@@ -10,7 +10,7 @@ To install Tetanus, you will need [Mythic](https://github.com/its-a-feature/Myth
 
 In the Mythic root directory, use `mythic-cli` to install the agent.
 ```bash
-sudo ./mythic-cli install github https://github.com/MEhrn00/tetanus
+sudo ./mythic-cli install github https://github.com/MythicAgents/tetanus
 sudo ./mythic-cli payload start tetanus
 ```
 
