@@ -1,0 +1,15 @@
+# Compiled executables
+debug/
+target/
+
+Cargo.lock
+
+# Rustfmt backup files
+**/*.rs.bk
+
+# Mac OS metadata
+.DS_Store
+
+push.sh
+tetanus.json
+tetanus.sh
