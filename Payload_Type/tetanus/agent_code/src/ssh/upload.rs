@@ -26,7 +26,7 @@ pub fn upload_file(
     let file_id = args.upload.as_ref().unwrap();
 
     // Get the path to the file to upload
-    let upload_path = args.upload.as_ref().unwrap();
+    let upload_path = args.upload_path.as_ref().unwrap();
 
     // Send the initial upload information to Mythic
     tx.send(json!({
