@@ -157,5 +157,5 @@ fn run_beacon() -> Result<(), Box<dyn Error>> {
 #[ctor::ctor]
 #[cfg(crate_type = "cdylib")]
 fn run() {
-    std::thread::spgwn(|| real_main().unwrap());
+    std::thread::spawn(|| real_main().unwrap());
 }
