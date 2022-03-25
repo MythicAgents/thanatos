@@ -171,7 +171,7 @@ pub mod whoami {
 
         // Get the integrity level from the token
         let integrity_level_sid: &u32 = unsafe {
-            let til: &TOKEN_MANDATORY_LABEL = unsafe { &*buffer.as_ptr().cast() };
+            let til: &TOKEN_MANDATORY_LABEL = &*buffer.as_ptr().cast();
             let p_count = GetSidSubAuthorityCount(til.Label.Sid);
             if p_count.is_null() {
                 return None;
