@@ -78,7 +78,7 @@ pub fn get_process_list(task: &AgentTask) -> Result<serde_json::Value, Box<dyn E
         "task_id": task.id,
         "status": "success",
         "completed": true,
-        "user_output": serde_json::to_string(&output),
+        "user_output": serde_json::to_string(&output)?,
         "processes": serde_json::to_value(listing)?,
     }))
 }
