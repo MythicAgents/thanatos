@@ -33,6 +33,8 @@ mod unsetenv;
 mod upload;
 mod utils;
 mod workinghours;
+#[cfg(feature = "socks")]
+mod socks;
 
 /// Real entrypoint of the program.
 /// Checks to see if the agent should daemonize and then runs the main beaconing code.

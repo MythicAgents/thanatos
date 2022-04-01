@@ -15,6 +15,9 @@ crate-type = ["cdylib", "lib"]
 name = "tetanus"
 path = "src/main.rs"
 
+[features]
+socks = ["tokio/sync"]
+
 [profile.release]
 strip = "symbols"
 
