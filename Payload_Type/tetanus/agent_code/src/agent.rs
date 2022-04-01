@@ -166,7 +166,7 @@ impl Agent {
         .to_string();
 
         #[cfg(feature = "socks")]
-        let json_body = if let Some(rx) = self.shared.socks_to_backend {
+        let json_body = if let Some(rx) = &mut self.shared.socks_to_backend {
             let mut v = Vec::new();
             while let Ok(msg) = rx.try_recv() {
                 v.push(msg);
@@ -190,7 +190,7 @@ impl Agent {
         let response: GetTaskingResponse = serde_json::from_str(&body)?;
 
         #[cfg(feature = "socks")]
-        if let Some(tx) = self.shared.socks_from_backend {
+        if let Some(tx) = &mut self.shared.socks_from_backend {
             for msg in response.socks {
                 tx.blocking_send(msg).unwrap();
             }
@@ -214,7 +214,7 @@ impl Agent {
         #[cfg(feature = "socks")]
         let mut socks = Vec::new();
         #[cfg(feature = "socks")]
-        if let Some(rx) = self.shared.socks_to_backend {
+        if let Some(rx) = &mut self.shared.socks_to_backend {
             while let Ok(msg) = rx.try_recv() {
                 socks.push(msg);
             }

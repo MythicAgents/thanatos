@@ -176,18 +176,29 @@ impl Tasker {
 
                     #[cfg(feature = "socks")]
                     "socks" => {
-                        match task_socks(task, 
+                        match task_socks(task.parameters.as_str(),
+                            task.id.clone(),
                             &mut agent.socks_from_backend,
                             &mut agent.socks_to_backend) {
-                            Ok(Some(bgtask)) => {
+                            Ok(Some((running, tx, rx))) => {
                                 // Assign a new ID to the job
-                                bgtask.id = if let Some(id) = self.cached_ids.pop_front() {
+                                let id = if let Some(id) = self.cached_ids.pop_front() {
                                     id
                                 } else {
                                     self.dispatch_val += 1;
                                     self.dispatch_val - 1
                                 };
-                                self.background_tasks.push(bgtask);
+                                self.background_tasks.push(BackgroundTask {
+                                    command: "socks".into(),
+                                    parameters: task.parameters.clone(),
+                                    uuid: task.id.clone(),
+                                    killable: true,
+                                    id,
+                                    running,
+                    
+                                    tx,
+                                    rx,
+                                });
                             },
                             Ok(None) => {
 

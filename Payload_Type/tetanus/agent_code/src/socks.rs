@@ -1,10 +1,9 @@
-use crate::agent::AgentTask;
 use crate::mythic_error;
-use crate::tasking::BackgroundTask;
 use std::result::Result;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::{error::Error, sync::Arc};
+use serde_json::Value;
 use tokio::{
     net::TcpStream,
     runtime::Runtime,
@@ -21,23 +20,19 @@ use serde::{Deserialize, Serialize};
 
 /// Struct for parsing the arguments of the `portfwd` command parameters
 #[derive(Debug, Deserialize, Serialize)]
-pub(crate) struct SocksMsg {
+pub struct SocksMsg {
     exit: bool,
     server_id: usize,
     data: String,
 }
-#[derive(Deserialize)]
-enum SocksArgs {
-    Start,
-    Stop
-}
 
 pub fn task_socks(
-    task: &AgentTask,
+    parameters: &str,
+    uuid: String,
     socks_from_backend: &mut Option<Sender<SocksMsg>>,
     socks_to_backend: &mut Option<Receiver<SocksMsg>>,
-) -> Result<Option<BackgroundTask>, Box<dyn Error>> {
-    match task.parameters.as_str()
+) -> Result<Option<(Arc<AtomicBool>, mpsc::Sender<Value>, mpsc::Receiver<Value>)>, Box<dyn Error>> {
+    match parameters
     {
         "start" => {
             let (snd_from_mythic,recv_from_mythic) = tokio::sync::mpsc::channel(1024);
@@ -53,31 +48,26 @@ pub fn task_socks(
             let running = Arc::new(AtomicBool::new(true));
             let running_ref = running.clone();
 
-            let uuid = task.id.clone();
+            let ttx = tx.clone();
 
             // Spawn a new thread for the background task
             std::thread::spawn(move || {
                 // Invoke the callback function
                 if let Err(e) = setup_socks(snd_to_mythic, recv_from_mythic) {
                     // If the function returns an error, relay the error message back to Mythic
-                    let _ = tx.send(mythic_error!(uuid, e.to_string()));
+                    let _ = ttx.send(mythic_error!(uuid, e.to_string()));
                 }
                 // Once the task ends, mark it as not running
                 running_ref.store(false, Ordering::SeqCst);
             });
 
             // Append this new task to the Vec of background tasks
-            Ok(Some(BackgroundTask {
-                command: "socks".into(),
-                parameters: task.parameters.clone(),
-                uuid: task.id.clone(),
-                killable: true,
-                id: 0,
-                running,
-
-                tx,
-                rx,
-            }))
+            Ok(Some(
+                (
+                    running,
+                    tx,
+                    rx,
+            )))
         },
         "stop" => {
             *socks_from_backend = None;//Droping this will end the loop
@@ -91,7 +81,7 @@ pub fn task_socks(
 /// Runs a async socks server
 pub fn setup_socks(
     snd_to_mythic: Sender<SocksMsg>,
-    recv_from_mythic: Receiver<SocksMsg>,
+    mut recv_from_mythic: Receiver<SocksMsg>,
 ) -> Result<(), Box<dyn Error>> {
     // Initialize a new async runtime
     let rt = Runtime::new()?;
