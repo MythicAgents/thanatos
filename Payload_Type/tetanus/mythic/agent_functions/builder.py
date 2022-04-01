@@ -179,8 +179,11 @@ class Tetanus(PayloadType):
                     v = json.dumps(val)
                     command += f"{key}='{v}' "
 
+            # Configure the compile time loaded commands (not fully implemented)
+            features = "socks"
+
             # Finish off the cargo command used for building the agent
-            command += f"cargo build --target {target_os} --release"
+            command += f"cargo build --target {target_os} --release --features {features}"
 
             # Copy any prebuilt dependencies if they exist
             deps_suffix = "_static" if self.get_parameter("static") == "yes" else ""
