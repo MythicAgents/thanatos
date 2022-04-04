@@ -7,6 +7,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     ParameterGroupInfo,
     ParameterType,
     BrowserScript,
+    CommandAttributes,
+    SupportedOS
 )
 import json
 
@@ -64,6 +66,10 @@ class LsCommand(CommandBase):
     attackmapping = ["T1106", "T1083"]
     browser_script = BrowserScript(
         script_name="ls", author="@M_alphaaa", for_new_ui=True
+    )
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
     )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:

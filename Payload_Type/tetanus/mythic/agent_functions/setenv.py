@@ -6,6 +6,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     CommandParameter,
     ParameterType,
     MythicStatus,
+    CommandAttributes,
+    SupportedOS
 )
 
 
@@ -48,6 +50,10 @@ class SetEnvCommand(CommandBase):
     author = "@M_alphaaa"
     argument_class = SetEnvArguments
     attackmapping = []
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         name = task.args.get_arg("name")

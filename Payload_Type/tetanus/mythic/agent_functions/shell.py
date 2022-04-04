@@ -6,6 +6,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     AgentResponse,
     CommandParameter,
     ParameterType,
+    CommandAttributes,
+    SupportedOS
 )
 
 
@@ -40,6 +42,10 @@ class ShellCommand(CommandBase):
     author = "@M_alphaaa"
     argument_class = ShellArguments
     attackmapping = ["T1059"]
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         await MythicRPC().execute(

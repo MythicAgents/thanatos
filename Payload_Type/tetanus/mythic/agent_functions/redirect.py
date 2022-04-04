@@ -6,6 +6,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     CommandParameter,
     ParameterType,
     ParameterGroupInfo,
+    CommandAttributes,
+    SupportedOS
 )
 
 
@@ -119,6 +121,10 @@ class RedirectCommand(CommandBase):
     author = "@M_alphaaa"
     argument_class = RedirectArguments
     attackmapping = ["T1090"]
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         bindhost = task.args.get_arg("bindhost")

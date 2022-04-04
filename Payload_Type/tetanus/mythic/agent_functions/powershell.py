@@ -44,7 +44,10 @@ class PowershellCommand(CommandBase):
     author = "@M_alphaaa"
     argument_class = PowershellArguments
     attackmapping = ["T1059"]
-    attributes = CommandAttributes(supported_os=[SupportedOS.Windows])
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         await MythicRPC().execute(

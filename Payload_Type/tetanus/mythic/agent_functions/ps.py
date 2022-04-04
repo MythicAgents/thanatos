@@ -4,6 +4,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     MythicTask,
     AgentResponse,
     BrowserScript,
+    CommandAttributes,
+    SupportedOS
 )
 
 
@@ -29,6 +31,10 @@ class PsCommand(CommandBase):
     attackmapping = ["T1106"]
     browser_script = BrowserScript(
         script_name="ps", author="@M_alphaaa", for_new_ui=True
+    )
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
     )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:

@@ -30,7 +30,7 @@ class Tetanus(PayloadType):
     wrapper = False
     wrapped_payloads = []
     note = "Linux and Windows agent written in Rust"  # Note about the payload displayed in Mythic
-    supports_dynamic_loading = False  # Payload does not support dynamic loading
+    supports_dynamic_loading = True
     mythic_encrypts = True
     build_parameters = [
         # Add a build option which specifies whether the agent should fork in the
@@ -179,12 +179,18 @@ class Tetanus(PayloadType):
                     v = json.dumps(val)
                     command += f"{key}='{v}' "
 
-            # Configure the compile time loaded commands (not fully implemented)
-            features = "socks"
+            # Configure the compile time loaded commands
+            features = ",".join(filter(
+                lambda f:f in self.commands.get_commands(),
+                ["socks"]
+            ))
 
             # Finish off the cargo command used for building the agent
-            command += f"cargo build --target {target_os} --release --features {features}"
+            command += f"cargo build --target {target_os} --release"
 
+            if len(features)>0:
+                command += f" --features {features}"
+            
             # Copy any prebuilt dependencies if they exist
             deps_suffix = "_static" if self.get_parameter("static") == "yes" else ""
 

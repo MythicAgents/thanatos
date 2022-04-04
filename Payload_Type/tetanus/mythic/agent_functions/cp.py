@@ -5,6 +5,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     MythicTask,
     AgentResponse,
     ParameterType,
+    CommandAttributes,
+    SupportedOS
 )
 
 
@@ -49,6 +51,10 @@ class CpCommand(CommandBase):
     author = "@M_alphaaa"
     argument_class = CpArguments
     attackmapping = ["T1570"]
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         source = task.args.get_arg("source")

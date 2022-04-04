@@ -5,6 +5,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     AgentResponse,
     CommandParameter,
     ParameterType,
+    CommandAttributes,
+    SupportedOS
 )
 
 
@@ -40,6 +42,10 @@ class JobKillCommand(CommandBase):
     author = "@M_alphaaa"
     argument_class = JobKillArguments
     attackmapping = []
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.display_params = str(task.args.get_arg("id"))

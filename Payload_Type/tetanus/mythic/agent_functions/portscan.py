@@ -5,6 +5,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     AgentResponse,
     CommandParameter,
     ParameterType,
+    CommandAttributes,
+    SupportedOS
 )
 import ipaddress
 
@@ -58,6 +60,10 @@ class PortScanCommand(CommandBase):
     author = "@M_alphaaa"
     argument_class = PortScanArguments
     attackmapping = ["T1046"]
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         ports = task.args.get_arg("ports")

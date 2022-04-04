@@ -5,6 +5,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     AgentResponse,
     MythicTask,
     ParameterType,
+    CommandAttributes,
+    SupportedOS
 )
 
 
@@ -42,6 +44,10 @@ class UnsetEnvCommand(CommandBase):
     supported_ui_features = ["unsetenv"]
     argument_class = UnsetEnvArguments
     attackmapping = []
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.display_params = str(task.args.get_arg("variable"))

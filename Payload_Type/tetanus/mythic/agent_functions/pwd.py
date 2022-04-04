@@ -3,6 +3,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     CommandBase,
     MythicTask,
     AgentResponse,
+    CommandAttributes,
+    SupportedOS
 )
 
 
@@ -25,6 +27,10 @@ class PwdCommand(CommandBase):
     argument_class = PwdArguments
     supported_ui_features = ["callback_table:pwd"]
     attackmapping = ["T1083"]
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

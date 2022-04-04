@@ -6,6 +6,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     AgentResponse,
     CommandParameter,
     ParameterType,
+    CommandAttributes,
+    SupportedOS
 )
 
 
@@ -50,6 +52,10 @@ class RmCommand(CommandBase):
     author = "@M_alphaaa"
     argument_class = RmArguments
     attackmapping = ["T1070.004", "T1565"]
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         if not task.args.has_arg("host"):

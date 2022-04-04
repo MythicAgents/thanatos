@@ -1,5 +1,15 @@
-from mythic_payloadtype_container.MythicCommandBase import *
-from mythic_payloadtype_container.MythicRPC import *
+from mythic_payloadtype_container.MythicCommandBase import (
+    TaskArguments,
+    CommandBase,
+    MythicTask,
+    AgentResponse,
+    CommandParameter,
+    ParameterType,
+    ParameterGroupInfo,
+    CommandAttributes,
+    SupportedOS
+)
+from mythic_payloadtype_container.MythicRPC import MythicRPC
 
 
 class SocksArguments(TaskArguments):
@@ -37,12 +47,22 @@ class SocksArguments(TaskArguments):
 class SocksCommand(CommandBase):
     cmd = "socks"
     needs_admin = False
-    help_cmd = "socks"
-    description = "Start or stop a socks5 instance."
+    help_cmd = "socks [action] [port number]"
+    description = "Enable SOCKS 5 compliant proxy on the agent such that you may proxy data in from an outside machine into the target network."
     version = 1
+    is_exit = False
+    is_file_browse = False
+    is_process_list = False
+    is_download_file = False
+    is_upload_file = False
+    is_remove_file = False
     author = "@M_alphaaa"
     argument_class = SocksArguments
     attackmapping = ["T1572"]
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=False,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         if task.args.get_arg("action") == "start":

@@ -7,6 +7,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     MythicTask,
     ParameterType,
     MythicStatus,
+    CommandAttributes,
+    SupportedOS
 )
 import json
 import sys
@@ -49,6 +51,10 @@ class UploadCommand(CommandBase):
     author = "@M_alphaaa"
     attackmapping = ["T1030", "T1105", "T1132"]
     argument_class = UploadArguments
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         try:

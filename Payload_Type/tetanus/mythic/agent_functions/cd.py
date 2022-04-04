@@ -5,6 +5,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     MythicTask,
     AgentResponse,
     ParameterType,
+    CommandAttributes,
+    SupportedOS
 )
 
 
@@ -36,6 +38,10 @@ class CdCommand(CommandBase):
     author = "@M_alphaaa"
     argument_class = CdArguments
     attackmapping = ["T1083"]
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.display_params = str(task.args.get_arg("directory"))

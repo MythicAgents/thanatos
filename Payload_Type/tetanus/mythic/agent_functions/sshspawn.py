@@ -8,6 +8,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     MythicStatus,
+    CommandAttributes,
+    SupportedOS
 )
 import json
 import sys
@@ -172,6 +174,10 @@ class SshSpawnCommand(CommandBase):
     author = "@M_alphaaa"
     attackmapping = ["T1021.004", "T1055"]
     argument_class = SshSpawnArguments
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         exec_cmd = task.args.get_arg("exec")

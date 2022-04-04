@@ -6,6 +6,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     CommandParameter,
     ParameterType,
     ParameterGroupInfo,
+    CommandAttributes,
+    SupportedOS
 )
 
 
@@ -52,6 +54,10 @@ class SleepCommand(CommandBase):
     author = "@M_alphaaa"
     argument_class = SleepArguments
     attackmapping = ["T1029"]
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         interval = task.args.get_arg("interval")

@@ -6,6 +6,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     AgentResponse,
     ParameterType,
     BrowserScript,
+    CommandAttributes,
+    SupportedOS
 )
 import json
 
@@ -55,6 +57,10 @@ class DownloadCommand(CommandBase):
     supported_ui_features = ["file_browser:download"]
     browser_script = BrowserScript(
         script_name="download", author="@djhohnstein", for_new_ui=True
+    )
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
     )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:

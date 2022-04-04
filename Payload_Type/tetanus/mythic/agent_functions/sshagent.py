@@ -6,6 +6,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     CommandParameter,
     ParameterType,
     ParameterGroupInfo,
+    CommandAttributes,
+    SupportedOS
 )
 
 
@@ -69,6 +71,10 @@ class SshAgentCommand(CommandBase):
     author = "@M_alphaaa"
     argument_class = SshAgentArguments
     attackmapping = ["T1563.001"]
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         if task.args.get_arg("list"):

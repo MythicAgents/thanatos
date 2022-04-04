@@ -3,6 +3,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     CommandBase,
     MythicTask,
     AgentResponse,
+    CommandAttributes,
+    SupportedOS
 )
 
 
@@ -25,6 +27,10 @@ class GetPrivsCommand(CommandBase):
     supported_ui_features = ["callback_table:getprivs"]
     argument_class = GetPrivsArguments
     attackmapping = ["T1078"]
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

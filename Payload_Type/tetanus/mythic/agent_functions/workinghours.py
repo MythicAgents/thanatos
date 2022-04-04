@@ -6,6 +6,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     CommandParameter,
     ParameterType,
     ParameterGroupInfo,
+    CommandAttributes,
+    SupportedOS
 )
 
 
@@ -71,6 +73,10 @@ class WorkinghoursCommand(CommandBase):
     author = "@M_alphaaa"
     argument_class = WorkinghoursArguments
     attackmapping = ["T1029"]
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows, SupportedOS.Linux ],
+        builtin=True,
+    )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         start = task.args.get_arg("start")
