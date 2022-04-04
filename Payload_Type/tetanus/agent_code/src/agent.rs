@@ -41,7 +41,7 @@ pub struct GetTaskingResponse {
     /// List of pending tasks
     pub tasks: Vec<AgentTask>,
     #[cfg(feature = "socks")]
-    pub socks: Vec<SocksMsg>,
+    pub socks: Option<Vec<SocksMsg>>,
 }
 
 /// Struct used for sending the completed task information
@@ -54,7 +54,7 @@ pub struct PostTaskingResponse {
     pub responses: Vec<serde_json::Value>,
 
     #[cfg(feature = "socks")]
-    pub socks: Vec<SocksMsg>,
+    pub socks: Option<Vec<SocksMsg>>,
 }
 
 /// Used for holding any data which has to be passed along to a background task
@@ -190,8 +190,8 @@ impl Agent {
         let response: GetTaskingResponse = serde_json::from_str(&body)?;
 
         #[cfg(feature = "socks")]
-        if let Some(tx) = &mut self.shared.socks_from_backend {
-            for msg in response.socks {
+        if let (Some(tx), Some(incomming_socks_msgs)) = (&mut self.shared.socks_from_backend, response.socks) {
+            for msg in incomming_socks_msgs {
                 tx.blocking_send(msg).unwrap();
             }
         }
@@ -212,13 +212,19 @@ impl Agent {
     ) -> Result<Option<Vec<AgentTask>>, Box<dyn Error>> {
         // Create the request body with the completed tasking information
         #[cfg(feature = "socks")]
-        let mut socks = Vec::new();
-        #[cfg(feature = "socks")]
-        if let Some(rx) = &mut self.shared.socks_to_backend {
-            while let Ok(msg) = rx.try_recv() {
-                socks.push(msg);
+        let socks = {
+            let mut socks = Vec::new();
+            if let Some(rx) = &mut self.shared.socks_to_backend {
+                while let Ok(msg) = rx.try_recv() {
+                    socks.push(msg);
+                }
             }
-        }
+            if socks.is_empty() {
+                None
+            }else{
+                Some(socks)
+            }
+        };
 
         let body = PostTaskingResponse {
             action: "post_response".to_string(),
