@@ -7,7 +7,8 @@ from mythic_payloadtype_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     CommandAttributes,
-    SupportedOS
+    SupportedOS,
+    MythicStatus
 )
 from mythic_payloadtype_container.MythicRPC import MythicRPC
 
