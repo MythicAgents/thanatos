@@ -7,7 +7,7 @@ hidden = true
 
 ## Summary
 
-This establishes a SOCKS5 proxy through the Medusa agent, permitting tooling to be proxied through the compromised host.
+This establishes a [SOCKS5 proxy](https://docs.mythic-c2.net/operational-pieces/socks-proxy) through the Tetanus agent, permitting tooling to be proxied through the compromised host.
 Currently only outgoing TCP connections are supported.
 
 - Needs Admin: False  
