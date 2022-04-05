@@ -131,7 +131,7 @@ fn setup_socks(
             if let Err(_e) = op {
                 //client error
                 client_sockets.lock().await.remove(&id);
-                write_mplx_data(id, true, &[0], &snd_to_mythic).await?;
+                write_mplx_data(id, true, &[], &snd_to_mythic).await?;
             }
             if new {
                 //new client
@@ -199,7 +199,7 @@ async fn connect_request(id: usize,
         }
         Err(socks_err_no) => {
             write_mplx_data(id, false, &[5, socks_err_no], &backend_w).await.expect("link down");
-            write_mplx_data(id, true, &[0], &backend_w).await.expect("link down");
+            write_mplx_data(id, true, &[], &backend_w).await.expect("link down");
         }
     }
 }
@@ -301,6 +301,6 @@ async fn read_from_client(id:usize, mut client_r : ReadHalf<TcpStream>, backend_
             return;
         }
     }
-    let _ = write_mplx_data(id, true, &[0], backend_w).await;
+    let _ = write_mplx_data(id, true, &[], backend_w).await;
     //backend gone, but we are closing anyway
 }
