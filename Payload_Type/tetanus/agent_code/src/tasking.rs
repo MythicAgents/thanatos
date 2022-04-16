@@ -201,7 +201,8 @@ impl Tasker {
                                 });
                             },
                             Ok(None) => {
-
+                                self.completed_tasks
+                                    .push(crate::mythic_success!(task.id, "SOCKS shutting down"));
                             },
                             Err(e) => {
                                 self.completed_tasks
