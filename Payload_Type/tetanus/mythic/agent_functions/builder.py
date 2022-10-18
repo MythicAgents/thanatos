@@ -226,7 +226,7 @@ class Tetanus(PayloadType):
                 resp.set_build_stderr(stdout.decode())
 
             # Parse the output format for the payload
-            if self.get_parameter("output") == "executable":
+            if "executable" in self.get_parameter("output"):
                 # Set the payload output to the built executable
                 target_name = (
                     "tetanus" if self.selected_os == SupportedOS.Linux else "tetanus.exe"
@@ -234,7 +234,7 @@ class Tetanus(PayloadType):
                 payload_path = (
                     f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
                 )
-            elif self.get_parameter("output") == "shared library (dll/so)":
+            elif "shared library" in self.get_parameter("output"):
                 # Set the payload output to the build shared library
                 target_name = (
                     "libtetanus.so"
@@ -244,7 +244,7 @@ class Tetanus(PayloadType):
                 payload_path = (
                     f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
                 )
-            elif self.get_parameter("output") == "shellcode":
+            elif "shellcode" in self.get_parameter("output"):
                 # Grab the dll if compiling to shellcode
                 target_name = "tetanus.dll"
                 payload_path = (
@@ -273,7 +273,7 @@ class Tetanus(PayloadType):
 
             # Return the python exception to the Mythic build message
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            resp.build_message += f"Error building payload: {e} traceback: " + repr(
+            resp.build_stderr += f"Error building payload: {e} traceback: " + repr(
                 traceback.format_exception(exc_type, exc_value, exc_traceback)
             )
 
