@@ -134,14 +134,18 @@ impl File {
 
         // Grab the last access time
         let access_time = DateTime::<Utc>::from_utc(
-            NaiveDateTime::from_timestamp(stats.atime.unwrap() as i64, 0),
+            NaiveDateTime::from_timestamp_opt(stats.atime.unwrap() as i64, 0).ok_or_else(|| {
+                std::io::Error::new(std::io::ErrorKind::Other, "Access time overflows for file")
+            })?,
             Utc,
         );
         let access_time: DateTime<Local> = DateTime::from(access_time);
 
         // Grab the last modify time
         let modify_time = DateTime::<Utc>::from_utc(
-            NaiveDateTime::from_timestamp(stats.mtime.unwrap() as i64, 0),
+            NaiveDateTime::from_timestamp_opt(stats.mtime.unwrap() as i64, 0).ok_or_else(|| {
+                std::io::Error::new(std::io::ErrorKind::Other, "Modify time overflows for file")
+            })?,
             Utc,
         );
         let modify_time: DateTime<Local> = DateTime::from(modify_time);
@@ -202,13 +206,17 @@ impl FileBrowser {
 
         // Grab the time metadata of the entry
         let access_time = DateTime::<Utc>::from_utc(
-            NaiveDateTime::from_timestamp(path_stat.atime.unwrap() as i64, 0),
+            NaiveDateTime::from_timestamp_opt(path_stat.atime.unwrap() as i64, 0).ok_or_else(
+                || std::io::Error::new(std::io::ErrorKind::Other, "Access time overflows for file"),
+            )?,
             Utc,
         );
         let access_time: DateTime<Local> = DateTime::from(access_time);
 
         let modify_time = DateTime::<Utc>::from_utc(
-            NaiveDateTime::from_timestamp(path_stat.mtime.unwrap() as i64, 0),
+            NaiveDateTime::from_timestamp_opt(path_stat.mtime.unwrap() as i64, 0).ok_or_else(
+                || std::io::Error::new(std::io::ErrorKind::Other, "Modify time overflows for file"),
+            )?,
             Utc,
         );
         let modify_time: DateTime<Local> = DateTime::from(modify_time);

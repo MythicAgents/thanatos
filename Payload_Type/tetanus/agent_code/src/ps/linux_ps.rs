@@ -176,7 +176,7 @@ pub fn get_start_time(pid: u32, boot_time: i64) -> Option<String> {
     let starttime = i64::from_str(proc_stat[proc_stat.len() - 30 - 1]).ok()?;
 
     // Convert the integer unix boot timestamp into the local time
-    let btime = DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(boot_time, 0), Utc);
+    let btime = DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp_opt(boot_time, 0)?, Utc);
     let btime: DateTime<Local> = DateTime::from(btime);
 
     // Divide the starttime by the clock ticks
