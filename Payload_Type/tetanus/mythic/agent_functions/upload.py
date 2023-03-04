@@ -2,6 +2,7 @@ from mythic_payloadtype_container.MythicRPC import MythicRPC
 from mythic_payloadtype_container.MythicCommandBase import (
     TaskArguments,
     CommandParameter,
+    ParameterGroupInfo,
     CommandBase,
     AgentResponse,
     MythicTask,
@@ -21,11 +22,25 @@ class UploadArguments(TaskArguments):
                 name="file",
                 type=ParameterType.File,
                 description="file to upload",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        ui_position=1,
+                        required=True,
+                    ),
+                ],
             ),
             CommandParameter(
-                name="path (including name)",
+                name="path",
+                display_name="path (including name)",
+                cli_name="path",
                 type=ParameterType.String,
                 description="Path where to upload the file including the file name.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        ui_position=2,
+                        required=True,
+                    ),
+                ],
             ),
         ]
 
@@ -52,30 +67,29 @@ class UploadCommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         try:
-            original_file_name = json.loads(task.original_params)["file"]
-            if len(task.args.get_arg("path")) == 0:
-                task.args.add_arg("path", original_file_name)
-            elif task.args.get_arg("path")[-1] == "/":
-                task.args.add_arg("path", task.args.get_arg("path") + original_file_name)
-            file_resp = await MythicRPC().execute(
-                "create_file",
-                task_id=task.id,
-                file=base64.b64encode(task.args.get_arg("file").encode()).decode(),
-                saved_file_name=original_file_name,
-                delete_after_fetch=True,
+            file_id = task.args.get_arg("file")
+            resp = await MythicRPC().execute(
+                "get_file", task_id=task.id, file_id=file_id, get_contents=False
             )
-            if file_resp.status == MythicStatus.Success:
-                task.args.add_arg("file", file_resp.response["agent_file_id"])
-                task.display_params = (
-                    f"{original_file_name} to {task.args.get_arg('path')}"
-                )
-            else:
-                raise Exception("Error from Mythic: " + str(file_resp.error))
+
+            if resp.status != MythicStatus.Success:
+                raise Exception("Failed to fetch file: {}".format(resp.error))
+
+            file_name = resp.response[0]["filename"]
+
+            if len(task.args.get_arg("path")) == 0:
+                task.args.add_arg("path", file_name)
+            elif task.args.get_arg("path")[-1] == "/":
+                task.args.add_arg("path", task.args.get_arg("path") + file_name)
+
+            task.display_params = f"{file_name} to {task.args.get_arg('path')}"
+            return task
         except Exception as e:
             raise Exception(
-                "Error from Mythic: " + str(sys.exc_info()[-1].tb_lineno) + str(e)
+                "Error from line {}: {}".format(
+                    str(sys.exc_info()[-1].tb_lineno), str(e)
+                )
             )
-        return task
 
     async def process_response(self, response: AgentResponse):
         pass
