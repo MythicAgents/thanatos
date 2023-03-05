@@ -1,6 +1,6 @@
 ### Real Dockerfile for the tetanus payload
 # Note: Invoke this Dockerfile from the `Payload_Type/tetanus` directory using the command
-#   `docker build -t mehrn00/tetanus:v0.1.0 -f .docker/Dockerfile .`
+#   `docker build -t docker.io/mehrn00/tetanus:v0.1.1 -f .docker/Dockerfile .`
 FROM fedora:32
 
 # Install packages

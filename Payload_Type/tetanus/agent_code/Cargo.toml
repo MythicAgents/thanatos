@@ -27,7 +27,7 @@ chrono = "0.4"
 ctor = "0.1.21"
 hmac = "0.11"
 minreq = { version = "2.4.2", features = ["https-rustls-probe"] }
-openssl = { version = "0.10.38", features = ["vendored"] }
+openssl = { version = "0.10.45", features = ["vendored"] }
 path-clean = "0.1.0"
 rand = "0.8"
 serde = { version = "1", features = ["derive"] }
