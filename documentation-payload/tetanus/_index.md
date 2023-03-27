@@ -82,9 +82,9 @@ correct interval.
 The initial check in for Linux agents will include the kernel version along with
 specifying if the kernel has SELinux.
 
-#[osinfo_linux](/agents/tetanus/images/osinfo_linux.png)
+![osinfo_linux](/agents/tetanus/images/osinfo_linux.png)
 
-#[osinfo_selinux](/agents/tetanus/images/osinfo_selinux.png)
+![osinfo_selinux](/agents/tetanus/images/osinfo_selinux.png)
 
 ## Authors
  - [@M_alphaaa](https://twitter.com/M_alphaaa)
