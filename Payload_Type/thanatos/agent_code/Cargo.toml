@@ -1,18 +1,18 @@
 [package]
-name = "tetanus"
+name = "thanatos"
 version = "0.1.0"
 authors = ["Matt Ehrnschwender", "Max Harley"]
 edition = "2021"
 
 
 [lib]
-name = "tetanus"
+name = "thanatos"
 path = "src/lib.rs"
 crate-type = ["cdylib", "lib"]
 
 
 [[bin]]
-name = "tetanus"
+name = "thanatos"
 path = "src/main.rs"
 
 [profile.release]

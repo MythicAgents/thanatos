@@ -37,8 +37,8 @@ ssh-agent -d
 ![ssh-agent_example](../images/ssh-agent_example.png)
 
 Once connected to an ssh agent, the identities in that agent can then be used for
-authentication through the [ssh](/agents/tetanus/commands/ssh/) and
-[ssh-spawn](/agents/tetanus/commands/ssh-spawn/) commands by setting the `use ssh agent`
+authentication through the [ssh](/agents/thanatos/commands/ssh/) and
+[ssh-spawn](/agents/thanatos/commands/ssh-spawn/) commands by setting the `use ssh agent`
 option to true in the task parameters.
 
 ![ssh-agent_useagent](../images/ssh-agent_useagent.png)

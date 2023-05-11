@@ -23,7 +23,7 @@ ssh -ls
      `Credential`
 
 #### use ssh agent
- - Option for whether or not to use a connected SSH agent for authentication. Tetanus will use
+ - Option for whether or not to use a connected SSH agent for authentication. Thanatos will use
    the supplied username from the `credentials` parameter but replaces the other fields
    for the ssh agent.
 
@@ -45,12 +45,12 @@ by clicking on the `LS` button next to the directory name.
 
 ![ssh-ls_ls_tasking](../images/ssh-ls_ls_tasking.png)
 
-The actions menu will issue new tasks to [ssh -rm](/agents/tetanus/commands/ssh-rm/) and [ssh -download](/agents/tetanus/commands/ssh-download/) for removing and downloading entries.
+The actions menu will issue new tasks to [ssh -rm](/agents/thanatos/commands/ssh-rm/) and [ssh -download](/agents/thanatos/commands/ssh-download/) for removing and downloading entries.
 This will reuse the credential and host information from the previous task.
 
 ![ssh-ls_actions](../images/ssh-ls_actions.png)
 
-An [ssh -cat](/agents/tetanus/commands/ssh-cat/) task can be issued from the browser script
+An [ssh -cat](/agents/thanatos/commands/ssh-cat/) task can be issued from the browser script
 for entries which are files by clicking on the `CAT` button.
 
 ![ssh-ls_cat](../images/ssh-ls_cat.png)

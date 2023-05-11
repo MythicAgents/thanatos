@@ -23,7 +23,7 @@ ssh -cat
      `Credential`
 
 #### use ssh agent
- - Option for whether or not to use a connected SSH agent for authentication. Tetanus will use
+ - Option for whether or not to use a connected SSH agent for authentication. Thanatos will use
    the supplied username from the `credentials` parameter but replaces the other fields
    for the ssh agent.
 
@@ -37,9 +37,9 @@ ssh -cat
  - Absolute path of the remote file to cat
 
 ### Browser Script
-Cat tasking can be issued through the [ssh -ls](/agents/tetanus/commands/ssh-ls/) browser
-script. A `CAT` button next to file entries will issue a new [ssh -cat](/agents/tetanus/commands/ssh-cat/)
-task using the path to that file and the credentials/host from that [ssh -ls](/agents/tetanus/commands/ssh-ls/) task.
+Cat tasking can be issued through the [ssh -ls](/agents/thanatos/commands/ssh-ls/) browser
+script. A `CAT` button next to file entries will issue a new [ssh -cat](/agents/thanatos/commands/ssh-cat/)
+task using the path to that file and the credentials/host from that [ssh -ls](/agents/thanatos/commands/ssh-ls/) task.
 
 ![ssh-cat_browserscript](../images/ssh-cat_browserscript.png)
 

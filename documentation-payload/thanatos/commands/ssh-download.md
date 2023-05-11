@@ -23,7 +23,7 @@ ssh -download
      `Credential`
 
 #### use ssh agent
- - Option for whether or not to use a connected SSH agent for authentication. Tetanus will use
+ - Option for whether or not to use a connected SSH agent for authentication. Thanatos will use
    the supplied username from the `credentials` parameter but replaces the other fields
    for the ssh agent.
 
@@ -40,7 +40,7 @@ ssh -download
 ![ssh-download_example_popup](../images/ssh-download_example_popup.png)
 
 ### Browser Script
-The browser script from [ssh -ls](/agents/tetanus/commands/ssh-ls/) can be used to issue `ssh -download` tasking. Click the
+The browser script from [ssh -ls](/agents/thanatos/commands/ssh-ls/) can be used to issue `ssh -download` tasking. Click the
 `Download` button in the `ACTIONS` menu next to the file for download.
 
 ![ssh-download_browserscript](../images/ssh-download_browserscript.png)

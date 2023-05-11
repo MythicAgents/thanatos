@@ -1,4 +1,4 @@
-use tetanus::real_main;
+use thanatos::real_main;
 
 /// Entrypoint when running the binary standalone.
 fn main() {

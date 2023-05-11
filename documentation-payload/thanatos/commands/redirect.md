@@ -64,7 +64,7 @@ redirect -bindhost 0.0.0.0 -bindport 8080 -connecthost mythic.local.vm -connectp
 ![redirect_pivot_listening](../images/redirect_pivot_listening.png)
 
 Spawn the newly built payload with the configured pivot connection on the machine. This
-example will use the [ssh-spawn](/agents/tetanus/commands/ssh-spawn/) command for
+example will use the [ssh-spawn](/agents/thanatos/commands/ssh-spawn/) command for
 launching the agent.
 
 ![pivot_spawn_ssh](../images/pivot_spawn_ssh.png)

@@ -1,6 +1,6 @@
-### Real Dockerfile for the tetanus payload
-# Note: Invoke this Dockerfile from the `Payload_Type/tetanus` directory using the command
-#   `docker build -t docker.io/mehrn00/tetanus:v0.1.1 -f .docker/Dockerfile .`
+### Real Dockerfile for the thanatos payload
+# Note: Invoke this Dockerfile from the `Payload_Type/thanatos` directory using the command
+#   `docker build -t docker.io/mehrn00/thanatos:v0.1.1 -f .docker/Dockerfile .`
 FROM fedora:32
 
 # Install packages
@@ -49,11 +49,11 @@ RUN rustup target install x86_64-pc-windows-gnu
 RUN rustup target install i686-pc-windows-gnu
 
 # Fetch dependencies
-RUN mkdir -p /tmp/tetanus
-COPY agent_code /tmp/tetanus
-WORKDIR /tmp/tetanus
+RUN mkdir -p /tmp/thanatos
+COPY agent_code /tmp/thanatos
+WORKDIR /tmp/thanatos
 RUN cargo fetch
 WORKDIR /
-RUN rm -rf /tmp/tetanus
+RUN rm -rf /tmp/thanatos
 
 ENTRYPOINT ["/Mythic/mythic/payload_service.sh"]

@@ -1,20 +1,20 @@
 <p align="center">
-  <img alt="Tetanus Logo" src="agent_icons/tetanus.svg" height="50%" width="50%">
+  <img alt="Thanatos Logo" src="agent_icons/thanatos.svg" height="50%" width="50%">
 </p>
 
-# Tetanus
-Tetanus is a Windows and Linux C2 agent written in rust.
+# Thanatos
+Thanatos is a Windows and Linux C2 agent written in rust.
 
 # Installation
-To install Tetanus, you will need [Mythic](https://github.com/its-a-feature/Mythic) set up on a machine.
+To install Thanatos, you will need [Mythic](https://github.com/its-a-feature/Mythic) set up on a machine.
 
 In the Mythic root directory, use `mythic-cli` to install the agent.
 ```bash
-sudo ./mythic-cli install github https://github.com/MythicAgents/tetanus
-sudo ./mythic-cli payload start tetanus
+sudo ./mythic-cli install github https://github.com/MythicAgents/thanatos
+sudo ./mythic-cli payload start thanatos
 ```
 
-Tetanus supports the http C2 profile:  
+Thanatos supports the http C2 profile:  
 ```bash
 sudo ./mythic-cli install github https://github.com/MythicC2Profiles/http
 sudo ./mythic-cli c2 start http

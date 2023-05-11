@@ -16,13 +16,13 @@ import tempfile
 import json
 
 
-# Class defining information about the Tetanus payload
-class Tetanus(PayloadType):
-    name = "tetanus"  # Name of the payload
+# Class defining information about the Thanatos payload
+class Thanatos(PayloadType):
+    name = "thanatos"  # Name of the payload
     file_extension = "exe"  # default file extension to use when creating payloads
     author = "@M_alphaaa, 0xdab0"  # authors
 
-    # Platforms that tetanus supports
+    # Platforms that thanatos supports
     supported_os = [
         SupportedOS.Windows,
         SupportedOS.Linux,
@@ -87,7 +87,7 @@ class Tetanus(PayloadType):
             required=True,
         ),
     ]
-    # Supported C2 profiles for tetanus
+    # Supported C2 profiles for thanatos
     c2_profiles = ["http"]
 
     # This function is called to build a new payload
@@ -229,7 +229,9 @@ class Tetanus(PayloadType):
             if "executable" in self.get_parameter("output"):
                 # Set the payload output to the built executable
                 target_name = (
-                    "tetanus" if self.selected_os == SupportedOS.Linux else "tetanus.exe"
+                    "thanatos"
+                    if self.selected_os == SupportedOS.Linux
+                    else "thanatos.exe"
                 )
                 payload_path = (
                     f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
@@ -237,16 +239,16 @@ class Tetanus(PayloadType):
             elif "shared library" in self.get_parameter("output"):
                 # Set the payload output to the build shared library
                 target_name = (
-                    "libtetanus.so"
+                    "libthanatos.so"
                     if self.selected_os == SupportedOS.Linux
-                    else "tetanus.dll"
+                    else "thanatos.dll"
                 )
                 payload_path = (
                     f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
                 )
             elif "shellcode" in self.get_parameter("output"):
                 # Grab the dll if compiling to shellcode
-                target_name = "tetanus.dll"
+                target_name = "thanatos.dll"
                 payload_path = (
                     f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
                 )
@@ -262,7 +264,7 @@ class Tetanus(PayloadType):
                 resp.payload = open(payload_path, "rb").read()
 
             # Notify Mythic that the build was successful
-            resp.set_build_message("Successfully built tetanus agent.")
+            resp.set_build_message("Successfully built thanatos agent.")
             resp.build_message += "\n"
             resp.build_message += str(command)
             resp.status = BuildStatus.Success

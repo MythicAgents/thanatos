@@ -23,7 +23,7 @@ ssh-spawn
      `Credential`
 
 #### use ssh agent
- - Option for whether or not to use a connected SSH agent for authentication. Tetanus will use
+ - Option for whether or not to use a connected SSH agent for authentication. Thanatos will use
    the supplied username from the `credentials` parameter but replaces the other fields
    for the ssh agent.
 
