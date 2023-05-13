@@ -104,23 +104,24 @@ pub mod profilevars {
     // Helper function to get the user agent
     pub fn useragent() -> String {
         // Grab the C2 profile headers from the environment variable `headers`
-        let headers: Vec<Header> = serde_json::from_str(env!("headers")).unwrap();
+        let headers: HashMap<String, String> = serde_json::from_str(env!("headers")).unwrap();
+
         headers
-            .iter()
-            .find(|header| header.name == "User-Agent")
-            .expect("User-Agent not defined")
-            .value
-            .to_owned()
+            .get("User-Agent")
+            .map(|agent| agent.to_owned())
+            .unwrap_or_else(|| "".to_string())
     }
 
     // Helper function to get the other headers
     pub fn headers() -> Option<HashMap<String, String>> {
-        let headers: Vec<Header> = serde_json::from_str(env!("headers")).unwrap();
-        headers
-            .iter()
-            .filter(|header| header.name != "User-Agent")
-            .map(|h| (h.key.to_owned(), h.value.to_owned()).into())
-            .collect()
+        let mut headers: HashMap<String, String> = serde_json::from_str(env!("headers")).unwrap();
+        headers.remove("User-Agent");
+
+        if !headers.is_empty() {
+            Some(headers)
+        } else {
+            None
+        }
     }
 
     // Helper function to get the C2 configured callback host
