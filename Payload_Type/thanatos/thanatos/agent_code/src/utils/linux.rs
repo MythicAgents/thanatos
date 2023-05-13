@@ -146,7 +146,7 @@ struct CheckinInfo {
     action: String,
 
     /// Internal IP address
-    ip: String,
+    ips: Vec<String>,
 
     /// OS information
     os: String,
@@ -183,7 +183,7 @@ pub fn get_checkin_info() -> String {
 
     let info = CheckinInfo {
         action: "checkin".to_string(),
-        ip: crate::utils::local_ipaddress::get().unwrap_or_else(|| "".to_string()),
+        ips: vec![crate::utils::local_ipaddress::get().unwrap_or_else(|| "".to_string())],
         os: whoami::platform(),
         user: whoami::username().unwrap_or_else(|| "".to_string()),
         host: whoami::hostname().unwrap_or_else(|| "".to_string()),
