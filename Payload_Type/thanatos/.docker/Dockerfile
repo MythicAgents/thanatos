@@ -1,59 +1,83 @@
 ### Real Dockerfile for the thanatos payload
 # Note: Invoke this Dockerfile from the `Payload_Type/thanatos` directory using the command
-#   `docker build -t docker.io/mehrn00/thanatos:v0.1.1 -f .docker/Dockerfile .`
-FROM fedora:32
+#   `docker build -t mehrn00/thanatos:v0.1.1 -f .docker/Dockerfile .`
+FROM fedora:35
 
 # Install packages
-RUN dnf install -y @development-tools \
-        glibc.i686 \
-        glibc-devel.i686 \
+RUN dnf install -y \
         python3-pip \
+        python3 \
         mingw64-gcc \
+        mingw32-gcc \
         mingw64-gcc-c++ \
         mingw32-gcc-c++ \
         mingw64-winpthreads-static.noarch \
         mingw32-winpthreads-static.noarch \
+        libgcc.i686 \
+        glibc-devel.i686 \
+        openssl-devel \
+        openssl-devel.i686 \
         openssl-static.i686 \
-        openssl-static.x86_64 \
-        musl-libc.x86_64 \
-        musl-libc.i686 \
+        perl-FindBin \
+        perl-File-Compare \
+        perl-lib \
+        clang \
+        curl \
+        make \
         musl-gcc \
-        zlib-static.i686 \
-        zlib-static.x86_64 \
+        musl-libc-static \
         python3-devel \
         && dnf clean all
 
+WORKDIR /tmp
 
 # Install the python dependencies
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt
+
 RUN rm requirements.txt
 
 # Install rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh && sh rustup.sh -y
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh \
+    && sh rustup.sh -y \
+        --profile minimal \
+        --default-toolchain stable \
+        -t i686-unknown-linux-gnu \
+        -t x86_64-unknown-linux-musl \
+        -t i686-unknown-linux-musl \
+        -t x86_64-pc-windows-gnu \
+        -t i686-pc-windows-gnu
+
 RUN rm -f rustup.sh
 
-# Add cargo and rustup to path
-RUN ln -sf /root/.cargo/bin/cargo /usr/local/bin/cargo
-RUN ln -sf /root/.cargo/bin/rustup /usr/local/bin/rustup
+ENV PATH=$PATH:/root/.cargo/bin
 
-# Add 32 bit linux toolchain
-RUN rustup target install i686-unknown-linux-gnu
-
-# Add musl toolchains for static linking
-RUN rustup target install x86_64-unknown-linux-musl
-RUN rustup target install i686-unknown-linux-musl
-
-# Add windows toolchains
-RUN rustup target install x86_64-pc-windows-gnu
-RUN rustup target install i686-pc-windows-gnu
-
-# Fetch dependencies
-RUN mkdir -p /tmp/thanatos
-COPY agent_code /tmp/thanatos
+# Fetch all the dependencies for each toolchain
+RUN mkdir /tmp/thanatos
 WORKDIR /tmp/thanatos
-RUN cargo fetch
+
+COPY thanatos/agent_code/ .
+
+RUN cargo fetch --target x86_64-unknown-linux-gnu
+RUN cargo fetch --target x86_64-unknown-linux-musl
+RUN cargo fetch --target x86_64-pc-windows-gnu
+RUN cargo fetch --target i686-unknown-linux-gnu
+RUN cargo fetch --target i686-unknown-linux-musl
+RUN cargo fetch --target i686-pc-windows-gnu
+
 WORKDIR /
 RUN rm -rf /tmp/thanatos
 
-ENTRYPOINT ["/Mythic/mythic/payload_service.sh"]
+WORKDIR /tmp
+RUN curl -L 'https://github.com/mozilla/sccache/releases/download/v0.4.0/sccache-v0.4.0-x86_64-unknown-linux-musl.tar.gz' -o sccache.tar.gz
+RUN tar xf sccache.tar.gz
+RUN mv sccache-v0.4.0-x86_64-unknown-linux-musl/sccache /usr/bin/sccache
+RUN chmod +x /usr/bin/sccache
+RUN rm -rf sccache-v0.4.0-x86_64-unknown-linux-musl
+RUN rm -f sccache.tar.gz
+
+COPY .docker/config.toml /root/.cargo/config.toml
+
+WORKDIR /Mythic/
+ENV SCCACHE_DIR /Mythic/.cache/sccache
+CMD ["python3", "main.py"]

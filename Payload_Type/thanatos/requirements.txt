@@ -1,4 +1,1 @@
-dynaconf==3.1.4
-aio-pika
-mythic-payloadtype-container==0.1.1
-donut-shellcode==0.9.2
+mythic-container==0.2.7
