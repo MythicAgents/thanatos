@@ -80,9 +80,9 @@ class Thanatos(PayloadType):
         BuildParameter(
             name="output",
             parameter_type=BuildParameterType.ChooseOne,
-            description="Payload output format (shellcode only works for Windows)",
+            description="Payload output format",
             default_value="executable",
-            choices=["executable", "shared library (.dll/.so)", "shellcode"],
+            choices=["executable", "shared library (.dll/.so)"],
             required=True,
         ),
     ]
@@ -112,14 +112,6 @@ class Thanatos(PayloadType):
                 resp.build_message = "Invalid C2 profile name specified"
                 return resp
 
-            # Check if building for shellcode on Linux and fail since it is not
-            # implemented
-            if (
-                self.get_parameter("output") == "shellcode"
-                and self.selected_os == SupportedOS.Linux
-            ):
-                raise Exception("Cannot build shellcode for Linux platform")
-
             # Get the architecture from the build parameter
             if self.get_parameter("architecture") == "x64":
                 arch = "x86_64"
@@ -147,10 +139,7 @@ class Thanatos(PayloadType):
             c2_params = c2.get_parameters_dict()
             c2_params["UUID"] = self.uuid
 
-            if self.get_parameter("output") == "shellcode":
-                c2_params["daemonize"] = "false"
-            else:
-                c2_params["daemonize"] = str(self.get_parameter("daemonize"))
+            c2_params["daemonize"] = str(self.get_parameter("daemonize"))
 
             c2_params["connection_retries"] = self.get_parameter("connection_retries")
             c2_params["working_hours"] = self.get_parameter("working_hours")
@@ -249,23 +238,8 @@ class Thanatos(PayloadType):
                 payload_path = (
                     f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
                 )
-            elif "shellcode" in self.get_parameter("output"):
-                # Grab the dll if compiling to shellcode
-                target_name = "thanatos.dll"
-                payload_path = (
-                    f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
-                )
 
-            # Convert the payload to shellcode if the output format was shellcode
-            if (
-                self.get_parameter("output") == "shellcode"
-                and self.selected_os == SupportedOS.Windows
-            ):
-                # Create shellcode using donut
-                # resp.payload = donut.create(file=payload_path)
-                pass
-            else:
-                resp.payload = open(payload_path, "rb").read()
+            resp.payload = open(payload_path, "rb").read()
 
             # Notify Mythic that the build was successful
             resp.set_build_message("Successfully built thanatos agent.")
