@@ -72,7 +72,7 @@ class Thanatos(PayloadType):
         BuildParameter(
             name="static",
             parameter_type=BuildParameterType.Boolean,
-            description="Statically link payload. (For Linux)",
+            description="Statically link payload. (For Linux. Only works for 64 bit builds)",
             default_value=False,
             required=True,
         ),
@@ -127,6 +127,12 @@ class Thanatos(PayloadType):
                 if self.get_parameter("static"):
                     rustflags += "-C target-feature=+crt-static"
                     abi = "musl"
+
+            # Fail if trying to build a 32 bit statically linked payload.
+            # This is a limitation in musl/openssl since 32 bit musl libc does not allow
+            # enough precision for openssl.
+            if arch == "i686" and abi == "musl":
+                raise Exception("Cannot build 32 bit statically linked payload.")
 
             # Get the target OS to compile for from the selected OS in Mythic
             target_os = (
