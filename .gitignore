@@ -11,5 +11,5 @@ Cargo.lock
 .DS_Store
 
 push.sh
-tetanus.json
-tetanus.sh
+thanatos.json
+thanatos.sh
