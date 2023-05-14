@@ -147,6 +147,11 @@ class Thanatos(PayloadType):
             # Start formulating the command to build the agent
             command = "env "
 
+            # Manually specify the C compiler for 32 bit Linux builds since Rust cannot
+            # find the right compiler by itself for some reason
+            if arch == "i686" and self.selected_os == SupportedOS.Linux:
+                command += "CC_i686-unknown-linux-gnu=clang "
+
             # Set up openssl environment variables
             openssl_env = "OPENSSL_STATIC=yes "
             if arch == "x86_64":
