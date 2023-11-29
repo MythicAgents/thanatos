@@ -1,7 +1,7 @@
 ### Real Dockerfile for the thanatos payload
 # Note: Invoke this Dockerfile from the `Payload_Type/thanatos` directory using the command
-#   `docker build -t mehrn00/thanatos:v0.1.1 -f .docker/Dockerfile .`
-FROM fedora:35
+#   `docker build -t mehrn00/thanatos:v0.1.2 -f .docker/Dockerfile .`
+FROM docker.io/library/fedora:35
 
 # Install packages
 RUN dnf install -y \
@@ -20,6 +20,8 @@ RUN dnf install -y \
         openssl-static.i686 \
         perl-FindBin \
         perl-File-Compare \
+        perl-IPC-Cmd \
+        perl-File-Copy \
         perl-lib \
         clang \
         curl \
