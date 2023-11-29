@@ -1,9 +1,12 @@
 package builder
 
+<<<<<<< HEAD
 import (
 	"github.com/MythicMeta/MythicContainer/mythicrpc"
 )
 
+=======
+>>>>>>> c89d869 (Stage rewrite files)
 type PayloadBuildParameterArchitecture byte
 
 const (
@@ -67,6 +70,7 @@ const (
 	PayloadBuildParameterOutputFormatSharedLibraryInit PayloadBuildParameterOutputFormat = "Shared Library (.dll/.so with export name 'init')"
 	PayloadBuildParameterOutputFormatWindowsShellcode  PayloadBuildParameterOutputFormat = "Windows Shellcode"
 )
+<<<<<<< HEAD
 
 // Generic handler interface for managing payload builds and RPC execution
 type BuildHandler interface {
@@ -88,3 +92,5 @@ type PayloadBuilder interface {
 type MythicRPCExecutor interface {
 	UpdateBuildStep(input mythicrpc.MythicRPCPayloadUpdateBuildStepMessage) (*mythicrpc.MythicRPCPayloadUpdateBuildStepMessageResponse, error)
 }
+=======
+>>>>>>> c89d869 (Stage rewrite files)
