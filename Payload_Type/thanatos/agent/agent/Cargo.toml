@@ -1,0 +1,93 @@
+[package]
+name = "thanatos"
+version = "0.1.0"
+authors = ["Matt Ehrnschwender"]
+edition = "2021"
+
+
+# Library package definition
+[lib]
+name = "thanatoslib"
+path = "src/lib.rs"
+crate-type = ["cdylib", "lib"]
+
+# Binary executable package definition
+[[bin]]
+name = "thanatos"
+path = "src/main.rs"
+
+
+### Feature flags for configuring the agent
+[features]
+AES = ["config/AES", "agent_utils/AES"]
+EKE = ["config/EKE", "agent_utils/EKE"]
+ctor = []
+domain = ["config/domain", "agent_utils/domain"]
+exitprocess = []
+exitthread = []
+forkonexec = []
+hostname = ["config/hostname", "agent_utils/hostname"]
+http_AES = ["AES", "egress-profile?/AES"]
+http_EKE = ["EKE", "egress-profile?/EKE"]
+tcp_AES = ["AES"]
+tcp_EKE = ["EKE"]
+library = []
+proxy = []
+spawnthread = []
+username = ["config/username", "agent_utils/username"]
+
+cat = ["dep:commands-cat"]
+cd = ["dep:commands-cd"]
+pwd = ["dep:commands-pwd"]
+http = ["dep:egress-profile"]
+tcp = ["dep:p2p-profile"]
+cryptinternal = ["dep:base64"]
+
+
+### Agent dependencies
+[dependencies]
+rand.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[dependencies.config]
+path = "../config"
+
+[dependencies.base64]
+workspace = true
+optional = true
+
+[dependencies.agent_utils]
+path = "../agent_utils"
+
+# C2 profile libraries
+[dependencies.egress-profile]
+optional = true
+path = "../profiles/egress"
+
+[dependencies.p2p-profile]
+optional = true
+path = "../profiles/p2p"
+
+# Command libraries
+[dependencies.commands-cat]
+optional = true
+path = "../commands/cat"
+features = ["agent"]
+
+[dependencies.commands-pwd]
+optional = true
+path = "../commands/pwd"
+
+[dependencies.commands-cd]
+optional = true
+path = "../commands/cd"
+features = ["agent"]
+
+
+# Platform specific dependencies
+[target.'cfg(target_os = "linux")'.dependencies]
+libc.workspace = true
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows.workspace = true

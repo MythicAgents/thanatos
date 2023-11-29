@@ -1,13 +1,32 @@
 ### Real Dockerfile for the thanatos payload
 # Note: Invoke this Dockerfile from the `Payload_Type/thanatos` directory using the command
-#   `docker build -t docker.io/mehrn00/thanatos:v0.1.3 -f .docker/Dockerfile .`
+#   `docker build -t docker.io/mehrn00/thanatos:v0.2.0 -f .docker/Dockerfile .`
+FROM docker.io/library/golang:alpine as mythic-builder
+
+RUN apk update \
+    && apk add binutils \
+    && apk cache clean
+
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+
+COPY thanatos thanatos
+COPY go.mod .
+COPY go.sum .
+COPY main.go .
+
+RUN go mod download
+RUN go mod tidy
+RUN go build -ldflags='-extldflags=-static' -o mythic-server .
+RUN strip -s mythic-server
+RUN mv mythic-server /opt/mythic-server
+
+# Image containing the dependencies to build the agent
 FROM docker.io/library/fedora:35
+
 
 # Install packages
 RUN dnf install -y \
-        python3.11 \
-        python3-pip \
-        python3.11-devel \
         mingw64-gcc \
         mingw32-gcc \
         mingw64-gcc-c++ \
@@ -31,21 +50,13 @@ RUN dnf install -y \
         musl-libc-static \
         && dnf clean all
 
-RUN python3.11 -m ensurepip
-
 WORKDIR /tmp
-
-# Install the python dependencies
-COPY requirements.txt .
-RUN python3.11 -m pip install -r requirements.txt
-
-RUN rm requirements.txt
 
 # Install rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh \
     && sh rustup.sh -y \
         --profile minimal \
-        --default-toolchain stable \
+        --default-toolchain nightly \
         -t i686-unknown-linux-gnu \
         -t x86_64-unknown-linux-musl \
         -t i686-unknown-linux-musl \
@@ -56,7 +67,13 @@ RUN rm -f rustup.sh
 
 ENV PATH=$PATH:/root/.cargo/bin
 
-# Fetch all the dependencies for each toolchain
+# Use the nightly toolchain
+RUN rustup default nightly
+
+# Install the rust-src package
+RUN rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
+
+# Fetch dependencies
 RUN mkdir /tmp/thanatos
 WORKDIR /tmp/thanatos
 
@@ -82,6 +99,9 @@ RUN rm -f sccache.tar.gz
 
 COPY .docker/config.toml /root/.cargo/config.toml
 
-WORKDIR /Mythic/
+WORKDIR /Mythic
+
+COPY --from=mythic-builder /opt/mythic-server /mythic-server
+
 ENV SCCACHE_DIR /Mythic/.cache/sccache
-CMD ["python3.11", "main.py"]
+CMD ["/mythic-server"]

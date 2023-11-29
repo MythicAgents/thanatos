@@ -1,0 +1,26 @@
+[package]
+name = "commands-cat"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["lib", "cdylib"]
+
+[dependencies.agent_utils]
+path = "../../agent_utils"
+optional = true
+
+[dependencies.thanatos-module]
+optional = true
+path = "../../thanatos-module"
+features = ["macros"]
+
+[dependencies.serde]
+workspace = true
+
+[dependencies.serde_json]
+workspace = true
+
+[features]
+load = ["dep:thanatos-module"]
+agent = ["dep:agent_utils"]

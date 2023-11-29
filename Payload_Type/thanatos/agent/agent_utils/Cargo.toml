@@ -1,0 +1,76 @@
+[package]
+name = "agent_utils"
+version = "0.1.0"
+edition = "2021"
+
+### Feature flags for configuring the library
+[features]
+AES = []
+EKE = []
+domain = []
+hostname = []
+username = []
+cryptinternal = [
+  "dep:aes",
+  "dep:base64",
+  "dep:block-padding",
+  "dep:cbc",
+  "dep:hmac",
+  "dep:sha2",
+  "dep:rsa",
+  "dep:sha1",
+]
+
+### Library dependencies
+[dependencies]
+rand.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[dependencies.config]
+path = "../config"
+
+[dependencies.aes]
+version = "0.8.2"
+optional = true
+
+[dependencies.base64]
+workspace = true
+optional = true
+
+[dependencies.block-padding]
+version = "0.3.2"
+optional = true
+
+[dependencies.cbc]
+version = "0.1.2"
+optional = true
+features = ["block-padding", "alloc"]
+
+[dependencies.hmac]
+version = "0.12.1"
+optional = true
+
+[dependencies.rsa]
+version = "0.8.2"
+optional = true
+features = ["pem"]
+
+[dependencies.sha1]
+version = "0.10.5"
+optional = true
+
+[dependencies.sha2]
+version = "0.10.6"
+optional = true
+
+# Target specific dependencies
+[target.'cfg(target_os = "linux")'.dependencies]
+libc.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies.openssl]
+workspace = true
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows.workspace = true
+
