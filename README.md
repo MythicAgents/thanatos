@@ -1,5 +1,8 @@
+> [!WARNING]
+> Rewrite branch is unstable and subject to sudden changes
+
 <p align="center">
-  <img alt="Thanatos Logo" src="agent_icons/thanatos.svg" height="50%" width="50%">
+  <img alt="Thanatos Logo" src="Payload_Type/thanatos/mythic/assets/thanatos.svg" height="50%" width="50%">
 </p>
 
 # Thanatos

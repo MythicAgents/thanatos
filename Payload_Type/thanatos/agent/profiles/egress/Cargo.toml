@@ -1,0 +1,43 @@
+[package]
+name = "egress-profile"
+version = "0.1.0"
+edition = "2021"
+
+
+[features]
+AES = []
+EKE = []
+http = []
+https = []
+tcp = []
+proxy = []
+self-signed-certs = []
+cryptinternal = ["dep:rustls", "dep:webpki-roots"]
+
+### Library dependencies
+[dependencies]
+rand.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[dependencies.agent_utils]
+path = "../../agent_utils"
+
+[dependencies.config]
+path = "../../config"
+
+# Target specific dependencies
+[target.'cfg(target_os = "windows")'.dependencies]
+windows.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies.openssl]
+workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies.rustls]
+version = "0.20.8"
+optional = true
+features = ["dangerous_configuration"]
+
+[target.'cfg(target_os = "linux")'.dependencies.webpki-roots]
+version = "0.22.6"
+optional = true

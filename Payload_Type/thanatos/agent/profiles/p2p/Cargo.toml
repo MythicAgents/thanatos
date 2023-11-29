@@ -1,0 +1,12 @@
+[package]
+name = "p2p-profile"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+tcp = []
+
+[dependencies]
+
+[dependencies.agent_utils]
+path = "../../agent_utils"
