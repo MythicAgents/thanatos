@@ -3,7 +3,7 @@ module thanatos
 go 1.20
 
 require (
-	github.com/MythicMeta/MythicContainer v1.1.2
+	github.com/MythicMeta/MythicContainer v1.2.0
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
 )
 
@@ -37,5 +37,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
-
-replace github.com/MythicMeta/MythicContainer v1.1.2 => ../../../../MythicContainer
