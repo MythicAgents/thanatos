@@ -394,8 +394,8 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler Buil
 
 // Routine invoked when Mythic requests a new payload
 func mythicBuildRoutine(payloadBuildMsg agentstructs.PayloadBuildMessage) agentstructs.PayloadBuildResponse {
-	builder := MythicPayloadHandler{}
-	return buildPayload(payloadBuildMsg, &builder)
+	handler := MythicPayloadHandler{}
+	return buildPayload(payloadBuildMsg, &handler)
 }
 
 // Initializes the agent in Mythic
