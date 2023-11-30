@@ -3,56 +3,99 @@ package builder
 import (
 	"errors"
 	"fmt"
+	"math"
 	"path/filepath"
-	"sync"
+	"strconv"
+	"strings"
+	_ "sync"
 	"time"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
+	"github.com/MythicMeta/MythicContainer/mythicrpc"
 )
-
-// Interface for building a payload
-type PayloadBuilder interface {
-	// Method which takes in the raw command for building the agent and returns the contents
-	// of the built payload for Mythic
-	Build(command string) ([]byte, error)
-}
 
 // Strongly type struct containing all of the build parameters from Mythic
 type ParsedBuildParameters struct {
+	// Supported architectures of the agent
 	Architecture PayloadBuildParameterArchitecture
-	InitOptions  PayloadBuildParameterInitOptions
-	CryptoLib    PayloadBuildParameterCryptoLibrary
+
+	// Agent's initial exection parameters
+	InitOptions PayloadBuildParameterInitOptions
+
+	// Number of tries to reconnect to Mythic on failed connections
+	ConnectionRetries float64
+
+	// Library for doing crypto
+	CryptoLib PayloadBuildParameterCryptoLibrary
+
+	// Working hours
 	WorkingHours struct {
+		// Working hour start time
 		StartTime time.Duration
-		EndTime   time.Duration
+
+		// Working hour end time
+		EndTime time.Duration
 	}
 
-	DomainList    []string
-	HostnameList  []string
-	UsernameList  []string
+	// List of domains for execution guardrails
+	DomainList []string
+
+	// List of hostnames for execution guardrails
+	HostnameList []string
+
+	// List of usernames for execution guardrails
+	UsernameList []string
+
+	// Options for static linking
 	StaticOptions []PayloadBuildParameterStaticOption
+
+	// Whether the agent should connect to self signed TLS certificates
 	TlsSelfSigned bool
-	SpawnTo       string
-	Output        PayloadBuildParameterOutputFormat
+
+	// Initial spawnto value
+	SpawnTo string
+
+	// Output format for the agent
+	Output PayloadBuildParameterOutputFormat
 }
 
 // Metadata defining the Mythic payload
 var payloadDefinition = agentstructs.PayloadType{
-	Name:          "thanatos",
+	// Payload name
+	Name: "thanatos",
+
+	// Default file extension
 	FileExtension: "",
-	Author:        "@M_alphaaa",
+
+	// Authors
+	Author: "@M_alphaaa",
+
+	// Supports OSs
 	SupportedOS: []string{
 		agentstructs.SUPPORTED_OS_LINUX, agentstructs.SUPPORTED_OS_WINDOWS,
 	},
-	Wrapper:                                false,
+
+	// Whether this is a wrapper payload
+	Wrapper: false,
+
+	// Supported wrapper payloads
 	CanBeWrappedByTheFollowingPayloadTypes: []string{},
-	SupportsDynamicLoading:                 true,
-	Description:                            "Linux and Windows agent written in Rust",
+
+	// Supports loading commands at runtime
+	SupportsDynamicLoading: true,
+
+	// Payload description
+	Description: "Linux and Windows agent written in Rust",
+
+	// C2 profiles which can be compiled into the agent
 	SupportedC2Profiles: []string{
 		"http", "tcp",
 	},
+
+	// Where encryption is handled
 	MythicEncryptsData: true,
 
+	// Build parameters of the payload
 	BuildParameters: []agentstructs.BuildParameter{
 		{
 			Name:         "architecture",
@@ -170,19 +213,118 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required: true,
 		},
 	},
-	BuildSteps: []agentstructs.BuildStep{},
+
+	BuildSteps: []agentstructs.BuildStep{
+		{
+			Name:        "Installing Rust Target",
+			Description: "Installing the reqruied Rust target for the paylod build",
+		},
+
+		{
+			Name:        "Building",
+			Description: "Building the payload",
+		},
+	},
 }
 
 // Mutex for restricting parallel builds. The rust compiler likes to use a lot of CPU resources.
 // This can be problematic when the payload builder is run on the same system Mythic is running on.
 // To prevent payload builds from accidentally DOSing the Mythic server, only allow sequential builds.
 // Parallel build support may be added back in the future.
-var payloadBuildLock sync.Mutex
+//var payloadBuildLock sync.Mutex
 
-type PayloadCommandBuilder struct{}
+// Type for the handler routines when being built by Mythic
+type MythicPayloadHandler struct{}
 
-func (builder PayloadCommandBuilder) Build(command string) ([]byte, error) {
+// Implementation for when the builder needs to build the agent
+func (handler MythicPayloadHandler) Build(command string) ([]byte, error) {
 	return make([]byte, 0), nil
+}
+
+// Implementation for installing a Rust target
+func (handler MythicPayloadHandler) InstallTarget(target string) error {
+	return nil
+}
+
+// Implementation for updating the current build step
+func (handler MythicPayloadHandler) UpdateBuildStep(input mythicrpc.MythicRPCPayloadUpdateBuildStepMessage) (*mythicrpc.MythicRPCPayloadUpdateBuildStepMessageResponse, error) {
+	return mythicrpc.SendMythicRPCPayloadUpdateBuildStep(input)
+}
+
+// Converts a singular working hours value '01:30' to a duration
+func workingHoursValueToDuration(value string) (time.Duration, error) {
+	parsedDuration := time.Duration(0)
+
+	// Split the duration into separate hour and minute values
+	stringSplit := strings.Split(value, ":")
+	if len(stringSplit) == 1 {
+		return parsedDuration, errors.New("Did not find a ':' delimiter in the working hour time")
+	} else if len(stringSplit) != 2 {
+		return parsedDuration, errors.New("Working hour time is malformed")
+	}
+
+	// Convert the hour portion to an integer
+	hour, err := strconv.Atoi(stringSplit[0])
+	if err != nil {
+		return parsedDuration, errors.New("Failed to parse the hours portion of the working hours")
+	}
+
+	// Validate the hour portion
+	if hour > 23 {
+		return parsedDuration, errors.New("Hour portion is greater than 23")
+	} else if hour < 0 {
+		return parsedDuration, errors.New("Hour portion is negative")
+	}
+
+	// Convert the minute portion to an integer
+	minute, err := strconv.Atoi(stringSplit[1])
+	if err != nil {
+		return parsedDuration, errors.New("Failed to parse the minutes potion of the working hours")
+	}
+
+	// Validate the minute portion
+	if minute > 60 {
+		return parsedDuration, errors.New("Minute portion is greater than 60")
+	} else if minute < 0 {
+		return parsedDuration, errors.New("Minute portion is negative")
+	}
+
+	// Convert the hour period to seconds
+	hour = hour * 60 * 60
+
+	// Convert the minute period to seconds
+	minute = minute * 60
+
+	// Get the duration in total seconds
+	durationSeconds := float64(hour) + float64(minute)
+
+	// Convert the seconds to nano seconds and create a time.Duration
+	parsedDuration = time.Duration(math.Pow(durationSeconds, 9))
+
+	return parsedDuration, nil
+}
+
+// Parses the working hours '00:00-23:00' format
+func parseWorkingHours(workingHours string) (time.Duration, time.Duration, error) {
+	workingStart := time.Duration(0)
+	workingEnd := time.Duration(0)
+
+	workingHoursSplit := strings.Split(workingHours, "-")
+	if len(workingHoursSplit) == 1 {
+		return workingStart, workingEnd, errors.New("Working hours value does not contain a '-' delimiter")
+	}
+
+	workingStart, err := workingHoursValueToDuration(workingHoursSplit[0])
+	if err != nil {
+		return workingStart, workingEnd, errors.New(fmt.Sprintf("Failed to parse the start portion for the working hours: %s", err.Error()))
+	}
+
+	workingEnd, err = workingHoursValueToDuration(workingHoursSplit[1])
+	if err != nil {
+		return workingStart, workingEnd, errors.New(fmt.Sprintf("Failed to parse the end portion for the working hours: %s", err.Error()))
+	}
+
+	return workingStart, workingEnd, nil
 }
 
 // Parses the build parameters from Mythic to a strongly typed structure
@@ -211,11 +353,25 @@ func parseBuildParameters(buildMessage *agentstructs.PayloadBuildMessage) (Parse
 
 	parsedParameters.InitOptions = PayloadBuildParameterInitOptions(initOptions)
 
+	connectionRetries, err := parameters.GetNumberArg("connection_retries")
+	if connectionRetries <= 0 {
+		return parsedParameters, errors.New("Connection retries is <= 0")
+	}
+
+	parsedParameters.ConnectionRetries = connectionRetries
+
+	workingHours, err := parameters.GetStringArg("working_hours")
+	if err != nil {
+		return parsedParameters, err
+	}
+
+	_ = workingHours
+
 	return parsedParameters, nil
 }
 
 // Function which builds the payload with a configured payload builder
-func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, builder PayloadBuilder) agentstructs.PayloadBuildResponse {
+func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler BuildHandler) agentstructs.PayloadBuildResponse {
 	payloadBuildResponse := agentstructs.PayloadBuildResponse{
 		PayloadUUID:        payloadBuildMsg.PayloadUUID,
 		Success:            false,
@@ -234,7 +390,7 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, builder Payl
 
 // Routine invoked when Mythic requests a new payload
 func mythicBuildRoutine(payloadBuildMsg agentstructs.PayloadBuildMessage) agentstructs.PayloadBuildResponse {
-	builder := PayloadCommandBuilder{}
+	builder := MythicPayloadHandler{}
 	return buildPayload(payloadBuildMsg, &builder)
 }
 
