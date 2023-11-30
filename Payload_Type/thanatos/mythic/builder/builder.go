@@ -258,35 +258,35 @@ func workingHoursValueToDuration(value string) (time.Duration, error) {
 	// Split the duration into separate hour and minute values
 	stringSplit := strings.Split(value, ":")
 	if len(stringSplit) == 1 {
-		return parsedDuration, errors.New("Did not find a ':' delimiter in the working hour time")
+		return parsedDuration, errors.New("did not find a ':' delimiter in the working hour time")
 	} else if len(stringSplit) != 2 {
-		return parsedDuration, errors.New("Working hour time is malformed")
+		return parsedDuration, errors.New("working hour time is malformed")
 	}
 
 	// Convert the hour portion to an integer
 	hour, err := strconv.Atoi(stringSplit[0])
 	if err != nil {
-		return parsedDuration, errors.New("Failed to parse the hours portion of the working hours")
+		return parsedDuration, errors.New("failed to parse the hours portion of the working hours")
 	}
 
 	// Validate the hour portion
 	if hour > 23 {
-		return parsedDuration, errors.New("Hour portion is greater than 23")
+		return parsedDuration, errors.New("hour portion is greater than 23")
 	} else if hour < 0 {
-		return parsedDuration, errors.New("Hour portion is negative")
+		return parsedDuration, errors.New("hour portion is negative")
 	}
 
 	// Convert the minute portion to an integer
 	minute, err := strconv.Atoi(stringSplit[1])
 	if err != nil {
-		return parsedDuration, errors.New("Failed to parse the minutes potion of the working hours")
+		return parsedDuration, errors.New("failed to parse the minutes potion of the working hours")
 	}
 
 	// Validate the minute portion
 	if minute > 60 {
-		return parsedDuration, errors.New("Minute portion is greater than 60")
+		return parsedDuration, errors.New("minute portion is greater than 60")
 	} else if minute < 0 {
-		return parsedDuration, errors.New("Minute portion is negative")
+		return parsedDuration, errors.New("minute portion is negative")
 	}
 
 	// Convert the hour period to seconds
@@ -311,17 +311,17 @@ func parseWorkingHours(workingHours string) (time.Duration, time.Duration, error
 
 	workingHoursSplit := strings.Split(workingHours, "-")
 	if len(workingHoursSplit) == 1 {
-		return workingStart, workingEnd, errors.New("Working hours value does not contain a '-' delimiter")
+		return workingStart, workingEnd, errors.New("working hours value does not contain a '-' delimiter")
 	}
 
 	workingStart, err := workingHoursValueToDuration(workingHoursSplit[0])
 	if err != nil {
-		return workingStart, workingEnd, errors.New(fmt.Sprintf("Failed to parse the start portion for the working hours: %s", err.Error()))
+		return workingStart, workingEnd, fmt.Errorf("failed to parse the start portion for the working hours: %s", err.Error())
 	}
 
 	workingEnd, err = workingHoursValueToDuration(workingHoursSplit[1])
 	if err != nil {
-		return workingStart, workingEnd, errors.New(fmt.Sprintf("Failed to parse the end portion for the working hours: %s", err.Error()))
+		return workingStart, workingEnd, fmt.Errorf("failed to parse the end portion for the working hours: %s", err.Error())
 	}
 
 	return workingStart, workingEnd, nil
@@ -343,7 +343,7 @@ func parseBuildParameters(buildMessage *agentstructs.PayloadBuildMessage) (Parse
 	if arch := NewPayloadBuildParameterArchitecture(architecture); arch != nil {
 		parsedParameters.Architecture = *arch
 	} else {
-		return parsedParameters, errors.New(fmt.Sprintf("Invalid architecture string value: %s", architecture))
+		return parsedParameters, fmt.Errorf("invalid architecture string value: %s", architecture)
 	}
 
 	initOptions, err := parameters.GetStringArg("initoptions")
@@ -354,8 +354,12 @@ func parseBuildParameters(buildMessage *agentstructs.PayloadBuildMessage) (Parse
 	parsedParameters.InitOptions = PayloadBuildParameterInitOptions(initOptions)
 
 	connectionRetries, err := parameters.GetNumberArg("connection_retries")
+	if err != nil {
+		return parsedParameters, err
+	}
+
 	if connectionRetries <= 0 {
-		return parsedParameters, errors.New("Connection retries is <= 0")
+		return parsedParameters, errors.New("connection retries is <= 0")
 	}
 
 	parsedParameters.ConnectionRetries = connectionRetries
