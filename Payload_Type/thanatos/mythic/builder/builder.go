@@ -299,7 +299,7 @@ func workingHoursValueToDuration(value string) (time.Duration, error) {
 	durationSeconds := float64(hour) + float64(minute)
 
 	// Convert the seconds to nano seconds and create a time.Duration
-	parsedDuration = time.Duration(math.Pow(durationSeconds, 9))
+	parsedDuration = time.Duration(durationSeconds * math.Pow(10, 9))
 
 	return parsedDuration, nil
 }
