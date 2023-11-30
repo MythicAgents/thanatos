@@ -1,5 +1,9 @@
 package builder
 
+import (
+	"github.com/MythicMeta/MythicContainer/mythicrpc"
+)
+
 type PayloadBuildParameterArchitecture byte
 
 const (
@@ -63,3 +67,24 @@ const (
 	PayloadBuildParameterOutputFormatSharedLibraryInit PayloadBuildParameterOutputFormat = "Shared Library (.dll/.so with export name 'init')"
 	PayloadBuildParameterOutputFormatWindowsShellcode  PayloadBuildParameterOutputFormat = "Windows Shellcode"
 )
+
+// Generic handler interface for managing payload builds and RPC execution
+type BuildHandler interface {
+	PayloadBuilder
+	MythicRPCExecutor
+}
+
+// Interface handling various payload build routines
+type PayloadBuilder interface {
+	// Method which takes in the raw command for building the agent and returns the contents
+	// of the built payload for Mythic
+	Build(command string) ([]byte, error)
+
+	// Method to install a required target
+	InstallTarget(target string) error
+}
+
+// Interface for execution Mythic RPC routines
+type MythicRPCExecutor interface {
+	UpdateBuildStep(input mythicrpc.MythicRPCPayloadUpdateBuildStepMessage) (*mythicrpc.MythicRPCPayloadUpdateBuildStepMessageResponse, error)
+}
