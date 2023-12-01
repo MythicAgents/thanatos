@@ -9,7 +9,7 @@ use std::str::FromStr;
 #[derive(Deserialize)]
 struct SleepArgs {
     /// Interval in seconds to sleep
-    interval: String,
+    interval: u64,
 
     /// Jitter in percentage from 0-100
     jitter: u64,
@@ -27,11 +27,8 @@ pub fn set_sleep(
     // Parse the task arguments
     let args: SleepArgs = serde_json::from_str(&task.parameters).unwrap();
 
-    // Parse the interval
-    let interval = u64::from_str(&args.interval)?;
-
     // Set the new interval and jitter
-    *agent_interval = interval;
+    *agent_interval = args.interval;
     *agent_jitter = args.jitter;
 
     // Formulate the task output
