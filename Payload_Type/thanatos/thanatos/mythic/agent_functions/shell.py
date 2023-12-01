@@ -62,7 +62,7 @@ class ShellCommand(CommandBase):
         await SendMythicRPCArtifactCreate(
             MythicRPCArtifactCreateMessage(
                 TaskID=task.id,
-                Artifact=shell + task.args.get_arg("command"),
+                ArtifactMessage=shell + task.args.get_arg("command"),
                 BaseArtifactType="Process Create",
             )
         )
