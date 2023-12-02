@@ -51,7 +51,7 @@ pub struct ProcessListingEntry {
     pub integrity_level: Option<u32>,
 
     /// Start time of the process
-    pub start_time: Option<String>,
+    pub start_time: Option<i64>,
 
     /// Description of the process
     pub description: Option<String>,

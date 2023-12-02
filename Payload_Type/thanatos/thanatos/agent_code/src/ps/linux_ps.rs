@@ -82,7 +82,7 @@ pub fn get_proc_name(pid: u32) -> Option<String> {
     let path = Path::new(&path);
 
     let name = fs::read_to_string(&path).ok()?;
-    Some(name)
+    Some(name.trim_end_matches('\n').to_string())
 }
 
 /// Get the user assocated with a process
@@ -159,7 +159,7 @@ pub fn get_integrity_level(pid: u32) -> Option<u32> {
 /// Get the start time of a process
 /// * `pid` - Pid to get the start time from
 /// * `boot_time` - Boot time of the machine
-pub fn get_start_time(pid: u32, boot_time: i64) -> Option<String> {
+pub fn get_start_time(pid: u32, boot_time: i64) -> Option<i64> {
     if boot_time == 0 {
         return None;
     }
@@ -186,5 +186,5 @@ pub fn get_start_time(pid: u32, boot_time: i64) -> Option<String> {
     let starttime = btime.checked_add_signed(chrono::Duration::seconds(starttime))?;
 
     // Return the start time
-    Some(starttime.timestamp().to_string())
+    Some(starttime.timestamp_millis())
 }
