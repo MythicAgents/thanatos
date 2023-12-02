@@ -1,4 +1,5 @@
 //! This file is only imported when compiling for Windows
+use chrono::{DateTime, Local};
 use serde::Serialize;
 use std::os::windows::ffi::OsStrExt;
 use std::{ffi::OsStr, iter::once, path, ptr};
@@ -25,7 +26,10 @@ pub struct Acl {
 
 /// Struct holding the ACL permissions
 #[derive(Default, Debug, Serialize)]
-pub struct FilePermissions(Vec<Acl>);
+pub struct FilePermissions {
+    acls: Vec<Acl>,
+    creation_date: i64,
+}
 
 /// Get the ACLs for the specified path
 /// * `fname` - File name for the object to get the ACLs
@@ -217,6 +221,18 @@ impl FilePermissions {
         } else {
             return FilePermissions(Vec::new());
         };
+
+        // Get the creation date timestamp
+        let creation_date = fpath
+            .metadata()
+            .ok()
+            .map(|meta| {
+                meta.created.ok().and_then(|created| {
+                    (created >= std::time::UNIX_EPOCH)
+                        .then(|| DateTime::<Local>::from(created).timestamp())
+                })
+            })
+            .flatten();
 
         // Return the file permissions
         FilePermissions(get_acls(&fname).unwrap_or_else(|| vec![Default::default()]))

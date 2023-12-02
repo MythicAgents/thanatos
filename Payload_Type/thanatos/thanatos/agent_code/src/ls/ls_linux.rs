@@ -3,6 +3,7 @@ use crate::utils::{
     linux::{get_group_from_gid, get_user_from_uid},
     parse_linux_mode,
 };
+use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use std::path;
@@ -11,7 +12,7 @@ use std::os::linux::fs::MetadataExt;
 use std::os::unix::fs::PermissionsExt;
 
 /// Struct for storing file permissions
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct FilePermissions {
     /// Username of the file owner
     pub user: String,
@@ -27,19 +28,9 @@ pub struct FilePermissions {
 
     /// Posix permissions of the file
     pub permissions: String,
-}
 
-/// Setup default FilePermission information when creating new `FilePermissions` objects
-impl Default for FilePermissions {
-    fn default() -> Self {
-        Self {
-            user: "".to_string(),
-            uid: -1,
-            gid: -1,
-            permissions: "".to_string(),
-            group: "".to_string(),
-        }
-    }
+    /// Creation date of the file
+    pub creation_date: i64,
 }
 
 /// Gets the file owner from a path
@@ -87,6 +78,18 @@ impl FilePermissions {
         // fails
         let user = get_user_from_uid(uid).unwrap_or_else(|| uid.to_string());
 
+        // Get the creation date timestamp
+        let creation_date = file_path
+            .metadata()
+            .ok()
+            .map(|meta| {
+                meta.created().ok().and_then(|created| {
+                    (created >= std::time::UNIX_EPOCH)
+                        .then(|| DateTime::<Local>::from(created).timestamp())
+                })
+            })
+            .flatten();
+
         // Create a new FilePermissions object
         Self {
             uid: uid.try_into().unwrap_or(-1),
@@ -94,6 +97,7 @@ impl FilePermissions {
             permissions,
             group,
             user,
+            creation_date: creation_date.unwrap_or(0),
         }
     }
 }
