@@ -61,13 +61,10 @@ pub struct FileBrowser {
     pub success: bool,
 
     /// Access time for the list entry
-    pub access_time: String,
+    pub access_time: i64,
 
     /// Modify time for the list entry
-    pub modify_time: String,
-
-    /// Creation date of the list entry
-    pub creation_date: String,
+    pub modify_time: i64,
 
     /// Size of the list entry
     pub size: u64,
@@ -95,13 +92,10 @@ pub struct File {
     pub full_name: String,
 
     /// Access time of the listing entry
-    pub access_time: String,
+    pub access_time: i64,
 
     /// Modify time of the listing entry
-    pub modify_time: String,
-
-    /// Creation date of the listing entry
-    pub creation_date: String,
+    pub modify_time: i64,
 
     /// Size of the listing entry
     pub size: u64,
@@ -167,9 +161,8 @@ impl FileBrowser {
             }
         }
 
-        let mut access_time = "".to_string();
-        let mut modify_time = "".to_string();
-        let mut creation_date = "".to_string();
+        let mut access_time = 0i64;
+        let mut modify_time = 0i64;
 
         let mut size = 0;
 
@@ -177,19 +170,13 @@ impl FileBrowser {
         if let Ok(meta) = path.metadata() {
             if let Ok(accessed) = meta.accessed() {
                 if accessed >= std::time::UNIX_EPOCH {
-                    access_time = DateTime::<Local>::from(accessed).timestamp().to_string();
+                    access_time = DateTime::<Local>::from(accessed).timestamp_millis();
                 }
             }
 
             if let Ok(modified) = meta.modified() {
                 if modified >= std::time::UNIX_EPOCH {
-                    modify_time = DateTime::<Local>::from(modified).timestamp().to_string();
-                }
-            }
-
-            if let Ok(created) = meta.created() {
-                if created >= std::time::UNIX_EPOCH {
-                    creation_date = DateTime::<Local>::from(created).timestamp().to_string();
+                    modify_time = DateTime::<Local>::from(modified).timestamp_millis();
                 }
             }
 
@@ -207,7 +194,6 @@ impl FileBrowser {
             success: true,
             access_time,
             modify_time,
-            creation_date,
             size,
             update_deleted: true,
             files,
@@ -243,9 +229,8 @@ impl File {
         let full_name = full_name.to_string_lossy().to_string();
 
         // Grab the time metadata from the file
-        let mut access_time = "".to_string();
-        let mut modify_time = "".to_string();
-        let mut creation_date = "".to_string();
+        let mut access_time = 0i64;
+        let mut modify_time = 0i64;
 
         let mut size = 0;
 
@@ -253,19 +238,13 @@ impl File {
             if let Ok(meta) = path.metadata() {
                 if let Ok(accessed) = meta.accessed() {
                     if accessed >= std::time::UNIX_EPOCH {
-                        access_time = DateTime::<Local>::from(accessed).timestamp().to_string();
+                        access_time = DateTime::<Local>::from(accessed).timestamp_millis();
                     }
                 }
 
                 if let Ok(modified) = meta.modified() {
                     if modified >= std::time::UNIX_EPOCH {
-                        modify_time = DateTime::<Local>::from(modified).timestamp().to_string();
-                    }
-                }
-
-                if let Ok(created) = meta.created() {
-                    if created >= std::time::UNIX_EPOCH {
-                        creation_date = DateTime::<Local>::from(created).timestamp().to_string();
+                        modify_time = DateTime::<Local>::from(modified).timestamp_millis();
                     }
                 }
 
@@ -281,7 +260,6 @@ impl File {
             full_name,
             access_time,
             modify_time,
-            creation_date,
             size,
             owner: get_file_owner(path),
         })
