@@ -69,4 +69,5 @@ features = [
   "winbase",
   "wincon",
   "wow64apiset",
+  "sysinfoapi"
 ]

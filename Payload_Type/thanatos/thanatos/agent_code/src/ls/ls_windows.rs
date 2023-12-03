@@ -219,7 +219,7 @@ impl FilePermissions {
         let fname = if let Some(name) = fpath.to_str() {
             format!("{}\0", name)
         } else {
-            return FilePermissions(Vec::new());
+            return FilePermissions::default();
         };
 
         // Get the creation date timestamp
@@ -227,7 +227,7 @@ impl FilePermissions {
             .metadata()
             .ok()
             .map(|meta| {
-                meta.created.ok().and_then(|created| {
+                meta.created().ok().and_then(|created| {
                     (created >= std::time::UNIX_EPOCH)
                         .then(|| DateTime::<Local>::from(created).timestamp())
                 })
@@ -235,6 +235,9 @@ impl FilePermissions {
             .flatten();
 
         // Return the file permissions
-        FilePermissions(get_acls(&fname).unwrap_or_else(|| vec![Default::default()]))
+        FilePermissions {
+            acls: get_acls(&fname).unwrap_or_else(|| vec![Default::default()]),
+            creation_date: creation_date.unwrap_or_default(),
+        }
     }
 }

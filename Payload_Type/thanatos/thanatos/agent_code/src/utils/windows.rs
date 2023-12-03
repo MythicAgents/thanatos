@@ -1,22 +1,25 @@
 //! This module is only imported when targeting windows
 use serde::Serialize;
 use std::ops::Deref;
-use std::os::raw::c_void;
-use winapi::um::handleapi::CloseHandle;
-use winapi::um::handleapi::INVALID_HANDLE_VALUE;
+use winapi::{
+    ctypes::c_void,
+    um::handleapi::{CloseHandle, INVALID_HANDLE_VALUE},
+};
 
 pub mod whoami {
     use super::Handle;
     use std::convert::TryInto;
-    use std::ffi::c_void;
     use std::os::raw::c_ulong;
     use std::os::windows::ffi::OsStringExt;
-    use winapi::um::{
-        processthreadsapi::{GetCurrentProcess, OpenProcessToken},
-        securitybaseapi::{GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation},
-        sysinfoapi::{ComputerNameDnsDomain, ComputerNameDnsHostname, GetComputerNameExW},
-        winbase::GetUserNameW,
-        winnt::{TokenIntegrityLevel, TOKEN_MANDATORY_LABEL, TOKEN_QUERY},
+    use winapi::{
+        ctypes::c_void,
+        um::{
+            processthreadsapi::{GetCurrentProcess, OpenProcessToken},
+            securitybaseapi::{GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation},
+            sysinfoapi::{ComputerNameDnsDomain, ComputerNameDnsHostname, GetComputerNameExW},
+            winbase::GetUserNameW,
+            winnt::{TokenIntegrityLevel, TOKEN_MANDATORY_LABEL, TOKEN_QUERY},
+        },
     };
 
     /// Get the platform information

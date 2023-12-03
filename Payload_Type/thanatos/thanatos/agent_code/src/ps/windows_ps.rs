@@ -4,10 +4,9 @@ use crate::utils::windows::Handle;
 use chrono::{DateTime, Local, NaiveDateTime, Utc};
 use serde::Deserialize;
 use std::error::Error;
-use std::os::raw::c_void;
-use std::os::windows::raw::HANDLE;
 use std::result::Result;
 use winapi::{
+    ctypes::c_void,
     shared::{
         minwindef::{FALSE, FILETIME, TRUE},
         winerror::ERROR_NO_MORE_FILES,
@@ -206,7 +205,7 @@ fn get_proc_name(pe32: &PROCESSENTRY32) -> Option<String> {
 
 /// Get the architecture of a process
 /// * `handle` - Handle to the process
-pub fn get_architecture(handle: HANDLE) -> Option<String> {
+pub fn get_architecture(handle: *mut c_void) -> Option<String> {
     let mut is_wow64 = FALSE;
 
     // Query the process architecture
@@ -224,7 +223,7 @@ pub fn get_architecture(handle: HANDLE) -> Option<String> {
 
 /// Get the user associated with a process
 /// * `token` - Handle to the process token
-pub fn get_proc_user(token: HANDLE) -> Option<String> {
+pub fn get_proc_user(token: *mut c_void) -> Option<String> {
     let mut dw_len = 0;
 
     // Get the size for the process token information
@@ -287,7 +286,7 @@ pub fn get_proc_user(token: HANDLE) -> Option<String> {
 
 /// Get the integrity level of a process
 /// * `token` - Process token
-pub fn get_integrity_level(token: HANDLE) -> Option<u32> {
+pub fn get_integrity_level(token: *mut c_void) -> Option<u32> {
     // Grab the token information length
     let mut len: u32 = 0;
     unsafe {
@@ -341,7 +340,7 @@ pub fn get_integrity_level(token: HANDLE) -> Option<u32> {
 
 /// Get the start time of a process
 /// * `handle` - Handle to the process
-pub fn get_start_time(handle: HANDLE) -> Option<String> {
+pub fn get_start_time(handle: *mut c_void) -> Option<i64> {
     let mut creation_time: FILETIME = Default::default();
     let mut exit_time: FILETIME = Default::default();
     let mut kernel_time: FILETIME = Default::default();
@@ -373,5 +372,5 @@ pub fn get_start_time(handle: HANDLE) -> Option<String> {
     let start_time = DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(posix_epoch, 0), Utc);
     let start_time: DateTime<Local> = DateTime::from(start_time);
 
-    Some(start_time.timestamp().to_string())
+    Some(start_time.timestamp_millis())
 }

@@ -3,7 +3,6 @@ use crate::mythic_success;
 use serde::Deserialize;
 use std::error::Error;
 use std::result::Result;
-use std::str::FromStr;
 
 /// Struct containing the sleep parameters
 #[derive(Deserialize)]
