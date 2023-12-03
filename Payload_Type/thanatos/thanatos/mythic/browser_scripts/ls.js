@@ -104,16 +104,16 @@ function(task, responses) {
     return { "plaintext": combined }
   }
 
-  let platform = data["platform"];
-
   let headers = [
     { "plaintext": "actions", "type": "button", "width": 100 },
     { "plaintext": "name", "type": "string", "fillWidth": true },
     { "plaintext": "size", "type": "size", "width": 150 },
   ];
 
+  let platform = data["platform"];
+
   if (platform == "Windows") {
-    headers.push({ "plaintext": "owner", "type": "string", "width": 100, });
+    headers.push({ "plaintext": "owner", "type": "string", "fillWidth": true, });
   } else if (platform == "Linux") {
     headers.push({ "plaintext": "user", "type": "string", "width": 125 });
     headers.push({ "plaintext": "group", "type": "string", "width": 125 });
@@ -246,6 +246,43 @@ function(task, responses) {
     };
 
     if (platform == "Windows") {
+      let acls = file["permissions"]["acls"].map((acl) => ({
+        "account": {
+          "plaintext": acl["account"]
+        },
+
+        "rights": {
+          "plaintext": acl["rights"]
+        },
+
+        "type": {
+          "plaintext": acl["type"]
+        },
+      }));
+
+      row["metadata"] = {
+        "button": {
+          "name": "view",
+          "type": "table",
+          "title": `Metadata for ${file["name"]}`,
+          "startIcon": "list",
+          "hoverText": `View ${file["is_file"] ? "file" : "directory"} metadata`,
+          "value": {
+            "headers": [
+              { "plaintext": "account", "width": 400, "type": "string" },
+              { "plaintext": "rights", "fillWidth": true, "type": "string" },
+              { "plaintext": "type", "width": 400, "type": "string" },
+            ],
+            "rows": acls
+          }
+        }
+      };
+
+      row["owner"] = {
+        "plaintext": file["owner"],
+        "copyIcon": true
+      }
+
     } else if (platform == "Linux") {
       let metadataInfo = {
         "Created on": created,
@@ -271,7 +308,7 @@ function(task, responses) {
         "button": {
           "name": "view",
           "type": "dictionary",
-            "title": `Metadata for ${file["name"]}`,
+          "title": `Metadata for ${file["name"]}`,
           "leftColumnTitle": "Attribute",
           "rightColumnTitle": "Value",
           "value": metadataInfo,
