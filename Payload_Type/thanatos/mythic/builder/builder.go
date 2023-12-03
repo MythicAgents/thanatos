@@ -3,7 +3,6 @@ package builder
 import (
 	"errors"
 	"fmt"
-<<<<<<< HEAD
 	"math"
 	"path/filepath"
 	"strconv"
@@ -58,44 +57,10 @@ type ParsedBuildParameters struct {
 
 	// Output format for the agent
 	Output PayloadBuildParameterOutputFormat
-=======
-	"path/filepath"
-	"sync"
-	"time"
-
-	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
-)
-
-// Interface for building a payload
-type PayloadBuilder interface {
-	// Method which takes in the raw command for building the agent and returns the contents
-	// of the built payload for Mythic
-	Build(command string) ([]byte, error)
-}
-
-// Strongly type struct containing all of the build parameters from Mythic
-type ParsedBuildParameters struct {
-	Architecture PayloadBuildParameterArchitecture
-	InitOptions  PayloadBuildParameterInitOptions
-	CryptoLib    PayloadBuildParameterCryptoLibrary
-	WorkingHours struct {
-		StartTime time.Duration
-		EndTime   time.Duration
-	}
-
-	DomainList    []string
-	HostnameList  []string
-	UsernameList  []string
-	StaticOptions []PayloadBuildParameterStaticOption
-	TlsSelfSigned bool
-	SpawnTo       string
-	Output        PayloadBuildParameterOutputFormat
->>>>>>> c89d869 (Stage rewrite files)
 }
 
 // Metadata defining the Mythic payload
 var payloadDefinition = agentstructs.PayloadType{
-<<<<<<< HEAD
 	// Payload name
 	Name: "thanatos",
 
@@ -131,23 +96,6 @@ var payloadDefinition = agentstructs.PayloadType{
 	MythicEncryptsData: true,
 
 	// Build parameters of the payload
-=======
-	Name:          "thanatos",
-	FileExtension: "",
-	Author:        "@M_alphaaa",
-	SupportedOS: []string{
-		agentstructs.SUPPORTED_OS_LINUX, agentstructs.SUPPORTED_OS_WINDOWS,
-	},
-	Wrapper:                                false,
-	CanBeWrappedByTheFollowingPayloadTypes: []string{},
-	SupportsDynamicLoading:                 true,
-	Description:                            "Linux and Windows agent written in Rust",
-	SupportedC2Profiles: []string{
-		"http", "tcp",
-	},
-	MythicEncryptsData: true,
-
->>>>>>> c89d869 (Stage rewrite files)
 	BuildParameters: []agentstructs.BuildParameter{
 		{
 			Name:         "architecture",
@@ -265,7 +213,6 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required: true,
 		},
 	},
-<<<<<<< HEAD
 
 	BuildSteps: []agentstructs.BuildStep{
 		{
@@ -278,16 +225,12 @@ var payloadDefinition = agentstructs.PayloadType{
 			Description: "Building the payload",
 		},
 	},
-=======
-	BuildSteps: []agentstructs.BuildStep{},
->>>>>>> c89d869 (Stage rewrite files)
 }
 
 // Mutex for restricting parallel builds. The rust compiler likes to use a lot of CPU resources.
 // This can be problematic when the payload builder is run on the same system Mythic is running on.
 // To prevent payload builds from accidentally DOSing the Mythic server, only allow sequential builds.
 // Parallel build support may be added back in the future.
-<<<<<<< HEAD
 //var payloadBuildLock sync.Mutex
 
 // Type for the handler routines when being built by Mythic
@@ -384,16 +327,6 @@ func parseWorkingHours(workingHours string) (time.Duration, time.Duration, error
 	return workingStart, workingEnd, nil
 }
 
-=======
-var payloadBuildLock sync.Mutex
-
-type PayloadCommandBuilder struct{}
-
-func (builder PayloadCommandBuilder) Build(command string) ([]byte, error) {
-	return make([]byte, 0), nil
-}
-
->>>>>>> c89d869 (Stage rewrite files)
 // Parses the build parameters from Mythic to a strongly typed structure
 func parseBuildParameters(buildMessage *agentstructs.PayloadBuildMessage) (ParsedBuildParameters, error) {
 	configuredOS := buildMessage.SelectedOS
@@ -410,11 +343,7 @@ func parseBuildParameters(buildMessage *agentstructs.PayloadBuildMessage) (Parse
 	if arch := NewPayloadBuildParameterArchitecture(architecture); arch != nil {
 		parsedParameters.Architecture = *arch
 	} else {
-<<<<<<< HEAD
 		return parsedParameters, fmt.Errorf("invalid architecture string value: %s", architecture)
-=======
-		return parsedParameters, errors.New(fmt.Sprintf("Invalid architecture string value: %s", architecture))
->>>>>>> c89d869 (Stage rewrite files)
 	}
 
 	initOptions, err := parameters.GetStringArg("initoptions")
@@ -424,7 +353,6 @@ func parseBuildParameters(buildMessage *agentstructs.PayloadBuildMessage) (Parse
 
 	parsedParameters.InitOptions = PayloadBuildParameterInitOptions(initOptions)
 
-<<<<<<< HEAD
 	connectionRetries, err := parameters.GetNumberArg("connection_retries")
 	if err != nil {
 		return parsedParameters, err
@@ -443,17 +371,11 @@ func parseBuildParameters(buildMessage *agentstructs.PayloadBuildMessage) (Parse
 
 	_ = workingHours
 
-=======
->>>>>>> c89d869 (Stage rewrite files)
 	return parsedParameters, nil
 }
 
 // Function which builds the payload with a configured payload builder
-<<<<<<< HEAD
 func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler BuildHandler) agentstructs.PayloadBuildResponse {
-=======
-func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, builder PayloadBuilder) agentstructs.PayloadBuildResponse {
->>>>>>> c89d869 (Stage rewrite files)
 	payloadBuildResponse := agentstructs.PayloadBuildResponse{
 		PayloadUUID:        payloadBuildMsg.PayloadUUID,
 		Success:            false,
@@ -472,13 +394,8 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, builder Payl
 
 // Routine invoked when Mythic requests a new payload
 func mythicBuildRoutine(payloadBuildMsg agentstructs.PayloadBuildMessage) agentstructs.PayloadBuildResponse {
-<<<<<<< HEAD
 	handler := MythicPayloadHandler{}
 	return buildPayload(payloadBuildMsg, &handler)
-=======
-	builder := PayloadCommandBuilder{}
-	return buildPayload(payloadBuildMsg, &builder)
->>>>>>> c89d869 (Stage rewrite files)
 }
 
 // Initializes the agent in Mythic

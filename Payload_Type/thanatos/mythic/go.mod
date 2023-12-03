@@ -3,12 +3,8 @@ module thanatos
 go 1.20
 
 require (
-<<<<<<< HEAD
 	github.com/MythicMeta/MythicContainer v1.2.0
 	github.com/google/uuid v1.4.0
-=======
-	github.com/MythicMeta/MythicContainer v1.1.2
->>>>>>> c89d869 (Stage rewrite files)
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
 )
 
@@ -17,10 +13,6 @@ require (
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/zerologr v1.2.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-<<<<<<< HEAD
-=======
-	github.com/google/uuid v1.4.0 // indirect
->>>>>>> c89d869 (Stage rewrite files)
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
@@ -45,8 +37,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
-<<<<<<< HEAD
-=======
-
-replace github.com/MythicMeta/MythicContainer v1.1.2 => ../../../../MythicContainer
->>>>>>> c89d869 (Stage rewrite files)
