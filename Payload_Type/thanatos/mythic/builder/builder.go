@@ -14,6 +14,28 @@ import (
 	"github.com/MythicMeta/MythicContainer/mythicrpc"
 )
 
+type HttpC2ProfileParameters struct {
+	CallbackPort           int64
+	Killdate               time.Time
+	EncryptedExchangeCheck bool
+	CallbackJitter         int64
+	Headers                map[string]string
+	CryptoInfo             *struct {
+		Type string
+		Key  string
+	}
+	CallbackHost  string
+	GetUri        string
+	PostUri       string
+	QueryPathName string
+	ProxyInfo     *struct {
+		Host string
+		Port int64
+		User string
+		Pass string
+	}
+}
+
 // Strongly type struct containing all of the build parameters from Mythic
 type ParsedBuildParameters struct {
 	// Supported architectures of the agent
@@ -57,6 +79,11 @@ type ParsedBuildParameters struct {
 
 	// Output format for the agent
 	Output PayloadBuildParameterOutputFormat
+
+	// Configured C2 profiles
+	C2Profiles struct {
+		HttpProfile *HttpC2ProfileParameters
+	}
 }
 
 // Metadata defining the Mythic payload
@@ -173,14 +200,14 @@ var payloadDefinition = agentstructs.PayloadType{
 		},
 
 		{
-			Name:        "static",
-			Description: "Libraries to statically link to (Linux only)",
+			Name:          "static",
+			Description:   "Libraries to statically link to (Linux only)",
+			ParameterType: agentstructs.BUILD_PARAMETER_TYPE_CHOOSE_MULTIPLE,
 			Choices: []string{
 				string(PayloadBuildParameterStaticOptionOpenSSL),
 				string(PayloadBuildParameterStaticOptionLibCurl),
 			},
-			ParameterType: agentstructs.BUILD_PARAMETER_TYPE_CHOOSE_MULTIPLE,
-			Required:      false,
+			Required: false,
 		},
 
 		{
@@ -249,6 +276,47 @@ func (handler MythicPayloadHandler) InstallTarget(target string) error {
 // Implementation for updating the current build step
 func (handler MythicPayloadHandler) UpdateBuildStep(input mythicrpc.MythicRPCPayloadUpdateBuildStepMessage) (*mythicrpc.MythicRPCPayloadUpdateBuildStepMessageResponse, error) {
 	return mythicrpc.SendMythicRPCPayloadUpdateBuildStep(input)
+}
+
+func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (*HttpC2ProfileParameters, error) {
+	parsedParameters := HttpC2ProfileParameters{}
+
+	callbackPort, err := parameters.GetNumberArg("callback_port")
+	if err != nil {
+		return &parsedParameters, err
+	}
+
+	if callbackPort < 1 || callbackPort > 65535 {
+		return &parsedParameters, errors.New("configured callback port for the HTTP profile is not between 1 and 65535")
+	}
+
+	parsedParameters.CallbackPort = int64(callbackPort)
+
+	killdate, err := parameters.GetDateArg("killdate")
+	if err != nil {
+		return &parsedParameters, err
+	}
+
+	killdateTime, err := time.Parse(time.DateOnly, killdate)
+	if err != nil {
+		return &parsedParameters, fmt.Errorf("failed to parse the HTTP profile killdate. %s", err.Error())
+	}
+
+	parsedParameters.Killdate = killdateTime
+
+	encryptedExchangeCheck, err := parameters.GetBooleanArg("encrypted_exchange_check")
+	if err != nil {
+		return &parsedParameters, err
+	}
+
+	parsedParameters.EncryptedExchangeCheck = encryptedExchangeCheck
+
+	callbackJitter, err := parameters.GetNumberArg("callback_jitter")
+	if err != nil {
+		return &parsedParameters, err
+	}
+
+	return &parsedParameters, nil
 }
 
 // Converts a singular working hours value '01:30' to a duration
@@ -364,12 +432,87 @@ func parseBuildParameters(buildMessage *agentstructs.PayloadBuildMessage) (Parse
 
 	parsedParameters.ConnectionRetries = connectionRetries
 
+	cryptoLib, err := parameters.GetStringArg("cryptolib")
+	if err != nil {
+		return parsedParameters, err
+	}
+
+	parsedParameters.CryptoLib = PayloadBuildParameterCryptoLibrary(cryptoLib)
+
 	workingHours, err := parameters.GetStringArg("working_hours")
 	if err != nil {
 		return parsedParameters, err
 	}
 
-	_ = workingHours
+	workingStart, workingEnd, err := parseWorkingHours(workingHours)
+	if err != nil {
+		return parsedParameters, err
+	}
+
+	parsedParameters.WorkingHours.StartTime = workingStart
+	parsedParameters.WorkingHours.EndTime = workingEnd
+
+	domainsList, err := parameters.GetArrayArg("domains")
+	if err == nil {
+		parsedParameters.DomainList = domainsList
+	} else {
+		parsedParameters.DomainList = make([]string, 0)
+	}
+
+	hostnamesList, err := parameters.GetArrayArg("hostnames")
+	if err == nil {
+		parsedParameters.HostnameList = hostnamesList
+	} else {
+		parsedParameters.HostnameList = make([]string, 0)
+	}
+
+	usernamesList, err := parameters.GetArrayArg("usernames")
+	if err == nil {
+		parsedParameters.UsernameList = usernamesList
+	} else {
+		parsedParameters.UsernameList = make([]string, 0)
+	}
+
+	staticOptions, err := parameters.GetArrayArg("static")
+	if err == nil {
+		for _, option := range staticOptions {
+			parsedParameters.StaticOptions = append(parsedParameters.StaticOptions, PayloadBuildParameterStaticOption(option))
+		}
+	} else {
+		parsedParameters.StaticOptions = make([]PayloadBuildParameterStaticOption, 0)
+	}
+
+	tlsselfsigned, err := parameters.GetBooleanArg("tlsselfsigned")
+	if err == nil {
+		parsedParameters.TlsSelfSigned = tlsselfsigned
+	} else {
+		parsedParameters.TlsSelfSigned = false
+	}
+
+	spawnto, err := parameters.GetStringArg("spawnto")
+	if err == nil {
+		parsedParameters.SpawnTo = spawnto
+	} else {
+		parsedParameters.SpawnTo = ""
+	}
+
+	output, err := parameters.GetStringArg("output")
+	if err != nil {
+		return parsedParameters, err
+	}
+
+	parsedParameters.Output = PayloadBuildParameterOutputFormat(output)
+
+	parsedParameters.C2Profiles.HttpProfile = nil
+
+	for _, profileParameter := range buildMessage.C2Profiles {
+		if profileParameter.Name == "http" {
+			parsedParameters.C2Profiles.HttpProfile, err = parseHttpProfileParameters(profileParameter)
+			if err != nil {
+				return parsedParameters, err
+			}
+		}
+	}
 
 	return parsedParameters, nil
 }
@@ -387,7 +530,7 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler Buil
 		payloadBuildResponse.BuildStdErr = err.Error()
 	}
 
-	_ = parameters
+	fmt.Printf("%+v\n", parameters)
 
 	return payloadBuildResponse
 }
