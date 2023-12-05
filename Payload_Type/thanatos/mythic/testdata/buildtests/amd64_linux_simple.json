@@ -5,11 +5,11 @@
   "selected_os": "Linux",
   "build_parameters": {
     "architecture": "amd64",
+    "initoptions": "none",
     "connection_retries": 1,
     "cryptolib": "system (wincrypto-ng/openssl)",
-    "initoptions": "none",
-    "output": "executable",
-    "working_hours": "00:00-23:59"
+    "working_hours": "00:00-23:59",
+    "output": "executable"
   },
 
   "c2profiles": [
