@@ -17,7 +17,7 @@ type ParsedBuildParameters struct {
 	InitOptions PayloadBuildParameterInitOptions
 
 	// Number of tries to reconnect to Mythic on failed connections
-	ConnectionRetries float64
+	ConnectionRetries int
 
 	// Library for doing crypto
 	CryptoLib PayloadBuildParameterCryptoLibrary
@@ -84,7 +84,7 @@ func parsePayloadBuildParameters(buildMessage agentstructs.PayloadBuildMessage) 
 		return parsedParameters, builderrors.New("connection_retries value is <= 0")
 	}
 
-	parsedParameters.ConnectionRetries = connectionRetries
+	parsedParameters.ConnectionRetries = int(connectionRetries)
 
 	cryptoLib, err := parameters.GetStringArg("cryptolib")
 	if err != nil {
