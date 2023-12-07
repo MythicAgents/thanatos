@@ -4,6 +4,7 @@ package builder
 import (
 	"errors"
 	"os/exec"
+	"strings"
 	builderrors "thanatos/builder/errors"
 
 	"github.com/MythicMeta/MythicContainer/mythicrpc"
@@ -23,6 +24,26 @@ func (handler MythicPayloadHandler) InstallBuildTarget(target string) error {
 	if err != nil {
 		errorMsg := builderrors.Errorf("failed to list the currently installed Rust targets: %s", err.Error())
 		return errors.Join(builderrors.Errorf("output for command '/bin/bash -c rustup target list':\n%s", string(output)), errorMsg)
+	}
+
+	for _, s := range strings.Split(string(output), "\n") {
+		if strings.Contains(s, target+" ") {
+			if strings.Contains(s, "(installed)") {
+				return nil
+			}
+		}
+	}
+
+	command := []string{
+		"/bin/bash",
+		"-c",
+		"rustup target add " + target,
+	}
+
+	output, err = exec.Command(command[0], command[1:]...).CombinedOutput()
+	if err != nil {
+		errorMsg := builderrors.Errorf("failed to install Rust target %s: %s", target, err.Error())
+		return errors.Join(builderrors.Errorf("output for command '%s':\n%s", strings.Join(command, " "), string(output)), errorMsg)
 	}
 
 	return nil
