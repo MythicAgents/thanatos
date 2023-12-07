@@ -337,11 +337,6 @@ func testPayloadBuildImpl(t *testing.T, handler BuildHandler) {
 // Test function which mocks all of the payload building and Mythic RPC functions
 // This test can be skipped by setting the `BUILDTEST` environment variable to "fullonly"
 func TestPayloadMockBuild(t *testing.T) {
-	buildtest := os.Getenv("BUILDTEST")
-	if buildtest == "fullonly" {
-		t.SkipNow()
-	}
-
 	handler := MockPayloadHandler{}
 	testPayloadBuildImpl(t, handler)
 }
@@ -349,11 +344,6 @@ func TestPayloadMockBuild(t *testing.T) {
 // Test function which will build the payload in the test
 // This test will not run unless the `BUILDTEST` environment variable is set to "full"
 func TestPayloadFullBuild(t *testing.T) {
-	buildtest := os.Getenv("BUILDTEST")
-	if buildtest != "full" {
-		t.SkipNow()
-	}
-
 	handler := FullBuildPayloadHandler{}
 	testPayloadBuildImpl(t, handler)
 }
