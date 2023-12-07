@@ -1,129 +1,55 @@
+// Main builder entrypoint. This is where the payload builder is defined and implemented
 package builder
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
-	"math"
+	"log"
 	"path/filepath"
-	"strconv"
-	"strings"
-	_ "sync"
-	"time"
+	builderrors "thanatos/builder/errors"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
-	"github.com/MythicMeta/MythicContainer/mythicrpc"
 )
 
-type HttpC2ProfileParameters struct {
-	CallbackPort           int64
-	Killdate               time.Time
-	EncryptedExchangeCheck bool
-	CallbackJitter         int64
-	Headers                map[string]string
-	CryptoInfo             *struct {
-		Type string
-		Key  string
-	}
-	CallbackHost  string
-	GetUri        string
-	PostUri       string
-	QueryPathName string
-	ProxyInfo     *struct {
-		Host string
-		Port int64
-		User string
-		Pass string
-	}
-}
-
-// Strongly type struct containing all of the build parameters from Mythic
-type ParsedBuildParameters struct {
-	// Supported architectures of the agent
-	Architecture PayloadBuildParameterArchitecture
-
-	// Agent's initial exection parameters
-	InitOptions PayloadBuildParameterInitOptions
-
-	// Number of tries to reconnect to Mythic on failed connections
-	ConnectionRetries float64
-
-	// Library for doing crypto
-	CryptoLib PayloadBuildParameterCryptoLibrary
-
-	// Working hours
-	WorkingHours struct {
-		// Working hour start time
-		StartTime time.Duration
-
-		// Working hour end time
-		EndTime time.Duration
-	}
-
-	// List of domains for execution guardrails
-	DomainList []string
-
-	// List of hostnames for execution guardrails
-	HostnameList []string
-
-	// List of usernames for execution guardrails
-	UsernameList []string
-
-	// Options for static linking
-	StaticOptions []PayloadBuildParameterStaticOption
-
-	// Whether the agent should connect to self signed TLS certificates
-	TlsSelfSigned bool
-
-	// Initial spawnto value
-	SpawnTo string
-
-	// Output format for the agent
-	Output PayloadBuildParameterOutputFormat
-
-	// Configured C2 profiles
-	C2Profiles struct {
-		HttpProfile *HttpC2ProfileParameters
-	}
-}
-
-// Metadata defining the Mythic payload
+// Metadata defining the Mythic payload type
 var payloadDefinition = agentstructs.PayloadType{
-	// Payload name
+	// Set the name in Mythic
 	Name: "thanatos",
 
-	// Default file extension
+	// Default to no file extension for payload builds
 	FileExtension: "",
 
 	// Authors
 	Author: "@M_alphaaa",
 
-	// Supports OSs
+	// Specifiy that the payload only supports Linux and Windows
 	SupportedOS: []string{
 		agentstructs.SUPPORTED_OS_LINUX, agentstructs.SUPPORTED_OS_WINDOWS,
 	},
 
-	// Whether this is a wrapper payload
+	// This payload is not a wrapper payload
 	Wrapper: false,
 
-	// Supported wrapper payloads
+	// Supported wrapper payloads. We don't support any yet
 	CanBeWrappedByTheFollowingPayloadTypes: []string{},
 
 	// Supports loading commands at runtime
 	SupportsDynamicLoading: true,
 
-	// Payload description
+	// Description for the payload in Mythic
 	Description: "Linux and Windows agent written in Rust",
 
-	// C2 profiles which can be compiled into the agent
+	// Has support for the HTTP and TCP C2 profiles
 	SupportedC2Profiles: []string{
 		"http", "tcp",
 	},
 
-	// Where encryption is handled
+	// Specify that Mythic handles encryption
 	MythicEncryptsData: true,
 
 	// Build parameters of the payload
 	BuildParameters: []agentstructs.BuildParameter{
+		// Supported build architectures. Only 32 bit (x86) and 64 bit (amd64) options
 		{
 			Name:         "architecture",
 			Description:  "Architecture of the agent",
@@ -136,6 +62,10 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required:      true,
 		},
 
+		// This parameter modifies how the payload should initially execute. The options
+		// are to either spawn a new thread and run the payload in the child thread while
+		// the main thread exists or to fully daemonize the payload and have it run in the
+		// background
 		{
 			Name:         "initoptions",
 			Description:  "Initial execution option",
@@ -149,6 +79,8 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required:      true,
 		},
 
+		// This determines how many times the agent should try to reconnect to Mythic if
+		// there is a failed connection
 		{
 			Name:          "connection_retries",
 			Description:   "Number of times to try and reconnect to Mythic",
@@ -157,6 +89,9 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required:      true,
 		},
 
+		// This affects what library is used for doing any sort of cryptography. The
+		// internal library uses statically linked pure Rust crypto routines. The system
+		// library will use openssl on Linux and Windows crypto-ng libraries
 		{
 			Name:         "cryptolib",
 			Description:  "Library to use for doing crypto routines",
@@ -169,6 +104,8 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required:      true,
 		},
 
+		// Interval of time the agent should be active. The agent will not check in
+		// outside of this interval and it will shutdown any active jobs
 		{
 			Name:          "working_hours",
 			Description:   "Working hours for the agent (use 24 hour time)",
@@ -178,6 +115,11 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required:      true,
 		},
 
+		// The user can supply a list of domains the agent is allowed to execute in. The
+		// domain information is retrieved before the check in and compared to this list.
+		// If the domain the machine is connected to is not in this list, the agent will
+		// exit. The domains, hostnames and usernames lists are 'AND'ed together. If the
+		// domain is in the list but the hostname is not, the agent will not execute
 		{
 			Name:          "domains",
 			Description:   "Limit payload execution to machines joined to one of the following domains",
@@ -185,6 +127,10 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required:      false,
 		},
 
+		// The user can supply a list of hosts the agent is allowed to execute on via
+		// their hostnames. The domains, hostnames and usernames lists are 'AND'ed
+		// together. If the machine's hostname is in the list but the domains list or
+		// usernames list does not match, the agent will not execute
 		{
 			Name:          "hostnames",
 			Description:   "Limit payload execution to machines with one of the specified hostnames",
@@ -192,6 +138,11 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required:      false,
 		},
 
+		// The user can supply a list of usernames the agent is allowed to execute as. If
+		// the current user is not in the list, the agent will exist. The domains,
+		// hostnames and usernames lists are 'AND'ed together. If the current username is
+		// in the list but the domains list or hostnames list does not match, the agent
+		// will not execute
 		{
 			Name:          "usernames",
 			Description:   "Limit payload execution to users with one of the specified usernames",
@@ -199,6 +150,7 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required:      false,
 		},
 
+		// List defining what libraries should be statically linked to
 		{
 			Name:          "static",
 			Description:   "Libraries to statically link to (Linux only)",
@@ -210,6 +162,8 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required: false,
 		},
 
+		// This option determines whether the agent should connect to Mythic via a
+		// self-signed TLS certificate
 		{
 			Name:          "tlsselfsigned",
 			Description:   "Allow HTTPs connections to self-signed TLS certificates",
@@ -218,6 +172,7 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required:      false,
 		},
 
+		// An initial value for spawn to
 		{
 			Name:          "spawnto",
 			Description:   "Initial spawnto value",
@@ -226,6 +181,7 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required:      false,
 		},
 
+		// The output format for the build
 		{
 			Name:          "output",
 			Description:   "Payload output format",
@@ -241,12 +197,15 @@ var payloadDefinition = agentstructs.PayloadType{
 		},
 	},
 
+	// Specified build steps for the agent
 	BuildSteps: []agentstructs.BuildStep{
+		// Build step signifying that the builder is downloading the needed Rust target
 		{
 			Name:        "Installing Rust Target",
 			Description: "Installing the reqruied Rust target for the paylod build",
 		},
 
+		// The payload is building
 		{
 			Name:        "Building",
 			Description: "Building the payload",
@@ -254,296 +213,128 @@ var payloadDefinition = agentstructs.PayloadType{
 	},
 }
 
-// Mutex for restricting parallel builds. The rust compiler likes to use a lot of CPU resources.
-// This can be problematic when the payload builder is run on the same system Mythic is running on.
-// To prevent payload builds from accidentally DOSing the Mythic server, only allow sequential builds.
-// Parallel build support may be added back in the future.
-//var payloadBuildLock sync.Mutex
+// Stores all of the parsed payload build parameters. This includes both the payload
+// parameters and the C2 profile parameters
+type ParsedPayloadParameters struct {
+	// The payload parameters
+	PayloadBuildParameters ParsedBuildParameters
 
-// Type for the handler routines when being built by Mythic
-type MythicPayloadHandler struct{}
+	// The configured C2 profile parameters
+	C2Profiles struct {
 
-// Implementation for when the builder needs to build the agent
-func (handler MythicPayloadHandler) Build(command string) ([]byte, error) {
-	return make([]byte, 0), nil
+		// The parameters for the HTTP C2 profile
+		HttpProfile *ParsedHttpC2ProfileParameters
+	}
 }
 
-// Implementation for installing a Rust target
-func (handler MythicPayloadHandler) InstallTarget(target string) error {
-	return nil
-}
+// Parses the user supplied build parameters
+func parsePayloadParameters(buildMessage agentstructs.PayloadBuildMessage) (ParsedPayloadParameters, error) {
+	payloadParameters := ParsedPayloadParameters{}
 
-// Implementation for updating the current build step
-func (handler MythicPayloadHandler) UpdateBuildStep(input mythicrpc.MythicRPCPayloadUpdateBuildStepMessage) (*mythicrpc.MythicRPCPayloadUpdateBuildStepMessageResponse, error) {
-	return mythicrpc.SendMythicRPCPayloadUpdateBuildStep(input)
-}
-
-func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (*HttpC2ProfileParameters, error) {
-	parsedParameters := HttpC2ProfileParameters{}
-
-	callbackPort, err := parameters.GetNumberArg("callback_port")
+	buildParameters, err := parsePayloadBuildParameters(buildMessage)
 	if err != nil {
-		return &parsedParameters, err
+		return payloadParameters, errors.Join(builderrors.New("failed to parse to payload build parameters"), err)
 	}
 
-	if callbackPort < 1 || callbackPort > 65535 {
-		return &parsedParameters, errors.New("configured callback port for the HTTP profile is not between 1 and 65535")
-	}
+	payloadParameters.PayloadBuildParameters = buildParameters
 
-	parsedParameters.CallbackPort = int64(callbackPort)
-
-	killdate, err := parameters.GetDateArg("killdate")
-	if err != nil {
-		return &parsedParameters, err
-	}
-
-	killdateTime, err := time.Parse(time.DateOnly, killdate)
-	if err != nil {
-		return &parsedParameters, fmt.Errorf("failed to parse the HTTP profile killdate. %s", err.Error())
-	}
-
-	parsedParameters.Killdate = killdateTime
-
-	encryptedExchangeCheck, err := parameters.GetBooleanArg("encrypted_exchange_check")
-	if err != nil {
-		return &parsedParameters, err
-	}
-
-	parsedParameters.EncryptedExchangeCheck = encryptedExchangeCheck
-
-	callbackJitter, err := parameters.GetNumberArg("callback_jitter")
-	if err != nil {
-		return &parsedParameters, err
-	}
-
-	return &parsedParameters, nil
-}
-
-// Converts a singular working hours value '01:30' to a duration
-func workingHoursValueToDuration(value string) (time.Duration, error) {
-	parsedDuration := time.Duration(0)
-
-	// Split the duration into separate hour and minute values
-	stringSplit := strings.Split(value, ":")
-	if len(stringSplit) == 1 {
-		return parsedDuration, errors.New("did not find a ':' delimiter in the working hour time")
-	} else if len(stringSplit) != 2 {
-		return parsedDuration, errors.New("working hour time is malformed")
-	}
-
-	// Convert the hour portion to an integer
-	hour, err := strconv.Atoi(stringSplit[0])
-	if err != nil {
-		return parsedDuration, errors.New("failed to parse the hours portion of the working hours")
-	}
-
-	// Validate the hour portion
-	if hour > 23 {
-		return parsedDuration, errors.New("hour portion is greater than 23")
-	} else if hour < 0 {
-		return parsedDuration, errors.New("hour portion is negative")
-	}
-
-	// Convert the minute portion to an integer
-	minute, err := strconv.Atoi(stringSplit[1])
-	if err != nil {
-		return parsedDuration, errors.New("failed to parse the minutes potion of the working hours")
-	}
-
-	// Validate the minute portion
-	if minute > 60 {
-		return parsedDuration, errors.New("minute portion is greater than 60")
-	} else if minute < 0 {
-		return parsedDuration, errors.New("minute portion is negative")
-	}
-
-	// Convert the hour period to seconds
-	hour = hour * 60 * 60
-
-	// Convert the minute period to seconds
-	minute = minute * 60
-
-	// Get the duration in total seconds
-	durationSeconds := float64(hour) + float64(minute)
-
-	// Convert the seconds to nano seconds and create a time.Duration
-	parsedDuration = time.Duration(durationSeconds * math.Pow(10, 9))
-
-	return parsedDuration, nil
-}
-
-// Parses the working hours '00:00-23:00' format
-func parseWorkingHours(workingHours string) (time.Duration, time.Duration, error) {
-	workingStart := time.Duration(0)
-	workingEnd := time.Duration(0)
-
-	workingHoursSplit := strings.Split(workingHours, "-")
-	if len(workingHoursSplit) == 1 {
-		return workingStart, workingEnd, errors.New("working hours value does not contain a '-' delimiter")
-	}
-
-	workingStart, err := workingHoursValueToDuration(workingHoursSplit[0])
-	if err != nil {
-		return workingStart, workingEnd, fmt.Errorf("failed to parse the start portion for the working hours: %s", err.Error())
-	}
-
-	workingEnd, err = workingHoursValueToDuration(workingHoursSplit[1])
-	if err != nil {
-		return workingStart, workingEnd, fmt.Errorf("failed to parse the end portion for the working hours: %s", err.Error())
-	}
-
-	return workingStart, workingEnd, nil
-}
-
-// Parses the build parameters from Mythic to a strongly typed structure
-func parseBuildParameters(buildMessage *agentstructs.PayloadBuildMessage) (ParsedBuildParameters, error) {
-	configuredOS := buildMessage.SelectedOS
-	_ = configuredOS
-	parameters := buildMessage.BuildParameters
-
-	parsedParameters := ParsedBuildParameters{}
-
-	architecture, err := parameters.GetStringArg("architecture")
-	if err != nil {
-		return parsedParameters, err
-	}
-
-	if arch := NewPayloadBuildParameterArchitecture(architecture); arch != nil {
-		parsedParameters.Architecture = *arch
-	} else {
-		return parsedParameters, fmt.Errorf("invalid architecture string value: %s", architecture)
-	}
-
-	initOptions, err := parameters.GetStringArg("initoptions")
-	if err != nil {
-		return parsedParameters, err
-	}
-
-	parsedParameters.InitOptions = PayloadBuildParameterInitOptions(initOptions)
-
-	connectionRetries, err := parameters.GetNumberArg("connection_retries")
-	if err != nil {
-		return parsedParameters, err
-	}
-
-	if connectionRetries <= 0 {
-		return parsedParameters, errors.New("connection retries is <= 0")
-	}
-
-	parsedParameters.ConnectionRetries = connectionRetries
-
-	cryptoLib, err := parameters.GetStringArg("cryptolib")
-	if err != nil {
-		return parsedParameters, err
-	}
-
-	parsedParameters.CryptoLib = PayloadBuildParameterCryptoLibrary(cryptoLib)
-
-	workingHours, err := parameters.GetStringArg("working_hours")
-	if err != nil {
-		return parsedParameters, err
-	}
-
-	workingStart, workingEnd, err := parseWorkingHours(workingHours)
-	if err != nil {
-		return parsedParameters, err
-	}
-
-	parsedParameters.WorkingHours.StartTime = workingStart
-	parsedParameters.WorkingHours.EndTime = workingEnd
-
-	domainsList, err := parameters.GetArrayArg("domains")
-	if err == nil {
-		parsedParameters.DomainList = domainsList
-	} else {
-		parsedParameters.DomainList = make([]string, 0)
-	}
-
-	hostnamesList, err := parameters.GetArrayArg("hostnames")
-	if err == nil {
-		parsedParameters.HostnameList = hostnamesList
-	} else {
-		parsedParameters.HostnameList = make([]string, 0)
-	}
-
-	usernamesList, err := parameters.GetArrayArg("usernames")
-	if err == nil {
-		parsedParameters.UsernameList = usernamesList
-	} else {
-		parsedParameters.UsernameList = make([]string, 0)
-	}
-
-	staticOptions, err := parameters.GetArrayArg("static")
-	if err == nil {
-		for _, option := range staticOptions {
-			parsedParameters.StaticOptions = append(parsedParameters.StaticOptions, PayloadBuildParameterStaticOption(option))
-		}
-	} else {
-		parsedParameters.StaticOptions = make([]PayloadBuildParameterStaticOption, 0)
-	}
-
-	tlsselfsigned, err := parameters.GetBooleanArg("tlsselfsigned")
-	if err == nil {
-		parsedParameters.TlsSelfSigned = tlsselfsigned
-	} else {
-		parsedParameters.TlsSelfSigned = false
-	}
-
-	spawnto, err := parameters.GetStringArg("spawnto")
-	if err == nil {
-		parsedParameters.SpawnTo = spawnto
-	} else {
-		parsedParameters.SpawnTo = ""
-	}
-
-	output, err := parameters.GetStringArg("output")
-	if err != nil {
-		return parsedParameters, err
-	}
-
-	parsedParameters.Output = PayloadBuildParameterOutputFormat(output)
-
-	parsedParameters.C2Profiles.HttpProfile = nil
+	payloadParameters.C2Profiles.HttpProfile = nil
 
 	for _, profileParameter := range buildMessage.C2Profiles {
 		if profileParameter.Name == "http" {
-			parsedParameters.C2Profiles.HttpProfile, err = parseHttpProfileParameters(profileParameter)
+			httpProfile, err := parseHttpProfileParameters(profileParameter)
 			if err != nil {
-				return parsedParameters, err
+				return payloadParameters, errors.Join(builderrors.New("failed to parse the profile parameters for the HTTP C2 profile"), err)
 			}
+
+			payloadParameters.C2Profiles.HttpProfile = httpProfile
 		}
 	}
 
-	return parsedParameters, nil
+	return payloadParameters, nil
 }
 
-// Function which builds the payload with a configured payload builder
+// Converts the selected os and architecture from the build parameters to a formatted Rust
+// target
+func getRustTriple(os string, arch PayloadBuildParameterArchitecture) string {
+	target := ""
+
+	switch arch {
+	case PayloadBuildParameterArchitectureAmd64:
+		target += "x86_64-"
+	case PayloadBuildParameterArchitectureX86:
+		target += "i686-"
+	}
+
+	switch os {
+	case agentstructs.SUPPORTED_OS_LINUX:
+		target += "unknown-linux-gnu"
+	case agentstructs.SUPPORTED_OS_WINDOWS:
+		target += "pc-windows-gnu"
+	}
+
+	return target
+}
+
+// Secondary entrypoint for the payload builder. This takes in the payload build message
+// and a handler which consists of a set of routines for doing long-running tasks and
+// Mythic RPC calls
 func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler BuildHandler) agentstructs.PayloadBuildResponse {
+	// Create the build response
 	payloadBuildResponse := agentstructs.PayloadBuildResponse{
 		PayloadUUID:        payloadBuildMsg.PayloadUUID,
 		Success:            false,
 		UpdatedCommandList: &payloadBuildMsg.CommandList,
 	}
 
-	parameters, err := parseBuildParameters(&payloadBuildMsg)
+	// Parse all of the payload parameters
+	parameters, err := parsePayloadParameters(payloadBuildMsg)
 	if err != nil {
-		payloadBuildResponse.BuildStdErr = err.Error()
+		payloadBuildResponse.BuildStdErr = errors.Join(builderrors.New("failed to parse the payload parameters"), err).Error()
+		return payloadBuildResponse
 	}
 
-	fmt.Printf("%+v\n", parameters)
+	// Get the Rust target for the payload build
+	rustTarget := getRustTriple(payloadBuildMsg.SelectedOS, parameters.PayloadBuildParameters.Architecture)
 
+	// Install the Rust target in order to build the payload
+	if err := handler.InstallBuildTarget(rustTarget); err != nil {
+		payloadBuildResponse.BuildStdErr = errors.Join(builderrors.Errorf("failed to install the '%s' Rust target", rustTarget), err).Error()
+		return payloadBuildResponse
+	}
+
+	p, _ := json.MarshalIndent(parameters, "", "  ")
+	log.Println(string(p))
+
+	// Create the command which is used to build the payload
+	buildCommand, err := FormulateBuildCommand(parameters)
+	if err != nil {
+		payloadBuildResponse.BuildStdErr = errors.Join(builderrors.New("failed to create the build command for the payload"), err).Error()
+		return payloadBuildResponse
+	}
+
+	// Build the payload
+	payload, err := handler.Build(buildCommand)
+	if err != nil {
+		payloadBuildResponse.BuildStdErr = errors.Join(builderrors.New("failed to build the payload"), err).Error()
+		return payloadBuildResponse
+	}
+
+	payloadBuildResponse.Payload = &payload
+
+	payloadBuildResponse.Success = true
 	return payloadBuildResponse
 }
 
-// Routine invoked when Mythic requests a new payload
-func mythicBuildRoutine(payloadBuildMsg agentstructs.PayloadBuildMessage) agentstructs.PayloadBuildResponse {
+// Main entrypoint when Mythic executes the payload builder
+func mythicBuildPayloadFunction(payloadBuildMsg agentstructs.PayloadBuildMessage) agentstructs.PayloadBuildResponse {
 	handler := MythicPayloadHandler{}
 	return buildPayload(payloadBuildMsg, &handler)
 }
 
-// Initializes the agent in Mythic
+// Initializes the payload build routines in Mythic
 func Initialize() {
 	agentstructs.AllPayloadData.Get("thanatos").AddPayloadDefinition(payloadDefinition)
 	agentstructs.AllPayloadData.Get("thanatos").AddIcon(filepath.Join(".", "thanatos", "mythic", "assets", "thanatos.svg"))
-	agentstructs.AllPayloadData.Get("thanatos").AddBuildFunction(mythicBuildRoutine)
+	agentstructs.AllPayloadData.Get("thanatos").AddBuildFunction(mythicBuildPayloadFunction)
 }
