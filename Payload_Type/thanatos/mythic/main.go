@@ -4,7 +4,7 @@
 package main
 
 import (
-	builder "thanatos/builder"
+	"thanatos/builder"
 	//command "thanatos/command"
 	//"github.com/MythicMeta/MythicContainer"
 )
