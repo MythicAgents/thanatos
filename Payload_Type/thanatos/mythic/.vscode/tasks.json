@@ -1,0 +1,82 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "go",
+			"label": "Mythic: Run builder tests (mock build only)",
+			"command": "test",
+			"args": [
+				"-run",
+				"^TestPayloadMockBuild$",
+				"./builder"
+			],
+			"problemMatcher": [],
+			"group": "test",
+			"detail": "${workspaceFolder}"
+		},
+		{
+			"type": "go",
+			"label": "Mythic: Run builder tests (mock build only +verbose)",
+			"command": "test",
+			"args": [
+				"-v",
+				"-run",
+				"^TestPayloadMockBuild$",
+				"./builder"
+			],
+			"problemMatcher": [],
+			"group": "test",
+			"detail": "${workspaceFolder}"
+		},
+		{
+			"type": "go",
+			"label": "Mythic: Run builder tests (full build only)",
+			"command": "test",
+			"args": [
+				"-run",
+				"^TestPayloadFullBuild$",
+				"./builder"
+			],
+			"problemMatcher": [],
+			"group": "test",
+			"detail": "${workspaceFolder}"
+		},
+		{
+			"type": "go",
+			"label": "Mythic: Run builder tests (full build only +verbose)",
+			"command": "test",
+			"args": [
+				"-v",
+				"-run",
+				"^TestPayloadFullBuild$",
+				"./builder"
+			],
+			"problemMatcher": [],
+			"group": "test",
+			"detail": "${workspaceFolder}"
+		},
+		{
+			"type": "go",
+			"label": "Mythic: Run builder tests (combined)",
+			"command": "test",
+			"args": [
+				"./builder"
+			],
+			"problemMatcher": [],
+			"group": "test",
+			"detail": "${workspaceFolder}"
+		},
+		{
+			"type": "go",
+			"label": "Mythic: Run builder tests (combined +verbose)",
+			"command": "test",
+			"args": [
+				"-v",
+				"./builder"
+			],
+			"problemMatcher": [],
+			"group": "test",
+			"detail": "${workspaceFolder}"
+		}
+	]
+}
