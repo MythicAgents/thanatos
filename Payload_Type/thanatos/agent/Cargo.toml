@@ -1,73 +1,61 @@
-###### WORKSPACE ITEMS ######
+##### MAIN PACKAGE DEFINITION #####
+[package]
+name = "thanatos"
+version = "2.0.0"
+authors = ["@M_alphaaa"]
+edition = "2021"
+homepage = "https://github.com/MythicAgents/thanatos"
+license = "BSD-3-Clause"
+
+[lib]
+name = "thanatos_core"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "thanatos"
+path = "src/main.rs"
+
+##### WORKSPACE DEFINITION #####
 [workspace]
-members = [
-  "agent",
-  "agent_utils",
-  "commands/pwd",
-  "commands/cat",
-  "commands/cd",
-  "config",
-  "profiles/egress",
-  "profiles/p2p",
-  "thanatos-module"
-]
+members = ["config"]
 
-default-members = ["agent", "agent_utils", "config"]
-exclude = [
-  "thanatos-module/loadapi_macros",
-]
+[workspace.package]
+authors = ["@M_alphaaa"]
+edition = "2021"
+homepage = "https://github.com/MythicAgents/thanatos"
+license = "BSD-3-Clause"
 
 
-###### WORKSPACE DEPENDENCIES ######
-[workspace.dependencies]
-serde_json = "1.0"
+##### WORKSPACE DEPENDENCIES #####
 
 
-[workspace.dependencies.base64]
-version = "0.21"
-default-features = false
-features = ["alloc"]
+##### WORKSPACE SETTINGS #####
+[workspace.lints.rust]
+elided_lifetimes_in_paths = "warn"
+explicit_outlives_requirements = "warn"
+fuzzy_provenance_casts = "warn"          # Enforce strict provenance! https://github.com/rust-lang/rust/issues/95228
+keyword_idents = "deny"
+lossy_provenance_casts = "warn"          # Enforce strict provenance! https://github.com/rust-lang/rust/issues/95228
+macro_use_extern_crate = "deny"
+missing_docs = "warn"
+multiple_supertrait_upcastable = "warn"
+non_ascii_idents = "deny"
+non_exhaustive_omitted_patterns = "deny"
+pointer_structural_match = "deny"
+single_use_lifetimes = "warn"
+unreachable_pub = "warn"
+unsafe_op_in_unsafe_fn = "deny"
+unused_import_braces = "warn"
+unused_lifetimes = "warn"
+unused_macro_rules = "warn"
+unused_qualifications = "warn"
+unused_tuple_struct_fields = "warn"
+variant_size_differences = "warn"
 
-[workspace.dependencies.libc]
-version = "0.2"
-features = ["extra_traits"]
-
-[workspace.dependencies.openssl]
-version = "0.10.46"
-features = ["vendored"]
-
-[workspace.dependencies.rand]
-version = "0.8.5"
-default-features = false
-features = ["alloc", "small_rng", "getrandom"]
-
-[workspace.dependencies.serde]
-version = "1.0"
-features = ["derive"]
-
-[workspace.dependencies.windows]
-version = "0.48"
-default-features = false
-features = [
-  "Win32_Foundation",
-  "Win32_System_SystemInformation",
-  "Win32_Networking_WinHttp",
-  "Win32_System_LibraryLoader",
-  "Win32_System_Threading",
-  "Win32_Security",
-  "Win32_System_WindowsProgramming",
-  "Win32_NetworkManagement_IpHelper",
-  "Win32_Security_Cryptography"
-]
-
-
-###### BUILD SETTINGS ######
-[profile.dev.package.num-bigint-dig]
-opt-level = 3 # ref: https://github.com/RustCrypto/RSA#example
-
+##### BUILD SETTINGS #####
 [profile.release]
-strip = true
 lto = true
-codegen-units = 256
-opt-level = 3
-panic = "abort"
+codegen-units = 1
+panic = 'abort'
+strip = true
+opt-level = 'z'

@@ -1,17 +1,10 @@
 [package]
 name = "config"
 version = "0.1.0"
-edition = "2021"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
 
-[features]
-AES = []
-EKE = []
-username = []
-hostname = []
-domain = []
-
-[build-dependencies]
-minijinja = "0.31.0"
-base64.workspace = true
-serde_json.workspace = true
-sha2 = "0.10.6"
+[lints]
+workspace = true
