@@ -195,11 +195,29 @@
                     },
                     "AESPSK": {
                       "description": "Encryption Type",
-                      "type": "string",
-                      "enum": [
-                        "aes256_hmac",
-                        "none"
-                      ]
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "value"
+                      ],
+                      "properties": {
+                        "value": {
+                          "description": "Value for the crypto type",
+                          "type": "string",
+                          "enum": [
+                            "aes256_hmac",
+                            "none"
+                          ]
+                        },
+                        "enc_key": {
+                          "description": "Base64 encoded encryption key",
+                          "type": "string"
+                        },
+                        "dec_key": {
+                          "description": "Base64 encoded decryption key",
+                          "type": "string"
+                        }
+                      }
                     },
                     "callback_host": {
                       "description": "Callback Host",

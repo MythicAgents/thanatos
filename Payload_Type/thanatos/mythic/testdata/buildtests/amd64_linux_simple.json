@@ -24,22 +24,26 @@
         "headers": {
           "User-Agent": "test"
         },
-        "AESPSK": "none",
+        "AESPSK": {
+          "value": "none",
+          "enc_key": "",
+          "dec_key": ""
+        },
         "callback_host": "http://mythic",
         "get_uri": "index",
         "post_uri": "data",
         "query_path_name": "q",
-        "proxy_host": "http://proxy",
-        "proxy_port": "80",
-        "proxy_user": "proxy",
-        "proxy_pass": "pass",
+        "proxy_host": "",
+        "proxy_port": "",
+        "proxy_user": "",
+        "proxy_pass": "",
         "callback_interval": 10
       }
     }
   ],
 
   "expect": {
-    "success": false
+    "success": true
   }
 
 }
