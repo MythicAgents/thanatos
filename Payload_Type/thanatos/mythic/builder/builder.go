@@ -2,9 +2,7 @@
 package builder
 
 import (
-	"encoding/json"
 	"errors"
-	"log"
 	"path/filepath"
 	builderrors "thanatos/builder/errors"
 
@@ -303,11 +301,8 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler Buil
 		return payloadBuildResponse
 	}
 
-	p, _ := json.MarshalIndent(parameters, "", "  ")
-	log.Println(string(p))
-
 	// Create the command which is used to build the payload
-	buildCommand, err := FormulateBuildCommand(parameters)
+	buildCommand, err := FormulateBuildCommand(parameters, rustTarget, payloadBuildMsg.PayloadUUID)
 	if err != nil {
 		payloadBuildResponse.BuildStdErr = errors.Join(builderrors.New("failed to create the build command for the payload"), err).Error()
 		return payloadBuildResponse
