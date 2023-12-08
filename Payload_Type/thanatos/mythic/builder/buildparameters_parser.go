@@ -112,19 +112,19 @@ func parsePayloadBuildParameters(buildMessage agentstructs.PayloadBuildMessage) 
 	if domainsList, err := parameters.GetArrayArg("domains"); err == nil {
 		parsedParameters.DomainList = domainsList
 	} else {
-		parsedParameters.DomainList = make([]string, 0)
+		parsedParameters.DomainList = []string{}
 	}
 
 	if hostnamesList, err := parameters.GetArrayArg("hostnames"); err == nil {
 		parsedParameters.HostnameList = hostnamesList
 	} else {
-		parsedParameters.HostnameList = make([]string, 0)
+		parsedParameters.HostnameList = []string{}
 	}
 
 	if usernamesList, err := parameters.GetArrayArg("usernames"); err == nil {
 		parsedParameters.UsernameList = usernamesList
 	} else {
-		parsedParameters.UsernameList = make([]string, 0)
+		parsedParameters.UsernameList = []string{}
 	}
 
 	staticOptions, err := parameters.GetArrayArg("static")
@@ -133,7 +133,7 @@ func parsePayloadBuildParameters(buildMessage agentstructs.PayloadBuildMessage) 
 			parsedParameters.StaticOptions = append(parsedParameters.StaticOptions, PayloadBuildParameterStaticOption(option))
 		}
 	} else {
-		parsedParameters.StaticOptions = make([]PayloadBuildParameterStaticOption, 0)
+		parsedParameters.StaticOptions = []PayloadBuildParameterStaticOption{}
 	}
 
 	tlsselfsigned, err := parameters.GetBooleanArg("tlsselfsigned")
