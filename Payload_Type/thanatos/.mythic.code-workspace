@@ -7,5 +7,21 @@
 			"path": "agent"
 		}
 	],
-	"settings": {}
+	"settings": {
+        "rust-analyzer.server.extraEnv": {
+            "CONNECTION_RETRIES": "1",
+            "UUID": "8df1baf5-258e-4538-be77-af9fe033faba",
+            "WORKING_HOURS_END": "86400",
+            "WORKING_HOURS_START": "0",
+            "HTTP_CALLBACK_HOST": "http://mythic",
+            "HTTP_CALLBACK_INTERVAL": "10",
+            "HTTP_CALLBACK_JITTER": "23",
+            "HTTP_CALLBACK_PORT": "80",
+            "HTTP_GET_URI": "index",
+            "HTTP_HEADERS": "eyJVc2VyLUFnZW50IjoidGVzdCJ9",
+            "HTTP_KILLDATE": "4070908800",
+            "HTTP_POST_URI": "data",
+            "HTTP_QUERY_PATH_NAME": "q"
+        },
+    }
 }
