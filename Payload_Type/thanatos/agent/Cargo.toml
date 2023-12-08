@@ -2,10 +2,10 @@
 [package]
 name = "thanatos"
 version = "2.0.0"
-authors = ["@M_alphaaa"]
-edition = "2021"
-homepage = "https://github.com/MythicAgents/thanatos"
-license = "BSD-3-Clause"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
 
 [lib]
 name = "thanatos_core"
@@ -14,6 +14,13 @@ crate-type = ["cdylib", "rlib"]
 [[bin]]
 name = "thanatos"
 path = "src/main.rs"
+
+[dependencies.config]
+path = "./config"
+
+[features]
+init-thread = []
+init-daemonize = []
 
 ##### WORKSPACE DEFINITION #####
 [workspace]
@@ -33,14 +40,10 @@ license = "BSD-3-Clause"
 [workspace.lints.rust]
 elided_lifetimes_in_paths = "warn"
 explicit_outlives_requirements = "warn"
-fuzzy_provenance_casts = "warn"          # Enforce strict provenance! https://github.com/rust-lang/rust/issues/95228
 keyword_idents = "deny"
-lossy_provenance_casts = "warn"          # Enforce strict provenance! https://github.com/rust-lang/rust/issues/95228
 macro_use_extern_crate = "deny"
 missing_docs = "warn"
-multiple_supertrait_upcastable = "warn"
 non_ascii_idents = "deny"
-non_exhaustive_omitted_patterns = "deny"
 pointer_structural_match = "deny"
 single_use_lifetimes = "warn"
 unreachable_pub = "warn"
