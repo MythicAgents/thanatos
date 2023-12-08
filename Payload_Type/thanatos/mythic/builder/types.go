@@ -108,7 +108,7 @@ type BuildHandler interface {
 type PayloadBuilder interface {
 	// Method which takes in the raw command for building the agent and returns the contents
 	// of the built payload for Mythic
-	Build(command string) ([]byte, error)
+	Build(target string, outform PayloadBuildParameterOutputFormat, command string) ([]byte, error)
 
 	// Method to install a required target
 	InstallBuildTarget(target string) error

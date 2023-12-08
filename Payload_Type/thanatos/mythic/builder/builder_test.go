@@ -18,7 +18,7 @@ import (
 
 // Directory which holds the JSON files with the test data. This data includes the
 // build/profile parameters and expected results from the build
-const buildTestDataDir string = "../testdata/buildtests"
+const buildTestDataDir string = "./testdata/buildtests"
 
 // Options for when testing if the build succeeded. This is for checking if the result
 // BuildStdout, BuildStderr and BuildMessage contain correct values
@@ -81,8 +81,8 @@ type testSpec struct {
 type MockPayloadHandler struct{}
 
 // Mock implementation for the payload build
-func (handler MockPayloadHandler) Build(command string) ([]byte, error) {
-	return make([]byte, 0), nil
+func (handler MockPayloadHandler) Build(target string, outform PayloadBuildParameterOutputFormat, command string) ([]byte, error) {
+	return []byte{}, nil
 }
 
 // Mock implementation for installing a Rust target
@@ -105,8 +105,8 @@ func (handler MockPayloadHandler) UpdateBuildStep(input mythicrpc.MythicRPCPaylo
 type FullBuildPayloadHandler struct{}
 
 // Runs the real build command for the build handler
-func (handler FullBuildPayloadHandler) Build(command string) ([]byte, error) {
-	return MythicPayloadHandler{}.Build(command)
+func (handler FullBuildPayloadHandler) Build(target string, outform PayloadBuildParameterOutputFormat, command string) ([]byte, error) {
+	return MythicPayloadHandler{}.Build(target, outform, command)
 }
 
 // Runs the real Rust target install command for the build handler
@@ -149,7 +149,7 @@ func checkResults(t *testing.T, payloadUUID string, buildResult agentstructs.Pay
 		}
 	}
 
-	logMsgBuffer := make([]string, 0)
+	logMsgBuffer := []string{}
 
 	if testData.Expect.Message != nil {
 		compareData := testData.Expect.Message
@@ -288,6 +288,8 @@ func checkResults(t *testing.T, payloadUUID string, buildResult agentstructs.Pay
 
 // Function which runs all of the tests with a specified handler
 func testPayloadBuildImpl(t *testing.T, handler BuildHandler) {
+	os.Chdir("..")
+
 	testSpecs, err := os.ReadDir(buildTestDataDir)
 	if err != nil {
 		t.Fatal(err)
@@ -309,6 +311,8 @@ func testPayloadBuildImpl(t *testing.T, handler BuildHandler) {
 				t.Fatal(err)
 			}
 
+			testLogPrintData(t, testData)
+
 			payloadUUID := uuid.NewString()
 			payloadFileUUID := uuid.NewString()
 
@@ -327,9 +331,10 @@ func testPayloadBuildImpl(t *testing.T, handler BuildHandler) {
 				PayloadFileUUID:    payloadFileUUID,
 			}
 
+			os.Chdir("..")
 			buildResult := buildPayload(payloadBuildMsg, handler)
 			checkResults(t, payloadUUID, buildResult, testData)
-			testLogPrintData(t, testData, buildResult)
+			os.Chdir("mythic")
 		})
 	}
 }

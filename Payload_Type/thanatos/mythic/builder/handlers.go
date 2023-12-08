@@ -3,6 +3,8 @@ package builder
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	builderrors "thanatos/builder/errors"
@@ -10,12 +12,52 @@ import (
 	"github.com/MythicMeta/MythicContainer/mythicrpc"
 )
 
+const AGENT_CODE_PATH = "agent"
+
 // Type for the handler routines when being built by Mythic
 type MythicPayloadHandler struct{}
 
 // This will build the agent using the specified command string
-func (handler MythicPayloadHandler) Build(command string) ([]byte, error) {
-	return make([]byte, 0), nil
+func (handler MythicPayloadHandler) Build(target string, outform PayloadBuildParameterOutputFormat, command string) ([]byte, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return []byte{}, builderrors.Errorf("failed to get the current working directory: %s", err.Error())
+	}
+
+	agentCodePath := fmt.Sprintf("%s/%s", cwd, AGENT_CODE_PATH)
+
+	cmd := exec.Command("/bin/bash", "-c", command)
+	cmd.Dir = agentCodePath
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		errorMsg := builderrors.Errorf("failed to build the agent: %s", err.Error())
+		return []byte{}, errors.Join(builderrors.Errorf("output for command '/bin/bash -c %s:\n%s", command, string(output)), errorMsg)
+	}
+
+	outpath := fmt.Sprintf("%s/target/%s/release", agentCodePath, target)
+
+	filename := ""
+	if strings.Contains(target, "linux") {
+		if outform == PayloadBuildParameterOutputFormatExecutable {
+			filename = "thanatos"
+		} else {
+			filename = "libthanatos_core.so"
+		}
+	} else {
+		if outform == PayloadBuildParameterOutputFormatExecutable {
+			filename = "thanatos.exe"
+		} else {
+			filename = "thanatos_core.dll"
+		}
+	}
+
+	payload, err := os.ReadFile(fmt.Sprintf("%s/%s", outpath, filename))
+	if err != nil {
+		return []byte{}, builderrors.Errorf("failed to open the built payload: %s", err.Error())
+	}
+
+	return payload, nil
 }
 
 // This will install a given Rust target if it does not exist

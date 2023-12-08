@@ -309,7 +309,7 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler Buil
 	}
 
 	// Build the payload
-	payload, err := handler.Build(buildCommand)
+	payload, err := handler.Build(rustTarget, PayloadBuildParameterOutputFormat(payloadBuildMsg.SelectedOS), buildCommand)
 	if err != nil {
 		payloadBuildResponse.BuildStdErr = errors.Join(builderrors.New("failed to build the payload"), err).Error()
 		return payloadBuildResponse
