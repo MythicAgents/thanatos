@@ -1,5 +1,4 @@
 use crate::utils::parse_linux_mode;
-use chrono::prelude::{DateTime, Local, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use ssh2::Session;
@@ -24,10 +23,10 @@ struct File {
     full_name: String,
 
     /// Last access time of the entry
-    access_time: String,
+    access_time: u64,
 
     /// Last modify time of the entry
-    modify_time: String,
+    modify_time: u64,
 
     /// Size of the entry
     size: u64,
@@ -71,10 +70,10 @@ struct FileBrowser {
     success: bool,
 
     /// Last access time for the entry
-    access_time: String,
+    access_time: u64,
 
     /// Last modify time for the entry
-    modify_time: String,
+    modify_time: u64,
 
     /// Size of the entry
     size: u64,
@@ -132,31 +131,16 @@ impl File {
             )
         };
 
-        // Grab the last access time
-        let access_time = DateTime::<Utc>::from_utc(
-            NaiveDateTime::from_timestamp_opt(stats.atime.unwrap() as i64, 0).ok_or_else(|| {
-                std::io::Error::new(std::io::ErrorKind::Other, "Access time overflows for file")
-            })?,
-            Utc,
-        );
-        let access_time: DateTime<Local> = DateTime::from(access_time);
-
-        // Grab the last modify time
-        let modify_time = DateTime::<Utc>::from_utc(
-            NaiveDateTime::from_timestamp_opt(stats.mtime.unwrap() as i64, 0).ok_or_else(|| {
-                std::io::Error::new(std::io::ErrorKind::Other, "Modify time overflows for file")
-            })?,
-            Utc,
-        );
-        let modify_time: DateTime<Local> = DateTime::from(modify_time);
+        let access_time = stats.atime.map(|access_ts| access_ts * 1000).unwrap_or(0);
+        let modify_time = stats.mtime.map(|modify_ts| modify_ts * 1000).unwrap_or(0);
 
         Ok(Self {
             is_file: stats.is_file(),
             permissions: FilePermissions::new(&stats),
             name,
             full_name,
-            access_time: access_time.timestamp().to_string(),
-            modify_time: modify_time.timestamp().to_string(),
+            access_time,
+            modify_time,
             size: stats.size.unwrap(),
         })
     }
@@ -204,22 +188,15 @@ impl FileBrowser {
             }
         }
 
-        // Grab the time metadata of the entry
-        let access_time = DateTime::<Utc>::from_utc(
-            NaiveDateTime::from_timestamp_opt(path_stat.atime.unwrap() as i64, 0).ok_or_else(
-                || std::io::Error::new(std::io::ErrorKind::Other, "Access time overflows for file"),
-            )?,
-            Utc,
-        );
-        let access_time: DateTime<Local> = DateTime::from(access_time);
+        let access_time = path_stat
+            .atime
+            .map(|access_ts| access_ts * 1000)
+            .unwrap_or(0);
 
-        let modify_time = DateTime::<Utc>::from_utc(
-            NaiveDateTime::from_timestamp_opt(path_stat.mtime.unwrap() as i64, 0).ok_or_else(
-                || std::io::Error::new(std::io::ErrorKind::Other, "Modify time overflows for file"),
-            )?,
-            Utc,
-        );
-        let modify_time: DateTime<Local> = DateTime::from(modify_time);
+        let modify_time = path_stat
+            .mtime
+            .map(|modify_ts| modify_ts * 1000)
+            .unwrap_or(0);
 
         Ok(Self {
             host,
@@ -229,8 +206,8 @@ impl FileBrowser {
             name,
             parent_path,
             success: true,
-            access_time: access_time.timestamp().to_string(),
-            modify_time: modify_time.timestamp().to_string(),
+            access_time,
+            modify_time,
             size: path_stat.size.unwrap(),
             update_deleted: true,
             files,

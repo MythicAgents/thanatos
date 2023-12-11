@@ -12,8 +12,8 @@ from mythic_container.MythicCommandBase import (
     PTTaskProcessResponseMessageResponse,
 )
 from mythic_container.MythicGoRPC import (
-    SendMythicRPCFileCreate,
-    MythicRPCFileCreateMessage,
+    SendMythicRPCFileSearch,
+    MythicRPCFileSearchMessage,
 )
 
 import json
@@ -325,7 +325,7 @@ class SshCommand(CommandBase):
 
         if path := task.args.get_arg("download"):
             task.display_params = f"{user}@{host} -download {path}"
-        elif path := task.args.get_arg("upload"):
+        elif upload_file_id := task.args.get_arg("upload"):
             try:
                 mode = str(task.args.get_arg("mode"))
                 mode_int = int(mode, 8)
@@ -334,27 +334,30 @@ class SshCommand(CommandBase):
                 raise Exception("Mode not in octal format")
 
             try:
-                original_file_name = json.loads(task.original_params)["upload"]
-
-                file_resp = await SendMythicRPCFileCreate(
-                    MythicRPCFileCreateMessage(
-                        task.id,
-                        FileContents=base64.b64encode(path.encode()).decode(),
-                        DeleteAfterFetch=True,
-                        FileName=original_file_name,
+                resp = await SendMythicRPCFileSearch(
+                    MythicRPCFileSearchMessage(
+                        TaskID=task.id,
+                        AgentFileId=upload_file_id,
                     )
                 )
-                if file_resp:
-                    task.args.add_arg("file", file_resp.response["agent_file_id"])
-                else:
-                    raise Exception("Error from Mythic: " + str(file_resp.error))
+
+                if not resp.Success:
+                    raise Exception(resp.error)
+
+                file_name = resp.Files[0].Filename
+
+                if len(task.args.get_arg("upload_path")) == 0:
+                    task.args.add_arg("upload_path", file_name)
+                elif task.args.get_arg("upload_path")[-1] == "/":
+                    task.args.add_arg("upload_path", task.args.get_arg("upload_path") + file_name)
+
             except Exception as e:
                 raise Exception(
                     "Error from Mythic: " + str(sys.exc_info()[-1].tb_lineno) + str(e)
                 )
 
             task.display_params = (
-                f"{user}@{host} -upload '{original_file_name}' to"
+                f"{user}@{host} -upload '{file_name}' to"
                 f" {task.args.get_arg('upload_path')}"
             )
 

