@@ -11,8 +11,8 @@ from mythic_container.MythicCommandBase import (
     PTTaskProcessResponseMessageResponse,
 )
 from mythic_container.MythicGoRPC import (
-    SendMythicRPCFileGetContent,
-    MythicRPCFileGetContentMessage,
+    SendMythicRPCFileSearch,
+    MythicRPCFileSearchMessage,
 )
 import sys
 
@@ -75,16 +75,17 @@ class UploadCommand(CommandBase):
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         try:
             file_id = task.args.get_arg("file")
-            resp = await SendMythicRPCFileGetContent(
-                MythicRPCFileGetContentMessage(
+            resp = await SendMythicRPCFileSearch(
+                MythicRPCFileSearchMessage(
+                    TaskID=task.id,
                     AgentFileId=file_id,
                 )
             )
 
-            if not resp:
-                raise Exception("Failed to fetch file: {}".format(resp.error))
+            if not resp.Success:
+                raise Exception(resp.error)
 
-            file_name = resp.response[0]["filename"]
+            file_name = resp.Files[0].Filename
 
             if len(task.args.get_arg("path")) == 0:
                 task.args.add_arg("path", file_name)
