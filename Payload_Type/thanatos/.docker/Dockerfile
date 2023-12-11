@@ -5,8 +5,9 @@ FROM docker.io/library/fedora:35
 
 # Install packages
 RUN dnf install -y \
+        python3.11 \
         python3-pip \
-        python3 \
+        python3.11-devel \
         mingw64-gcc \
         mingw32-gcc \
         mingw64-gcc-c++ \
@@ -28,14 +29,15 @@ RUN dnf install -y \
         make \
         musl-gcc \
         musl-libc-static \
-        python3-devel \
         && dnf clean all
+
+RUN python3.11 -m ensurepip
 
 WORKDIR /tmp
 
 # Install the python dependencies
 COPY requirements.txt .
-RUN pip3 install -r requirements.txt
+RUN python3.11 -m pip install -r requirements.txt
 
 RUN rm requirements.txt
 
@@ -82,4 +84,4 @@ COPY .docker/config.toml /root/.cargo/config.toml
 
 WORKDIR /Mythic/
 ENV SCCACHE_DIR /Mythic/.cache/sccache
-CMD ["python3", "main.py"]
+CMD ["python3.11", "main.py"]
