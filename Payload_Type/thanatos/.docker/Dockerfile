@@ -1,6 +1,6 @@
 ### Real Dockerfile for the thanatos payload
 # Note: Invoke this Dockerfile from the `Payload_Type/thanatos` directory using the command
-#   `docker build -t mehrn00/thanatos:v0.1.2 -f .docker/Dockerfile .`
+#   `docker build -t docker.io/mehrn00/thanatos:v0.1.3 -f .docker/Dockerfile .`
 FROM docker.io/library/fedora:35
 
 # Install packages
