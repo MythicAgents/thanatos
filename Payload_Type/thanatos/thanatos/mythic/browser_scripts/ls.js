@@ -7,7 +7,7 @@ function(task, responses) {
   }
 
   if (!(responses.length > 0)) {
-    return { "plaintext": "Not response yet from agent..." }
+    return { "plaintext": "No response yet from agent..." }
   }
 
   const fileFormats = [
