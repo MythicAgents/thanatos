@@ -1,0 +1,49 @@
+{
+  "$schema": "../schemas/payload_build_spec.schema.json",
+  "filename": "thanatos",
+  "commands": [],
+  "selected_os": "Windows",
+  "build_parameters": {
+    "architecture": "amd64",
+    "initoptions": "none",
+    "connection_retries": 1,
+    "cryptolib": "system (wincrypto-ng/openssl)",
+    "working_hours": "00:00-23:59",
+    "output": "executable"
+  },
+
+  "c2profiles": [
+    {
+      "name": "http",
+      "is_p2p": false,
+      "parameters": {
+        "callback_port": 80,
+        "killdate": "2099-01-01",
+        "encrypted_exchange_check": true,
+        "callback_jitter": 23,
+        "headers": {
+          "User-Agent": "test"
+        },
+        "AESPSK": {
+          "value": "none",
+          "enc_key": "",
+          "dec_key": ""
+        },
+        "callback_host": "http://mythic",
+        "get_uri": "index",
+        "post_uri": "data",
+        "query_path_name": "q",
+        "proxy_host": "",
+        "proxy_port": "",
+        "proxy_user": "",
+        "proxy_pass": "",
+        "callback_interval": 10
+      }
+    }
+  ],
+
+  "expect": {
+    "success": true
+  }
+
+}
