@@ -6,43 +6,15 @@ import (
 )
 
 // Type for the payload architecture parameter
-type PayloadBuildParameterArchitecture byte
+type PayloadBuildParameterArchitecture string
 
 const (
 	// Build payload is amd64 (64 bit)
-	PayloadBuildParameterArchitectureAmd64 PayloadBuildParameterArchitecture = iota
+	PayloadBuildParameterArchitectureAmd64 PayloadBuildParameterArchitecture = "amd64"
 
 	// Build payload is x86 (32 bit)
-	PayloadBuildParameterArchitectureX86
+	PayloadBuildParameterArchitectureX86 PayloadBuildParameterArchitecture = "x86"
 )
-
-// Converts the architecture to a string
-func (arch PayloadBuildParameterArchitecture) String() string {
-	switch arch {
-	case PayloadBuildParameterArchitectureAmd64:
-		return "amd64"
-	case PayloadBuildParameterArchitectureX86:
-		return "x86"
-	}
-
-	panic("Invalid architecture value")
-}
-
-// Creates a new build parameter architecture from a specified value
-func NewPayloadBuildParameterArchitecture(arch string) *PayloadBuildParameterArchitecture {
-	switch arch {
-	case "amd64":
-		val := new(PayloadBuildParameterArchitecture)
-		*val = PayloadBuildParameterArchitectureAmd64
-		return val
-	case "x86":
-		val := new(PayloadBuildParameterArchitecture)
-		*val = PayloadBuildParameterArchitectureX86
-		return val
-	}
-
-	return nil
-}
 
 // Type for the initial execution options
 type PayloadBuildParameterInitOptions string

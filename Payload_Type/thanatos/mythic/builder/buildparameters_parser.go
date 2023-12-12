@@ -62,11 +62,7 @@ func parsePayloadBuildParameters(buildMessage agentstructs.PayloadBuildMessage) 
 		return parsedParameters, builderrors.Errorf(errorFormatStr, "architecture", err.Error())
 	}
 
-	if arch := NewPayloadBuildParameterArchitecture(architecture); arch != nil {
-		parsedParameters.Architecture = *arch
-	} else {
-		return parsedParameters, builderrors.Errorf("invalid architecture string value: %s", architecture)
-	}
+	parsedParameters.Architecture = PayloadBuildParameterArchitecture(architecture)
 
 	initOptions, err := parameters.GetStringArg("initoptions")
 	if err != nil {

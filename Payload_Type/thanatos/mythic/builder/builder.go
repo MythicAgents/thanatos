@@ -51,7 +51,7 @@ var payloadDefinition = agentstructs.PayloadType{
 		{
 			Name:         "architecture",
 			Description:  "Architecture of the agent",
-			DefaultValue: "amd64",
+			DefaultValue: string(PayloadBuildParameterArchitectureAmd64),
 			Choices: []string{
 				string(PayloadBuildParameterArchitectureAmd64),
 				string(PayloadBuildParameterArchitectureX86),
@@ -330,6 +330,6 @@ func mythicBuildPayloadFunction(payloadBuildMsg agentstructs.PayloadBuildMessage
 // Initializes the payload build routines in Mythic
 func Initialize() {
 	agentstructs.AllPayloadData.Get("thanatos").AddPayloadDefinition(payloadDefinition)
-	agentstructs.AllPayloadData.Get("thanatos").AddIcon(filepath.Join(".", "thanatos", "mythic", "assets", "thanatos.svg"))
+	agentstructs.AllPayloadData.Get("thanatos").AddIcon(filepath.Join(".", "mythic", "assets", "thanatos.svg"))
 	agentstructs.AllPayloadData.Get("thanatos").AddBuildFunction(mythicBuildPayloadFunction)
 }
