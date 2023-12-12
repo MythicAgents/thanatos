@@ -1,6 +1,8 @@
-### Real Dockerfile for the thanatos payload
+# Base container image for the thanatos payload.
 # Note: Invoke this Dockerfile from the `Payload_Type/thanatos` directory using the command
-#   `docker build -t docker.io/mehrn00/thanatos:v0.2.0 -f .docker/Dockerfile .`
+#   `docker build -t ghcr.io/mythicagents/thanatos:{TAG} -f .docker/Dockerfile .`
+
+# Build the Mythic code
 FROM docker.io/library/golang:alpine as mythic-builder
 
 RUN apk update \
@@ -10,98 +12,52 @@ RUN apk update \
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
-COPY thanatos thanatos
-COPY go.mod .
-COPY go.sum .
-COPY main.go .
+COPY mythic mythic
+WORKDIR /usr/src/app/mythic
 
 RUN go mod download
 RUN go mod tidy
 RUN go build -ldflags='-extldflags=-static' -o mythic-server .
 RUN strip -s mythic-server
-RUN mv mythic-server /opt/mythic-server
 
-# Image containing the dependencies to build the agent
-FROM docker.io/library/fedora:35
+# Image containing the dependencies for building the agent
+FROM docker.io/library/debian:bookworm-slim
 
-
-# Install packages
-RUN dnf install -y \
-        mingw64-gcc \
-        mingw32-gcc \
-        mingw64-gcc-c++ \
-        mingw32-gcc-c++ \
-        mingw64-winpthreads-static.noarch \
-        mingw32-winpthreads-static.noarch \
-        libgcc.i686 \
-        glibc-devel.i686 \
-        openssl-devel \
-        openssl-devel.i686 \
-        openssl-static.i686 \
-        perl-FindBin \
-        perl-File-Compare \
-        perl-IPC-Cmd \
-        perl-File-Copy \
-        perl-lib \
-        clang \
+# Install required system packages
+RUN apt-get update -y && apt-get install -y \
         curl \
-        make \
-        musl-gcc \
-        musl-libc-static \
-        && dnf clean all
+        && apt-get clean
 
+# Install sccache
 WORKDIR /tmp
+ENV SCCACHE_VERSION v0.7.4
+RUN curl -L \
+    "https://github.com/mozilla/sccache/releases/download/${SCCACHE_VERSION}/sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+    -o sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
+RUN tar xf sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
+RUN mv sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl/sccache /usr/bin/sccache
+RUN chmod +x /usr/bin/sccache
+RUN rm -rf sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl
+RUN rm -f sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
+ENV SCCACHE_DIR /Mythic/.cache/sccache
 
-# Install rust
+# Install the 64 bit Rust toolchains (32 bit get installed during the build if needed)
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh \
     && sh rustup.sh -y \
         --profile minimal \
-        --default-toolchain nightly \
-        -t i686-unknown-linux-gnu \
-        -t x86_64-unknown-linux-musl \
-        -t i686-unknown-linux-musl \
-        -t x86_64-pc-windows-gnu \
-        -t i686-pc-windows-gnu
+        --default-toolchain stable \
+        -t x86_64-unknown-linux-gnu \
+        -t x86_64-pc-windows-gnu
 
 RUN rm -f rustup.sh
 
-ENV PATH=$PATH:/root/.cargo/bin
-
-# Use the nightly toolchain
-RUN rustup default nightly
-
-# Install the rust-src package
-RUN rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
-
-# Fetch dependencies
-RUN mkdir /tmp/thanatos
-WORKDIR /tmp/thanatos
-
-COPY thanatos/agent_code/ .
-
-RUN cargo fetch --target x86_64-unknown-linux-gnu
-RUN cargo fetch --target x86_64-unknown-linux-musl
-RUN cargo fetch --target x86_64-pc-windows-gnu
-RUN cargo fetch --target i686-unknown-linux-gnu
-RUN cargo fetch --target i686-unknown-linux-musl
-RUN cargo fetch --target i686-pc-windows-gnu
-
-WORKDIR /
-RUN rm -rf /tmp/thanatos
-
-WORKDIR /tmp
-RUN curl -L 'https://github.com/mozilla/sccache/releases/download/v0.4.0/sccache-v0.4.0-x86_64-unknown-linux-musl.tar.gz' -o sccache.tar.gz
-RUN tar xf sccache.tar.gz
-RUN mv sccache-v0.4.0-x86_64-unknown-linux-musl/sccache /usr/bin/sccache
-RUN chmod +x /usr/bin/sccache
-RUN rm -rf sccache-v0.4.0-x86_64-unknown-linux-musl
-RUN rm -f sccache.tar.gz
-
+# Copy the cargo config.toml
 COPY .docker/config.toml /root/.cargo/config.toml
+
+ENV PATH=$PATH:/root/.cargo/bin
 
 WORKDIR /Mythic
 
-COPY --from=mythic-builder /opt/mythic-server /mythic-server
-
-ENV SCCACHE_DIR /Mythic/.cache/sccache
+COPY --from=mythic-builder /usr/src/app/mythic/mythic-server /mythic-server
+RUN chmod +x /mythic-server
 CMD ["/mythic-server"]
