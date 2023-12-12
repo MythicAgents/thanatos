@@ -4,20 +4,16 @@
 package main
 
 import (
+	"github.com/MythicMeta/MythicContainer"
 	"thanatos/builder"
-	//command "thanatos/command"
-	//"github.com/MythicMeta/MythicContainer"
 )
 
 func main() {
 	// Initialize the builder
 	builder.Initialize()
 
-	// Initialize the commands
-	//command.Initialize()
-
 	// Start communicating with Mythic
-	//MythicContainer.StartAndRunForever([]MythicContainer.MythicServices{
-	//	MythicContainer.MythicServicePayload,
-	//})
+	MythicContainer.StartAndRunForever([]MythicContainer.MythicServices{
+		MythicContainer.MythicServicePayload,
+	})
 }
