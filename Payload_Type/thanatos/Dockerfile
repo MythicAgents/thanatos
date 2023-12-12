@@ -1,2 +1,2 @@
 # Pull in the thanatos docker image
-FROM docker.io/mehrn00/thanatos:v0.1.3
+FROM ghcr.io/mythicagents/thanatos:v0.1.4
