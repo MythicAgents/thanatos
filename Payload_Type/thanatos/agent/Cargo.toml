@@ -18,13 +18,19 @@ path = "src/main.rs"
 [dependencies.config]
 path = "./config"
 
+[dependencies.ffiwrappers]
+path = "./ffiwrappers"
+
 [features]
 init-thread = []
 init-daemonize = []
 
 ##### WORKSPACE DEFINITION #####
 [workspace]
-members = ["config"]
+members = [
+  "config",
+  "ffiwrappers",
+]
 
 [workspace.package]
 authors = ["@M_alphaaa"]
