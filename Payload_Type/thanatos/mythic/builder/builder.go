@@ -301,12 +301,25 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler Buil
 		return payloadBuildResponse
 	}
 
+	// Create the config for the build command
+	commandConfig, err := CreateCommandConfig(parameters, payloadBuildMsg.SelectedOS, payloadBuildMsg.PayloadUUID)
+	if err != nil {
+		payloadBuildResponse.BuildStdErr = errors.Join(builderrors.New("failed to create the config for the build command"), err).Error()
+		return payloadBuildResponse
+	}
+
+	payloadBuildResponse.BuildMessage = "Payload configuration:\n"
+	payloadBuildResponse.BuildMessage += commandConfig.String() + "\n"
+
 	// Create the command which is used to build the payload
-	buildCommand, err := FormulateBuildCommand(parameters, rustTarget, payloadBuildMsg.PayloadUUID)
+	buildCommand, err := FormulateBuildCommand(commandConfig, rustTarget)
 	if err != nil {
 		payloadBuildResponse.BuildStdErr = errors.Join(builderrors.New("failed to create the build command for the payload"), err).Error()
 		return payloadBuildResponse
 	}
+
+	payloadBuildResponse.BuildMessage += "Build command:\n"
+	payloadBuildResponse.BuildMessage += buildCommand + "\n"
 
 	// Build the payload
 	payload, err := handler.Build(rustTarget, PayloadBuildParameterOutputFormat(payloadBuildMsg.SelectedOS), buildCommand)

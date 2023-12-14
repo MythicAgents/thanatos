@@ -9,15 +9,47 @@ import (
 	"sort"
 	"strings"
 	builderrors "thanatos/builder/errors"
+
+	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 )
 
-// Take the parsed build parameters and return a string containing the command to build
-// the payload
-func FormulateBuildCommand(parameters ParsedPayloadParameters, target string, uuid string) (string, error) {
-	buildCommand := []string{"env"}
+type BuildCommandConfig struct {
+	EnvVars  []map[string]string
+	Features []string
+}
 
-	featureFlags := []string{}
+func (c *BuildCommandConfig) String() string {
+	output := ""
+	for _, m := range c.EnvVars {
+		for key, val := range m {
+			output += fmt.Sprintf("%s=%s\n", key, val)
+		}
+	}
+
+	output += "Features:\n"
+	for _, val := range c.Features {
+		output += val + "\n"
+	}
+
+	return output
+}
+
+// Create a mapping for the build parameters
+func CreateCommandConfig(parameters ParsedPayloadParameters, os string, uuid string) (BuildCommandConfig, error) {
+	config := BuildCommandConfig{}
+
 	payloadvars := map[string]string{}
+	featureFlags := []string{}
+
+	// uuid
+	payloadvars["uuid"] = uuid
+
+	// Connection retries
+	payloadvars["connection_retries"] = fmt.Sprint(parameters.PayloadBuildParameters.ConnectionRetries)
+
+	// Working hours
+	payloadvars["working_hours_start"] = fmt.Sprint(int(parameters.PayloadBuildParameters.WorkingHours.StartTime.Seconds()))
+	payloadvars["working_hours_end"] = fmt.Sprint(int(parameters.PayloadBuildParameters.WorkingHours.EndTime.Seconds()))
 
 	// Init options
 	switch parameters.PayloadBuildParameters.InitOptions {
@@ -27,12 +59,6 @@ func FormulateBuildCommand(parameters ParsedPayloadParameters, target string, uu
 		featureFlags = append(featureFlags, "init-daemonize")
 	}
 
-	// uuid
-	payloadvars["uuid"] = uuid
-
-	// Connection retries
-	payloadvars["connection_retries"] = fmt.Sprint(parameters.PayloadBuildParameters.ConnectionRetries)
-
 	// Crypto library
 	switch parameters.PayloadBuildParameters.CryptoLib {
 	case PayloadBuildParameterCryptoLibraryInternal:
@@ -41,9 +67,20 @@ func FormulateBuildCommand(parameters ParsedPayloadParameters, target string, uu
 		featureFlags = append(featureFlags, "cryptolib?/system")
 	}
 
-	// Working hours
-	payloadvars["working_hours_start"] = fmt.Sprint(int(parameters.PayloadBuildParameters.WorkingHours.StartTime.Seconds()))
-	payloadvars["working_hours_end"] = fmt.Sprint(int(parameters.PayloadBuildParameters.WorkingHours.EndTime.Seconds()))
+	// Domain list
+	if len(parameters.PayloadBuildParameters.DomainList) > 0 {
+		featureFlags = append(featureFlags, "domaincheck")
+	}
+
+	// Hostname list
+	if len(parameters.PayloadBuildParameters.HostnameList) > 0 {
+		featureFlags = append(featureFlags, "hostnamecheck")
+	}
+
+	// Username list
+	if len(parameters.PayloadBuildParameters.UsernameList) > 0 {
+		featureFlags = append(featureFlags, "usernamecheck")
+	}
 
 	// Domain list
 	if len(parameters.PayloadBuildParameters.DomainList) > 0 {
@@ -64,11 +101,11 @@ func FormulateBuildCommand(parameters ParsedPayloadParameters, target string, uu
 	}
 
 	// Static options
-	if strings.Contains(target, "linux") {
+	if os == agentstructs.SUPPORTED_OS_LINUX {
 		for _, option := range parameters.PayloadBuildParameters.StaticOptions {
 			switch option {
 			case PayloadBuildParameterStaticOptionOpenSSL:
-				buildCommand = append(buildCommand, "OPENSSL_STATIC=yes")
+				payloadvars["OPENSSL_STATIC"] = "yes"
 			case PayloadBuildParameterStaticOptionLibCurl:
 				if parameters.C2Profiles.HttpProfile != nil {
 					featureFlags = append(featureFlags, "curl/static-curl")
@@ -87,15 +124,12 @@ func FormulateBuildCommand(parameters ParsedPayloadParameters, target string, uu
 		payloadvars["spawn_to"] = parameters.PayloadBuildParameters.SpawnTo
 	}
 
-	payloadkeys := make([]string, 0, len(payloadvars))
-	for key := range payloadvars {
-		payloadkeys = append(payloadkeys, key)
+	envVars := map[string]string{}
+	for key, val := range payloadvars {
+		newkey := strings.ToUpper(key)
+		envVars[newkey] = val
 	}
-	sort.Strings(payloadkeys)
-
-	for _, key := range payloadkeys {
-		buildCommand = append(buildCommand, fmt.Sprintf("%s=%s", strings.ToUpper(key), payloadvars[key]))
-	}
+	config.EnvVars = append(config.EnvVars, envVars)
 
 	// HTTP C2 profile
 	if parameters.C2Profiles.HttpProfile != nil {
@@ -114,7 +148,7 @@ func FormulateBuildCommand(parameters ParsedPayloadParameters, target string, uu
 
 		headers_json, err := json.Marshal(profile.Headers)
 		if err != nil {
-			return "", builderrors.Errorf("failed to marshal HTTP profile headers: %s", err.Error())
+			return BuildCommandConfig{}, builderrors.Errorf("failed to marshal HTTP profile headers: %s", err.Error())
 		}
 
 		profilevars["headers"] = base64.StdEncoding.EncodeToString(headers_json)
@@ -131,7 +165,7 @@ func FormulateBuildCommand(parameters ParsedPayloadParameters, target string, uu
 		if profile.ProxyInfo != nil {
 			proxyinfo_json, err := json.Marshal(*profile.ProxyInfo)
 			if err != nil {
-				return "", builderrors.Errorf("failed to marshal HTTP proxy info: %s", err.Error())
+				return BuildCommandConfig{}, builderrors.Errorf("failed to marshal HTTP proxy info: %s", err.Error())
 			}
 
 			profilevars["proxy_info"] = base64.StdEncoding.EncodeToString(proxyinfo_json)
@@ -139,20 +173,32 @@ func FormulateBuildCommand(parameters ParsedPayloadParameters, target string, uu
 
 		profilevars["callback_interval"] = fmt.Sprint(profile.CallbackInterval)
 
-		profilekeys := make([]string, 0, len(profilevars))
-		for key := range profilevars {
-			profilekeys = append(profilekeys, key)
-		}
-		sort.Strings(profilekeys)
-
-		for _, key := range profilekeys {
-			buildCommand = append(buildCommand, fmt.Sprintf("HTTP_%s=%s", strings.ToUpper(key), profilevars[key]))
+		envVars = map[string]string{}
+		for key, val := range profilevars {
+			newkey := fmt.Sprintf("HTTP_%s", strings.ToUpper(key))
+			envVars[newkey] = val
 		}
 
+		config.EnvVars = append(config.EnvVars, envVars)
+	}
+
+	sort.Strings(featureFlags)
+	config.Features = featureFlags
+	return config, nil
+}
+
+// Take the parsed build parameter command config and return a string containing the command to build
+// the payload
+func FormulateBuildCommand(config BuildCommandConfig, target string) (string, error) {
+	buildCommand := []string{"env"}
+
+	for _, m := range config.EnvVars {
+		for key, val := range m {
+			buildCommand = append(buildCommand, fmt.Sprintf("%s=%s", key, val))
+		}
 	}
 
 	cargoCommand := fmt.Sprintf("cargo build --target %s --release", target)
-	_ = featureFlags
 	//if len(featureFlags) > 0 {
 	//	cargoCommand = fmt.Sprintf("%s --features %s", cargoCommand, strings.Join(featureFlags, ","))
 	//}

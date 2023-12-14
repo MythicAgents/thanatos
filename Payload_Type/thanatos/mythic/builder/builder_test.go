@@ -288,9 +288,9 @@ func checkResults(t *testing.T, payloadUUID string, buildResult agentstructs.Pay
 
 // Function which runs all of the tests with a specified handler
 func testPayloadBuildImpl(t *testing.T, handler BuildHandler) {
-	os.Chdir("..")
+	os.Chdir("../..")
 
-	testSpecs, err := os.ReadDir(buildTestDataDir)
+	testSpecs, err := os.ReadDir(filepath.Join("mythic", buildTestDataDir))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -301,7 +301,7 @@ func testPayloadBuildImpl(t *testing.T, handler BuildHandler) {
 		t.Run(strings.TrimSuffix(specPath.Name(), ".json"), func(t *testing.T) {
 			t.Parallel()
 
-			rawData, err := os.ReadFile(filepath.Join(buildTestDataDir, testDataSpecPath))
+			rawData, err := os.ReadFile(filepath.Join("mythic", buildTestDataDir, testDataSpecPath))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -331,10 +331,11 @@ func testPayloadBuildImpl(t *testing.T, handler BuildHandler) {
 				PayloadFileUUID:    payloadFileUUID,
 			}
 
-			os.Chdir("..")
 			buildResult := buildPayload(payloadBuildMsg, handler)
+			t.Logf("[BUILD MESSAGE]: %s", buildResult.BuildMessage)
+			t.Logf("[BUILD STDOUT]: %s", buildResult.BuildStdOut)
+			t.Logf("[BUILD STDERR]: %s", buildResult.BuildStdErr)
 			checkResults(t, payloadUUID, buildResult, testData)
-			os.Chdir("mythic")
 		})
 	}
 }

@@ -2,10 +2,11 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "go",
 			"label": "Mythic: Run builder tests (mock build only)",
-			"command": "test",
+			"type": "shell",
+			"command": "go",
 			"args": [
+        "test",
 				"-run",
 				"^TestPayloadMockBuild$",
 				"./builder"
@@ -15,10 +16,11 @@
 			"detail": "${workspaceFolder}"
 		},
 		{
-			"type": "go",
 			"label": "Mythic: Run builder tests (mock build only +verbose)",
-			"command": "test",
+			"type": "shell",
+			"command": "go",
 			"args": [
+        "test",
 				"-v",
 				"-run",
 				"^TestPayloadMockBuild$",
@@ -29,10 +31,11 @@
 			"detail": "${workspaceFolder}"
 		},
 		{
-			"type": "go",
 			"label": "Mythic: Run builder tests (full build only)",
-			"command": "test",
+			"type": "shell",
+			"command": "go",
 			"args": [
+        "test",
 				"-run",
 				"^TestPayloadFullBuild$",
 				"./builder"
@@ -42,10 +45,11 @@
 			"detail": "${workspaceFolder}"
 		},
 		{
-			"type": "go",
 			"label": "Mythic: Run builder tests (full build only +verbose)",
-			"command": "test",
+			"type": "shell",
+			"command": "go",
 			"args": [
+        "test",
 				"-v",
 				"-run",
 				"^TestPayloadFullBuild$",
@@ -56,10 +60,11 @@
 			"detail": "${workspaceFolder}"
 		},
 		{
-			"type": "go",
 			"label": "Mythic: Run builder tests (combined)",
-			"command": "test",
+			"type": "shell",
+			"command": "go",
 			"args": [
+        "test",
 				"./builder"
 			],
 			"problemMatcher": [],
@@ -67,10 +72,11 @@
 			"detail": "${workspaceFolder}"
 		},
 		{
-			"type": "go",
 			"label": "Mythic: Run builder tests (combined +verbose)",
-			"command": "test",
+			"type": "shell",
+			"command": "go",
 			"args": [
+        "test",
 				"-v",
 				"./builder"
 			],
