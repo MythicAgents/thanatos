@@ -14,11 +14,18 @@ workspace = true
 [dependencies]
 rmp = "0.8.12"
 rmp-serde = "1.1.2"
-serde = { version = "1", features = ["derive"] }
+serde.workspace = true
+serde_repr = "0.1"
+
+[dependencies.utils]
+path = "../utils"
 
 [build-dependencies]
+base64 = "0.21.5"
 rmp = "0.8.12"
 rmp-serde = "1.1.2"
-serde = { version = "1", features = ["derive"] }
+serde.workspace = true
 serde_json = "1"
-base64 = "0.21.5"
+serde_repr = "0.1"
+utils = { path = "../utils" }
+sha2 = "0.10.8"
