@@ -21,6 +21,9 @@ path = "./config"
 [dependencies.ffiwrappers]
 path = "./ffiwrappers"
 
+[dependencies.utils]
+path = "./utils"
+
 [features]
 init-thread = []
 init-daemonize = []
@@ -30,6 +33,11 @@ init-daemonize = []
 members = [
   "config",
   "ffiwrappers",
+  "utils",
+]
+
+exclude = [
+  "shellcode-builder"
 ]
 
 [workspace.package]
@@ -40,7 +48,11 @@ license = "BSD-3-Clause"
 
 
 ##### WORKSPACE DEPENDENCIES #####
+[workspace.dependencies]
 
+[workspace.dependencies.serde]
+version = "1"
+features = ["derive"]
 
 ##### WORKSPACE SETTINGS #####
 [workspace.lints.rust]
