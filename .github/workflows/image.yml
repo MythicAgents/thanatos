@@ -27,7 +27,7 @@ env:
   # Set the container image version to the Github release tag
   VERSION: ${{ github.event.release.tag_name }}
 
-  # Branch for pushing release changes
+  # Branch for pushing release changes (TODO: Change this to the main branch when the rewrite is finished)
   RELEASE_BRANCH: rewrite
 
 jobs:
