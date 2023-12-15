@@ -54,9 +54,9 @@ func CreateCommandConfig(parameters ParsedPayloadParameters, os string, uuid str
 	// Init options
 	switch parameters.PayloadBuildParameters.InitOptions {
 	case PayloadBuildParameterInitOptionSpawnThread:
-		featureFlags = append(featureFlags, "init-thread")
+		payloadvars["init_option"] = "thread"
 	case PayloadBuildParameterInitOptionDaemonize:
-		featureFlags = append(featureFlags, "init-daemonize")
+		payloadvars["init_option"] = "daemonize"
 	}
 
 	// Crypto library
