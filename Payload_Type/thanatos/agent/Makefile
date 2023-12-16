@@ -1,5 +1,5 @@
 CARGOARGS	?=
-TRIPLE		?= x86_64-unknown-linux-gnu
+TARGET		?= x86_64-unknown-linux-gnu
 CONFIG		?= .config
 SOURCES		:= $(wildcard ./**.rs)
 
@@ -41,7 +41,7 @@ endef
 
 .PHONY: test
 test: # Run all of the tests
-	cargo test --workspace --target $(TRIPLE) $(CARGOARGS)
+	cargo test --workspace --target $(TARGET) $(CARGOARGS)
 
 .PHONY: genconfig
 genconfig: # Generate a configuration file for building the agent
@@ -72,17 +72,17 @@ thanatos.so: # Build the Linux shared object version of the thanatos agent
 
 .PHONY: thanatos.exe
 thanatos.exe: # Build the Windows executable version of the thanatos agent
-	@$(MAKE) TRIPLE="x86_64-pc-windows-gnu" _binary
+	@$(MAKE) TARGET="x86_64-pc-windows-gnu" _binary
 
 .PHONY: thanatos.dll
 thanatos.dll: # Build the Windows DLL version of the thanatos agent
-	@$(MAKE) TRIPLE="x86_64-pc-windows-gnu" _library
+	@$(MAKE) TARGET="x86_64-pc-windows-gnu" _library
 
 # Hidden build targets for abstracting the other build targets
 .PHONY: _binary
 _binary: $(CONFIG) $(SOURCES)
-	cargo build -p thanatos_bin --target $(TRIPLE) $(CARGOARGS)
+	cargo build -p thanatos_bin --target $(TARGET) $(CARGOARGS)
 
 .PHONY: _library
 _library: $(CONFIG) $(SOURCES)
-	cargo build -p thanatos_lib --target $(TRIPLE) $(CARGOARGS)
+	cargo build -p thanatos_lib --target $(TARGET) $(CARGOARGS)
