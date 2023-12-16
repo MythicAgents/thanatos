@@ -9,7 +9,7 @@ license.workspace = true
 
 [lib]
 name = "thanatos_core"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib", "rlib"] # TODO: https://github.com/rust-lang/rust/issues/51009
 
 [[bin]]
 name = "thanatos"
