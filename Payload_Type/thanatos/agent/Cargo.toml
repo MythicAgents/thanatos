@@ -1,40 +1,16 @@
-##### MAIN PACKAGE DEFINITION #####
-[package]
-name = "thanatos"
-version = "2.0.0"
-authors.workspace = true
-edition.workspace = true
-homepage.workspace = true
-license.workspace = true
-
-[lib]
-name = "thanatos_core"
-crate-type = ["cdylib", "rlib"] # TODO: https://github.com/rust-lang/rust/issues/51009
-
-[[bin]]
-name = "thanatos"
-path = "src/main.rs"
-
-[dependencies.config]
-path = "./config"
-
-[dependencies.ffiwrappers]
-path = "./ffiwrappers"
-
-[dependencies.utils]
-path = "./utils"
-
-[features]
-init-thread = []
-init-daemonize = []
-
 ##### WORKSPACE DEFINITION #####
 [workspace]
+resolver = "2"
 members = [
   "config",
   "ffiwrappers",
+  "thanatos_bin",
+  "thanatos_core",
+  "thanatos_lib",
   "utils",
 ]
+
+default-members = ["thanatos_core"]
 
 exclude = [
   "shellcode-builder"
@@ -76,7 +52,7 @@ variant_size_differences = "warn"
 ##### BUILD SETTINGS #####
 [profile.release]
 lto = true
-codegen-units = 1
+codegen-units = 256
 panic = 'abort'
 strip = true
 opt-level = 'z'

@@ -1,0 +1,17 @@
+[package]
+name = "thanatos_bin"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "thanatos"
+path = "src/main.rs"
+
+[dependencies]
+thanatos_core = { path = "../thanatos_core" }
+
+[lints]
+workspace = true

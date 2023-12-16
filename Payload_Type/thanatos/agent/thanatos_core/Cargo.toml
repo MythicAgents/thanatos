@@ -1,0 +1,22 @@
+[package]
+name = "thanatos_core"
+version = "2.0.0"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+
+[dependencies.config]
+path = "../config"
+
+[dependencies.utils]
+path = "../utils"
+
+
+[lints]
+workspace = true

@@ -230,12 +230,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "thanatos"
+name = "thanatos_bin"
+version = "0.1.0"
+dependencies = [
+ "thanatos_core",
+]
+
+[[package]]
+name = "thanatos_core"
 version = "2.0.0"
 dependencies = [
  "config",
- "ffiwrappers",
  "utils",
+]
+
+[[package]]
+name = "thanatos_lib"
+version = "0.1.0"
+dependencies = [
+ "thanatos_core",
 ]
 
 [[package]]

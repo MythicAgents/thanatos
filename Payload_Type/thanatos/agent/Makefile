@@ -59,23 +59,30 @@ clean: # Remove the built binaries
 distclean: # Remove the build configuration
 	rm -vf $(CONFIG)
 
+.PHONY: all
+all: thanatos thanatos.so thanatos.exe thanatos.dll # Builds all of the build targets
+
 .PHONY: thanatos
 thanatos: # Build the Linux executable version of the thanatos agent
-	@$(MAKE) _build
+	@$(MAKE) _binary
 
 .PHONY: thanatos.so
 thanatos.so: # Build the Linux shared object version of the thanatos agent
-	@$(MAKE) _build
+	@$(MAKE) _library
 
 .PHONY: thanatos.exe
 thanatos.exe: # Build the Windows executable version of the thanatos agent
-	@$(MAKE) TRIPLE="x86_64-pc-windows-gnu" _build
+	@$(MAKE) TRIPLE="x86_64-pc-windows-gnu" _binary
 
 .PHONY: thanatos.dll
 thanatos.dll: # Build the Windows DLL version of the thanatos agent
-	@$(MAKE) TRIPLE="x86_64-pc-windows-gnu" _build
+	@$(MAKE) TRIPLE="x86_64-pc-windows-gnu" _library
 
+# Hidden build targets for abstracting the other build targets
+.PHONY: _binary
+_binary: $(CONFIG) $(SOURCES)
+	cargo build -p thanatos_bin --target $(TRIPLE) $(CARGOARGS)
 
-.PHONY: _build
-_build: $(CONFIG) $(SOURCES)
-	cargo build --target $(TRIPLE) $(CARGOARGS)
+.PHONY: _library
+_library: $(CONFIG) $(SOURCES)
+	cargo build -p thanatos_lib --target $(TRIPLE) $(CARGOARGS)
