@@ -116,6 +116,10 @@ fn load_config_env() -> Vec<u8> {
     rmp_serde::to_vec(&config_data).expect("Failed to serialize the config")
 }
 
+fn placeholder_config() -> [u8; 1000] {
+    [0x41u8; 1000]
+}
+
 fn main() {
     let out_dir = std::env::var("OUT_DIR").expect("Failed to get the 'OUT_DIR' value");
     println!("cargo:rerun-if-changed=../.config");
@@ -123,7 +127,7 @@ fn main() {
     let config_data = if option_env!("UUID").is_some() {
         load_config_env()
     } else {
-        Vec::new()
+        Vec::from(placeholder_config())
     };
 
     let _ = std::fs::remove_file(format!("{}/config.bin", out_dir));
@@ -134,6 +138,8 @@ fn main() {
         .create(true)
         .open(format!("{}/config.bin", out_dir))
         .expect("Failed to open the config output file");
+
+    let config_data = [&config_data.len().to_le_bytes()[..], &config_data[..]].concat();
 
     config_file
         .write_all(&config_data)

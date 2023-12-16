@@ -7,14 +7,16 @@ pub use structs::InitOption;
 
 mod structs;
 
-#[link_section = ".rsrc"]
-static CONFIG_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/config.bin"));
+const CONFIG_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/config.bin"));
 
 macro_rules! get_field {
     ($field:ident) => {
-        rmp_serde::from_slice::<ConfigVars<'_>>(CONFIG_BYTES)
-            .unwrap()
-            .$field
+        unsafe {
+            let _size = u32::from_le_bytes(CONFIG_BYTES[..4].try_into().unwrap_unchecked());
+            rmp_serde::from_slice::<ConfigVars<'_>>(&CONFIG_BYTES[4.._size as usize])
+                .unwrap()
+                .$field
+        }
     };
 }
 
