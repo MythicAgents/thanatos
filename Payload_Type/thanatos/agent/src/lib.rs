@@ -4,5 +4,6 @@
 )]
 
 pub fn entrypoint() {
-    println!("Hello World!");
+    let c = config::raw();
+    utils::hexdump(c);
 }
