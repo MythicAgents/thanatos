@@ -118,14 +118,22 @@ class Thanatos(PayloadType):
             else:
                 arch = "i686"
 
+            # Start formulating the rust flags
+            rustflags = []
+
+            # Windows needs to link against `libssp` since mingw on Fedora was compiled with
+            # `_FORTIFY_SOURCE=2`. Rust mingw doesn't do this on its own for Fedora 35??? https://github.com/rust-lang/rust/issues/68973
+            if self.selected_os == SupportedOS.Windows:
+                rustflags.append("-Clink-arg=-lssp")
+
             # Add the C2 profile to the compile flags
-            rustflags = f"--cfg {profile} "
+            rustflags.append(f"--cfg {profile}")
 
             # Check for static linking
             abi = "gnu"
             if self.selected_os == SupportedOS.Linux:
                 if self.get_parameter("static"):
-                    rustflags += "-C target-feature=+crt-static"
+                    rustflags.append("-C target-feature=+crt-static")
                     abi = "musl"
 
             # Fail if trying to build a 32 bit statically linked payload.
@@ -171,7 +179,7 @@ class Thanatos(PayloadType):
 
             # Add any rustflags if they exist
             if rustflags:
-                command += f'RUSTFLAGS="{rustflags}" '
+                command += 'RUSTFLAGS="{}" '.format(' '.join(rustflags))
 
             # Loop through each C2/build parameter creating environment variable
             # key/values for each option
