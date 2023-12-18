@@ -5,6 +5,8 @@
     windows_subsystem = "windows"
 )]
 
+const CONFIG_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/config.bin"));
+
 fn main() {
-    thanatos_core::entrypoint();
+    thanatos_core::entrypoint(CONFIG_BYTES);
 }

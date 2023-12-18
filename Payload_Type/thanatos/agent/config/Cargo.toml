@@ -12,20 +12,10 @@ workspace = true
 [features]
 
 [dependencies]
-rmp = "0.8.12"
-rmp-serde = "1.1.2"
+rmp.workspace = true
+rmp-serde.workspace = true
 serde.workspace = true
-serde_repr = "0.1"
+serde_repr.workspace = true
 
 [dependencies.utils]
 path = "../utils"
-
-[build-dependencies]
-base64 = "0.21.5"
-rmp = "0.8.12"
-rmp-serde = "1.1.2"
-serde.workspace = true
-serde_json = "1"
-serde_repr = "0.1"
-utils = { path = "../utils" }
-sha2 = "0.10.8"

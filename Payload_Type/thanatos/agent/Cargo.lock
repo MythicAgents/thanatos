@@ -39,7 +39,19 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 name = "config"
 version = "0.1.0"
 dependencies = [
+ "rmp",
+ "rmp-serde",
+ "serde",
+ "serde_repr",
+ "utils",
+]
+
+[[package]]
+name = "config_builder"
+version = "0.1.0"
+dependencies = [
  "base64",
+ "config",
  "rmp",
  "rmp-serde",
  "serde",
@@ -233,6 +245,7 @@ dependencies = [
 name = "thanatos_bin"
 version = "0.1.0"
 dependencies = [
+ "config_builder",
  "thanatos_core",
 ]
 
@@ -240,7 +253,14 @@ dependencies = [
 name = "thanatos_core"
 version = "2.0.0"
 dependencies = [
+ "base64",
  "config",
+ "rmp",
+ "rmp-serde",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "sha2",
  "utils",
 ]
 
@@ -248,6 +268,7 @@ dependencies = [
 name = "thanatos_lib"
 version = "0.1.0"
 dependencies = [
+ "config_builder",
  "thanatos_core",
 ]
 

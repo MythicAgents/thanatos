@@ -1,26 +1,22 @@
 [package]
-name = "thanatos_core"
-version = "2.0.0"
+name = "config_builder"
+version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
 license.workspace = true
 
+
 [dependencies]
 base64.workspace = true
+config = { path = "../config" }
 rmp.workspace = true
 rmp-serde.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 serde_repr.workspace = true
+utils = { path = "../utils" }
 sha2.workspace = true
-
-[dependencies.config]
-path = "../config"
-
-[dependencies.utils]
-path = "../utils"
-
 
 [lints]
 workspace = true

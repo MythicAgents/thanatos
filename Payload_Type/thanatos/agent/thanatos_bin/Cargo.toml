@@ -13,5 +13,8 @@ path = "src/main.rs"
 [dependencies]
 thanatos_core = { path = "../thanatos_core" }
 
+[build-dependencies]
+config_builder = { path = "../config_builder" }
+
 [lints]
 workspace = true

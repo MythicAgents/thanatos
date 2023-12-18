@@ -3,6 +3,7 @@
 resolver = "2"
 members = [
   "config",
+  "config_builder",
   "ffiwrappers",
   "thanatos_bin",
   "thanatos_core",
@@ -13,7 +14,7 @@ members = [
 default-members = ["thanatos_core"]
 
 exclude = [
-  "shellcode-builder"
+  "shellcode-builder",
 ]
 
 [workspace.package]
@@ -25,6 +26,12 @@ license = "BSD-3-Clause"
 
 ##### WORKSPACE DEPENDENCIES #####
 [workspace.dependencies]
+base64 = "0.21.5"
+rmp = "0.8.12"
+rmp-serde = "1.1.2"
+serde_json = "1"
+serde_repr = "0.1"
+sha2 = "0.10.8"
 
 [workspace.dependencies.serde]
 version = "1"

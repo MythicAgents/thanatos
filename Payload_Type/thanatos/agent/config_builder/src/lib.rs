@@ -1,12 +1,11 @@
-//! Build script for transforming the configuration
+//! Builds the config from the environment variables
 
-use std::io::Write;
 use std::str::FromStr;
 
 use base64::Engine;
 use sha2::Digest;
 
-include!("src/structs.rs");
+include!("../../config/src/structs.rs");
 
 fn hash_string_list(s: &str) -> Vec<[u8; 32]> {
     s.split(",")
@@ -18,7 +17,8 @@ fn hash_string_list(s: &str) -> Vec<[u8; 32]> {
         .collect()
 }
 
-fn load_config_env() -> Vec<u8> {
+/// Loads the configuration from envrionment variables
+pub fn load() -> Vec<u8> {
     let headers = option_env!("HTTP_HEADERS")
         .expect("Failed to find the 'HTTP_HEADERS' environment variable");
 
@@ -114,34 +114,4 @@ fn load_config_env() -> Vec<u8> {
     };
 
     rmp_serde::to_vec(&config_data).expect("Failed to serialize the config")
-}
-
-fn placeholder_config() -> [u8; 1000] {
-    [0x41u8; 1000]
-}
-
-fn main() {
-    let out_dir = std::env::var("OUT_DIR").expect("Failed to get the 'OUT_DIR' value");
-    println!("cargo:rerun-if-changed=../.config");
-
-    let config_data = if option_env!("UUID").is_some() {
-        load_config_env()
-    } else {
-        Vec::from(placeholder_config())
-    };
-
-    let _ = std::fs::remove_file(format!("{}/config.bin", out_dir));
-
-    let mut config_file = std::fs::OpenOptions::new()
-        .read(true)
-        .write(true)
-        .create(true)
-        .open(format!("{}/config.bin", out_dir))
-        .expect("Failed to open the config output file");
-
-    let config_data = [&config_data.len().to_le_bytes()[..], &config_data[..]].concat();
-
-    config_file
-        .write_all(&config_data)
-        .expect("Failed to write the serialized config to the output file");
 }
