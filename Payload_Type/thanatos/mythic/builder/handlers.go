@@ -42,13 +42,13 @@ func (handler MythicPayloadHandler) Build(target string, outform PayloadBuildPar
 		if outform == PayloadBuildParameterOutputFormatExecutable {
 			filename = "thanatos"
 		} else {
-			filename = "libthanatos_core.so"
+			filename = "libthanatos.so"
 		}
 	} else {
 		if outform == PayloadBuildParameterOutputFormatExecutable {
 			filename = "thanatos.exe"
 		} else {
-			filename = "thanatos_core.dll"
+			filename = "thanatos.dll"
 		}
 	}
 

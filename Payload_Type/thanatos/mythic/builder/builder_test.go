@@ -20,6 +20,10 @@ import (
 // build/profile parameters and expected results from the build
 const buildTestDataDir string = "./testdata/buildtests"
 
+var (
+	savedCwd string = ""
+)
+
 // Options for when testing if the build succeeded. This is for checking if the result
 // BuildStdout, BuildStderr and BuildMessage contain correct values
 type expectCompareOptions struct {
@@ -288,7 +292,14 @@ func checkResults(t *testing.T, payloadUUID string, buildResult agentstructs.Pay
 
 // Function which runs all of the tests with a specified handler
 func testPayloadBuildImpl(t *testing.T, handler BuildHandler) {
-	os.Chdir("../..")
+	if savedCwd == "" {
+		savedCwd, _ = os.Getwd()
+	}
+
+	os.Chdir(savedCwd + "/../..")
+
+	cwd, _ := os.Getwd()
+	t.Log(cwd)
 
 	testSpecs, err := os.ReadDir(filepath.Join("mythic", buildTestDataDir))
 	if err != nil {
