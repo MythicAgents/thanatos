@@ -60,6 +60,15 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required:      true,
 		},
 
+		// Option for using a pre-compiled agent or to build from source
+		{
+			Name:          "prebuilt",
+			Description:   "Use the pre-compiled version of the agent",
+			DefaultValue:  true,
+			ParameterType: agentstructs.BUILD_PARAMETER_TYPE_BOOLEAN,
+			Required:      true,
+		},
+
 		// This parameter modifies how the payload should initially execute. The options
 		// are to either spawn a new thread and run the payload in the child thread while
 		// the main thread exists or to fully daemonize the payload and have it run in the
@@ -196,19 +205,7 @@ var payloadDefinition = agentstructs.PayloadType{
 	},
 
 	// Specified build steps for the agent
-	BuildSteps: []agentstructs.BuildStep{
-		// Build step signifying that the builder is downloading the needed Rust target
-		{
-			Name:        "Installing Rust Target",
-			Description: "Installing the reqruied Rust target for the paylod build",
-		},
-
-		// The payload is building
-		{
-			Name:        "Building",
-			Description: "Building the payload",
-		},
-	},
+	BuildSteps: []agentstructs.BuildStep{},
 }
 
 // Stores all of the parsed payload build parameters. This includes both the payload
