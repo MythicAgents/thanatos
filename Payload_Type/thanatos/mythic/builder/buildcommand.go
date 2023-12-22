@@ -26,11 +26,6 @@ func (c *BuildCommandConfig) String() string {
 		}
 	}
 
-	output += "Features:\n"
-	for _, val := range c.Features {
-		output += val + "\n"
-	}
-
 	return output
 }
 
@@ -59,7 +54,7 @@ func CreateCommandConfig(parameters ParsedPayloadParameters, os string, uuid str
 		payloadvars["init_option"] = "daemonize"
 	}
 
-	// Crypto library
+	// TODO: Crypto library
 	switch parameters.PayloadBuildParameters.CryptoLib {
 	case PayloadBuildParameterCryptoLibraryInternal:
 		featureFlags = append(featureFlags, "cryptolib?/internal")
@@ -199,9 +194,6 @@ func FormulateBuildCommand(config BuildCommandConfig, target string) (string, er
 	}
 
 	cargoCommand := fmt.Sprintf("cargo build --target %s --release", target)
-	//if len(featureFlags) > 0 {
-	//	cargoCommand = fmt.Sprintf("%s --features %s", cargoCommand, strings.Join(featureFlags, ","))
-	//}
 
 	buildCommand = append(buildCommand, strings.Split(cargoCommand, " ")...)
 	return strings.Join(buildCommand, " "), nil

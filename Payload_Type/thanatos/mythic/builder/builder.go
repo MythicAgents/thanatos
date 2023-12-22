@@ -306,9 +306,6 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler Buil
 		return payloadBuildResponse
 	}
 
-	payloadBuildResponse.BuildMessage += "Build command:\n"
-	payloadBuildResponse.BuildMessage += buildCommand + "\n"
-
 	// Build the payload
 	payload, err := handler.Build(rustTarget, PayloadBuildParameterOutputFormat(payloadBuildMsg.SelectedOS), buildCommand)
 	if err != nil {
