@@ -60,15 +60,6 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required:      true,
 		},
 
-		// Option for using a pre-compiled agent or to build from source
-		{
-			Name:          "prebuilt",
-			Description:   "Use the pre-compiled version of the agent",
-			DefaultValue:  true,
-			ParameterType: agentstructs.BUILD_PARAMETER_TYPE_BOOLEAN,
-			Required:      true,
-		},
-
 		// This parameter modifies how the payload should initially execute. The options
 		// are to either spawn a new thread and run the payload in the child thread while
 		// the main thread exists or to fully daemonize the payload and have it run in the
