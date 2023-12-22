@@ -28,8 +28,9 @@ RUN apt-get update -y && apt-get install -y \
         curl \
         && apt-get clean
 
-# Install sccache
 WORKDIR /tmp
+
+# Install sccache
 ENV SCCACHE_VERSION v0.7.4
 RUN curl -L \
     "https://github.com/mozilla/sccache/releases/download/${SCCACHE_VERSION}/sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
