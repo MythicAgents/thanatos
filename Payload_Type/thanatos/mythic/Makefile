@@ -1,7 +1,7 @@
 TARGET    := thanatos
 SOURCES   := $(wildcard ./**.go)
 MODULE    ?= ./...
-GOARGS    =
+GOARGS    ?=
 
 .PHONY: help
 help: # Print out this help info
