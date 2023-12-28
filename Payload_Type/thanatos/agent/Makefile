@@ -62,6 +62,10 @@ distclean: # Remove the build configuration
 .PHONY: all
 all: thanatos thanatos.so thanatos.exe thanatos.dll # Builds all of the build targets
 
+.PHONY: core
+core: # Build the core agent
+	cargo build -p thanatos_core --target $(TARGET) $(CARGOARGS)
+
 .PHONY: thanatos
 thanatos: # Build the Linux executable version of the thanatos agent
 	@$(MAKE) _binary
@@ -80,9 +84,9 @@ thanatos.dll: # Build the Windows DLL version of the thanatos agent
 
 # Hidden build targets for abstracting the other build targets
 .PHONY: _binary
-_binary: $(CONFIG) $(SOURCES)
+_binary: $(CONFIG) $(SOURCES) core
 	cargo build -p thanatos_bin --target $(TARGET) $(CARGOARGS)
 
 .PHONY: _library
-_library: $(CONFIG) $(SOURCES)
+_library: $(CONFIG) $(SOURCES) core
 	cargo build -p thanatos_lib --target $(TARGET) $(CARGOARGS)

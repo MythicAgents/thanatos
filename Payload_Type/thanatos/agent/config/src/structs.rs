@@ -9,13 +9,13 @@ use utils::uuid::Uuid;
 #[repr(u8)]
 pub enum InitOption {
     /// Payload should not do anything special when executed
-    None,
+    None = 0,
 
     /// Payload should run in a new thread
-    Thread,
+    Thread = 1,
 
     /// Payload should fork to the background
-    Daemonize,
+    Daemonize = 2,
 }
 
 /// HTTP profile configuration variables

@@ -6,6 +6,9 @@ edition.workspace = true
 homepage.workspace = true
 license.workspace = true
 
+[lib]
+crate-type = ["staticlib"]
+
 [dependencies]
 base64.workspace = true
 rmp.workspace = true

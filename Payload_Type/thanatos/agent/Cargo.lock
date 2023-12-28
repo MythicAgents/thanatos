@@ -246,7 +246,6 @@ name = "thanatos_bin"
 version = "0.1.0"
 dependencies = [
  "config_builder",
- "thanatos_core",
 ]
 
 [[package]]

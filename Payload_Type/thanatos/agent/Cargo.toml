@@ -59,7 +59,10 @@ variant_size_differences = "warn"
 ##### BUILD SETTINGS #####
 [profile.release]
 lto = true
-codegen-units = 256
-panic = 'abort'
+codegen-units = 1
+panic = "abort"
 strip = true
 opt-level = 'z'
+
+[profile.dev]
+panic = "abort"

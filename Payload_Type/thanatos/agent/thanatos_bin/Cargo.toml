@@ -10,11 +10,13 @@ license.workspace = true
 name = "thanatos"
 path = "src/main.rs"
 
-[dependencies]
-thanatos_core = { path = "../thanatos_core" }
+[build-dependencies.config_builder]
+path = "../config_builder"
+optional = true
 
-[build-dependencies]
-config_builder = { path = "../config_builder" }
+[features]
+default = ["config-builder"]
+config-builder = ["dep:config_builder"]
 
 [lints]
 workspace = true
