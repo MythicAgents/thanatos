@@ -1,5 +1,3 @@
-ENTRY(entrypoint)
-
 SECTIONS
 {
     . = 0x0;
