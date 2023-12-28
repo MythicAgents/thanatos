@@ -1,5 +1,5 @@
 [build]
 rustflags = [
   "-C", "link-arg=-nostartfiles",
-  "-C", "link-arg=-Tlink.ld"
+  "-C", "link-arg=-Tlinks/link-release.ld"
 ]
