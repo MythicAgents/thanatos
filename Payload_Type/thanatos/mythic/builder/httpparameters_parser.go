@@ -60,6 +60,22 @@ type ParsedHttpC2ProfileParameters struct {
 	CallbackInterval int64
 }
 
+type HttpConfigVars struct {
+	CallbackHost     string
+	CallbackInterval uint
+	CallbackJitter   uint16
+	CallbackPort     uint16
+	GetUri           string
+	Headers          []map[string]string
+	Killdate         uint
+	PostUri          string
+	QueryPathName    string
+}
+
+func (p *ParsedHttpC2ProfileParameters) String() string {
+	return ""
+}
+
 // Parses the HTTP C2 profile parameters
 func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (*ParsedHttpC2ProfileParameters, error) {
 	const errorFormatStr string = "failed to get the '%s' value from the HTTP C2 profile parameters: %s"

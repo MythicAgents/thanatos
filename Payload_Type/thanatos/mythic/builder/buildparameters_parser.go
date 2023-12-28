@@ -3,6 +3,8 @@ package builder
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 	builderrors "thanatos/builder/errors"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
@@ -45,6 +47,46 @@ type ParsedBuildParameters struct {
 
 	// Output format for the agent
 	Output PayloadBuildParameterOutputFormat
+}
+
+func (p *ParsedBuildParameters) String() string {
+	output := ""
+
+	initOption := "none"
+
+	switch p.InitOptions {
+	case PayloadBuildParameterInitOptionDaemonize:
+		initOption = "daemonize"
+	case PayloadBuildParameterInitOptionSpawnThread:
+		initOption = "thread"
+	}
+
+	output += fmt.Sprintf("INIT_OPTION=%s\n", initOption)
+
+	outputFormat := "WORKING_HOURS_START=%0.0f\n" +
+		"WORKING_HOURS_END=%0.0f\n" +
+		"CONNECTION_RETRIES=%d\n"
+
+	output += fmt.Sprintf(outputFormat, p.WorkingHours.StartTime.Seconds(), p.WorkingHours.EndTime.Seconds(), p.ConnectionRetries)
+
+	if len(p.DomainList) > 0 {
+		output += fmt.Sprintf("DOMAIN_LIST=%s\n", strings.Join(p.DomainList, ","))
+	}
+
+	if len(p.HostnameList) > 0 {
+		output += fmt.Sprintf("HOSTNAME_LIST=%s\n", strings.Join(p.HostnameList, ","))
+	}
+
+	if len(p.UsernameList) > 0 {
+		output += fmt.Sprintf("USERNAME_LIST=%s\n", strings.Join(p.UsernameList, ","))
+	}
+
+	output += fmt.Sprintf("TLS_SELF_SIGNED=%t\n", p.TlsSelfSigned)
+	if len(p.SpawnTo) > 0 {
+		output += fmt.Sprintf("SPAWN_TO=%s\n", p.SpawnTo)
+	}
+
+	return output
 }
 
 // Parses the build parameters from Mythic to a strongly typed structure

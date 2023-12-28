@@ -3,10 +3,13 @@ package builder
 
 import (
 	"errors"
+	"fmt"
 	"path/filepath"
 	builderrors "thanatos/builder/errors"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
+	"github.com/google/uuid"
+	_ "github.com/vmihailenco/msgpack"
 )
 
 // Metadata defining the Mythic payload type
@@ -202,6 +205,9 @@ var payloadDefinition = agentstructs.PayloadType{
 // Stores all of the parsed payload build parameters. This includes both the payload
 // parameters and the C2 profile parameters
 type ParsedPayloadParameters struct {
+	// UUID of the agent
+	Uuid uuid.UUID
+
 	// The payload parameters
 	PayloadBuildParameters ParsedBuildParameters
 
@@ -213,9 +219,49 @@ type ParsedPayloadParameters struct {
 	}
 }
 
+const (
+	ConfigVarInitOptionNone      byte = 0
+	ConfigVarInitOptionThread    byte = 1
+	ConfigVarInitOptionDaemonize byte = 2
+)
+
+type ConfigSerializedFormat struct {
+	Uuid              [16]byte        `msgpack:"uuid"`
+	InitOption        byte            `msgpack:"init_option"`
+	WorkingHoursStart uint64          `msgpack:"working_hours_start"`
+	WorkingHoursEnd   uint64          `msgpack:"working_hours_end"`
+	ConnectionRetries uint            `msgpack:"connection_retries"`
+	Domains           [][32]byte      `msgpack:"domains"`
+	Hostnames         [][32]byte      `msgpack:"hostnames"`
+	Usernames         [][32]byte      `msgpack:"usernames"`
+	TlsSelfSigned     bool            `msgpack:"tlsselfsigned"`
+	SpawnTo           string          `msgpack:"spawn_to"`
+	Profile           *HttpConfigVars `msgpack:"profile,omitempty"`
+}
+
+func (p *ParsedPayloadParameters) String() string {
+	output := fmt.Sprintf("UUID=%s\n", p.Uuid.String())
+	output += p.PayloadBuildParameters.String()
+	if p.C2Profiles.HttpProfile != nil {
+		output += p.C2Profiles.HttpProfile.String()
+	}
+	return output
+}
+
+func (p *ParsedPayloadParameters) Serialize() ([]byte, error) {
+	return []byte{}, nil
+}
+
 // Parses the user supplied build parameters
 func parsePayloadParameters(buildMessage agentstructs.PayloadBuildMessage) (ParsedPayloadParameters, error) {
-	payloadParameters := ParsedPayloadParameters{}
+	payloadUuid, err := uuid.Parse(buildMessage.PayloadUUID)
+	if err != nil {
+		return ParsedPayloadParameters{}, builderrors.Errorf("failed to parse the payload UUID: %v", err)
+	}
+
+	payloadParameters := ParsedPayloadParameters{
+		Uuid: payloadUuid,
+	}
 
 	buildParameters, err := parsePayloadBuildParameters(buildMessage)
 	if err != nil {
@@ -274,14 +320,14 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler Buil
 	}
 
 	// Parse all of the payload parameters
-	parameters, err := parsePayloadParameters(payloadBuildMsg)
+	payloadConfig, err := parsePayloadParameters(payloadBuildMsg)
 	if err != nil {
 		payloadBuildResponse.BuildStdErr = errors.Join(builderrors.New("failed to parse the payload parameters"), err).Error()
 		return payloadBuildResponse
 	}
 
 	// Get the Rust target for the payload build
-	rustTarget := getRustTriple(payloadBuildMsg.SelectedOS, parameters.PayloadBuildParameters.Architecture)
+	rustTarget := getRustTriple(payloadBuildMsg.SelectedOS, payloadConfig.PayloadBuildParameters.Architecture)
 
 	// Install the Rust target in order to build the payload
 	if err := handler.InstallBuildTarget(rustTarget); err != nil {
@@ -289,22 +335,14 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler Buil
 		return payloadBuildResponse
 	}
 
-	// Create the config for the build command
-	commandConfig, err := CreateCommandConfig(parameters, payloadBuildMsg.SelectedOS, payloadBuildMsg.PayloadUUID)
-	if err != nil {
-		payloadBuildResponse.BuildStdErr = errors.Join(builderrors.New("failed to create the config for the build command"), err).Error()
-		return payloadBuildResponse
-	}
-
+	// Print out the payload config
 	payloadBuildResponse.BuildMessage = "Payload configuration:\n"
-	payloadBuildResponse.BuildMessage += commandConfig.String() + "\n"
+	payloadBuildResponse.BuildMessage += payloadConfig.String() + "\n"
 
-	// Create the command which is used to build the payload
-	buildCommand, err := FormulateBuildCommand(commandConfig, rustTarget)
-	if err != nil {
-		payloadBuildResponse.BuildStdErr = errors.Join(builderrors.New("failed to create the build command for the payload"), err).Error()
-		return payloadBuildResponse
-	}
+	// Serialize the payload config
+	_, err = payloadConfig.Serialize()
+
+	buildCommand := FormulateBuildCommand("/tmp/foo", rustTarget)
 
 	// Build the payload
 	payload, err := handler.Build(rustTarget, PayloadBuildParameterOutputFormat(payloadBuildMsg.SelectedOS), buildCommand)
