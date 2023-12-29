@@ -124,15 +124,15 @@ impl ToString for Uuid {
     }
 }
 
-impl AsRef<[u8]> for Uuid {
-    fn as_ref(&self) -> &[u8] {
+impl AsRef<[u8; 16]> for Uuid {
+    fn as_ref(&self) -> &[u8; 16] {
         &self.0
     }
 }
 
 impl Uuid {
-    /// Gets the raw bytes of the Uuid
-    pub fn as_bytes(&self) -> [u8; 16] {
+    /// Consumes the Uuid and returns the underlying data
+    pub fn into_bytes(self) -> [u8; 16] {
         self.0
     }
 }
@@ -151,7 +151,7 @@ mod test {
         ];
 
         let parsed_uuid = Uuid::from_str(uuid).unwrap();
-        assert_eq!(parsed_uuid.as_bytes(), expected_uuid);
+        assert_eq!(parsed_uuid.into_bytes(), expected_uuid);
     }
 
     #[test]
