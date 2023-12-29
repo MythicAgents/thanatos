@@ -2,7 +2,9 @@
 package builder
 
 import (
+	"encoding/base64"
 	"errors"
+	"math"
 	"strconv"
 	builderrors "thanatos/builder/errors"
 	"time"
@@ -10,77 +12,116 @@ import (
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 )
 
+/*
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ProxyInfo<'a> {
+    host: &'a str,
+    port: u16,
+    user: &'a str,
+    pass: &'a str,
+}
+*/
+
 // Data type with the HTTP proxy parameters
 type HttpC2ProfileProxyParameters struct {
-	Host string
-	Port int
-	User string
-	Pass string
+	Host string `msgpack:"host"`
+	Port uint16 `msgpack:"port"`
+	User string `msgpack:"user"`
+	Pass string `msgpack:"pass"`
 }
 
-// Contains the parsed HTTP C2 profile parameters
-type ParsedHttpC2ProfileParameters struct {
-	// Callback port for the payload to connect to
-	CallbackPort int64
+/*
+{
+  "crypto_type": {
+    // TODO: Change type to an integer value rather than a string (serde_repr)
+    "type": "aes256_hmac",
+    "key": [1, 2, 3, 4, 5, ...]
+  }
+}
 
-	// Killdate of the payload
-	Killdate time.Time
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "type")]
+pub enum CryptoInfo {
+    #[serde(rename = "aes256_hmac")]
+    Aes256Hmac {
+        key: [u8; 16],
+    }
+}
+*/
 
-	// Whether the payload should do a key exchange
-	EncryptedExchangeCheck bool
+// HTTP C2 profile crypto information
+type HttpC2ProfileCryptoInfo struct {
+	Type string   `msgpack:"type"`
+	Key  [16]byte `msgpack:"key"`
+}
 
-	// Callback jitter for the payload
-	CallbackJitter int64
+/*
+/// HTTP profile configuration variables
+#[derive(Serialize, Deserialize, Debug)]
+pub struct HttpConfigVars<'a> {
+    callback_host: &'a str,
+    callback_interval: u32,
+    callback_jitter: u16,
+    callback_port: u16,
+    killdate: u64,
+    encrypted_exchange_check: bool,
+    crypto_info: Option<CryptoInfo>,
+    headers: HashMap<&'a str, &'a str>,
+    get_uri: &'a str,
+    post_uri: &'a str,
+    query_path_name: &'a str,
+    proxy_info: Option<ProxyInfo>,
+}
+*/
 
-	// HTTP headers for making HTTP requests
-	Headers map[string]string
-
-	// Information for encryption
-	CryptoInfo *struct {
-		Type string
-		Key  string
-	}
-
+// Contains the HTTP C2 profile parameters
+type HttpC2ProfileParameters struct {
 	// Host for making HTTP connections to
-	CallbackHost string
-
-	// The GET uri for any GET requests
-	GetUri string
-
-	// The POST uri for any POST requests
-	PostUri string
-
-	// The query path for GET requests
-	QueryPathName string
-
-	// HTTP proxy information
-	ProxyInfo *HttpC2ProfileProxyParameters
+	CallbackHost string `msgpack:"callback_host"`
 
 	// Interval for HTTP connections
-	CallbackInterval int64
+	CallbackInterval uint32 `msgpack:"callback_interval"`
+
+	// Callback jitter for the payload
+	CallbackJitter uint16 `msgpack:"callback_jitter"`
+
+	// Callback port for the payload to connect to
+	CallbackPort uint16 `msgpack:"callback_port"`
+
+	// Killdate of the payload
+	Killdate uint64 `msgpack:"killdate"`
+
+	// Whether the payload should do a key exchange
+	EncryptedExchangeCheck bool `msgpack:"encrypted_exchange_check"`
+
+	// Information for encryption
+	CryptoInfo *HttpC2ProfileCryptoInfo `msgpack:"crypto_info,omitempty"`
+
+	// HTTP headers for making HTTP requests
+	Headers map[string]string `msgpack:"headers"`
+
+	// The GET uri for any GET requests
+	GetUri string `msgpack:"get_uri"`
+
+	// The POST uri for any POST requests
+	PostUri string `msgpack:"post_uri"`
+
+	// The query path for GET requests
+	QueryPathName string `msgpack:"query_path_name"`
+
+	// HTTP proxy information
+	ProxyInfo *HttpC2ProfileProxyParameters `msgpack:"proxy_info,omitempty"`
 }
 
-type HttpConfigVars struct {
-	CallbackHost     string
-	CallbackInterval uint
-	CallbackJitter   uint16
-	CallbackPort     uint16
-	GetUri           string
-	Headers          []map[string]string
-	Killdate         uint
-	PostUri          string
-	QueryPathName    string
-}
-
-func (p *ParsedHttpC2ProfileParameters) String() string {
+func (p *HttpC2ProfileParameters) String() string {
 	return ""
 }
 
 // Parses the HTTP C2 profile parameters
-func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (*ParsedHttpC2ProfileParameters, error) {
+func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (*HttpC2ProfileParameters, error) {
 	const errorFormatStr string = "failed to get the '%s' value from the HTTP C2 profile parameters: %s"
 
-	parsedParameters := ParsedHttpC2ProfileParameters{}
+	parsedParameters := HttpC2ProfileParameters{}
 
 	callbackPort, err := parameters.GetNumberArg("callback_port")
 	if err != nil {
@@ -91,7 +132,7 @@ func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (
 		return &parsedParameters, builderrors.New("configured callback port for the HTTP profile is not between 1 and 65535")
 	}
 
-	parsedParameters.CallbackPort = int64(callbackPort)
+	parsedParameters.CallbackPort = uint16(callbackPort)
 
 	killdate, err := parameters.GetDateArg("killdate")
 	if err != nil {
@@ -103,7 +144,13 @@ func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (
 		return &parsedParameters, builderrors.Errorf("failed to parse the HTTP profile killdate: %s", err.Error())
 	}
 
-	parsedParameters.Killdate = killdateTime
+	// Check if killdate timestamp integer conversion has overflowed. This shouldn't
+	// happen until about another 292 billion years from now so I'll fix it then
+	if killdateTime.Unix() > math.MaxInt64 {
+		return &parsedParameters, builderrors.Errorf("are you from the future?")
+	}
+
+	parsedParameters.Killdate = uint64(killdateTime.Unix())
 
 	encryptedExchangeCheck, err := parameters.GetBooleanArg("encrypted_exchange_check")
 	if err != nil {
@@ -121,7 +168,7 @@ func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (
 		return &parsedParameters, errors.New("callback jitter for the HTTP C2 profile is not between 0-99")
 	}
 
-	parsedParameters.CallbackJitter = int64(callbackJitter)
+	parsedParameters.CallbackJitter = uint16(callbackJitter)
 
 	headers, err := parameters.GetDictionaryArg("headers")
 	if err != nil {
@@ -136,8 +183,13 @@ func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (
 	}
 
 	if aespsk.Value != "none" {
+		aeskey, err := base64.StdEncoding.DecodeString(aespsk.EncKey)
+		if err != nil {
+			return &parsedParameters, builderrors.Errorf("failed to base64 decode HTTP encryption key: %s", err.Error())
+		}
+
 		parsedParameters.CryptoInfo.Type = aespsk.Value
-		parsedParameters.CryptoInfo.Key = aespsk.EncKey
+		parsedParameters.CryptoInfo.Key = [16]byte(aeskey)
 	} else {
 		parsedParameters.CryptoInfo = nil
 	}
@@ -212,7 +264,7 @@ func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (
 			return &parsedParameters, builderrors.New("proxy port value for the HTTP C2 profile is outside the possible port range of 1-65535")
 		}
 
-		parsedParameters.ProxyInfo.Port = int(proxyPort)
+		parsedParameters.ProxyInfo.Port = uint16(proxyPort)
 		parsedParameters.ProxyInfo.User = proxyUser
 		parsedParameters.ProxyInfo.Pass = proxyPass
 	} else {
@@ -228,6 +280,6 @@ func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (
 		return &parsedParameters, builderrors.New("callback interval for the HTTP C2 profile is less than 0")
 	}
 
-	parsedParameters.CallbackInterval = int64(callbackInterval)
+	parsedParameters.CallbackInterval = uint32(callbackInterval)
 	return &parsedParameters, nil
 }

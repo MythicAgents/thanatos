@@ -2,12 +2,14 @@
 package builder
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"strings"
 	builderrors "thanatos/builder/errors"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
+	"github.com/vmihailenco/msgpack"
 )
 
 // Strongly type struct containing all of the build parameters from Mythic
@@ -47,6 +49,134 @@ type ParsedBuildParameters struct {
 
 	// Output format for the agent
 	Output PayloadBuildParameterOutputFormat
+}
+
+/*
+/// Configuration option for the initial payload execution
+#[derive(Serialize_repr, Deserialize_repr, Copy, Clone, Debug)]
+#[repr(u8)]
+pub enum InitOption {
+    /// Payload should not do anything special when executed
+    None = 0,
+
+    /// Payload should run in a new thread
+    Thread = 1,
+
+    /// Payload should fork to the background
+    Daemonize = 2,
+}
+*/
+
+type SerializedConfigInitOption byte
+
+const (
+	SerializedConfigInitOptionNone      SerializedConfigInitOption = 0
+	SerializedConfigInitOptionThread    SerializedConfigInitOption = 1
+	SerializedConfigInitOptionDaemonize SerializedConfigInitOption = 2
+)
+
+/*
+/// Holds a Uuid
+#[repr(transparent)]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Uuid([u8; 16]);
+
+
+/// Payload configuration variables
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ConfigVars<'a> {
+    uuid: Uuid,
+    init_option: InitOption,
+    working_hours_start: u64,
+    working_hours_end: u64,
+    connection_retries: u32,
+    domains: Vec<[u8; 32]>,
+    hostnames: Vec<[u8; 32]>,
+    usernames: Vec<[u8; 32]>,
+    tlsselfsigned: bool,
+    spawn_to: &'a str,
+    profile: Option<HttpConfigVars<'a>>,
+}
+*/
+
+// Format for the serialized payload config
+type SerializedBuildParameterFormat struct {
+	Uuid              [16]byte                   `msgpack:"uuid"`
+	InitOption        SerializedConfigInitOption `msgpack:"init_option"`
+	WorkingHoursStart uint64                     `msgpack:"working_hours_start"`
+	WorkingHoursEnd   uint64                     `msgpack:"working_hours_end"`
+	ConnectionRetries uint32                     `msgpack:"connection_retries"`
+	Domains           [][32]byte                 `msgpack:"domains"`
+	Hostnames         [][32]byte                 `msgpack:"hostnames"`
+	Usernames         [][32]byte                 `msgpack:"usernames"`
+	TlsSelfSigned     bool                       `msgpack:"tlsselfsigned"`
+	SpawnTo           string                     `msgpack:"spawn_to"`
+	Profile           *HttpC2ProfileParameters   `msgpack:"profile,omitempty"`
+}
+
+func (p *ParsedPayloadParameters) String() string {
+	output := fmt.Sprintf("UUID=%s\n", p.Uuid.String())
+	output += p.PayloadBuildParameters.String()
+	if p.C2Profiles.HttpProfile != nil {
+		output += p.C2Profiles.HttpProfile.String()
+	}
+	return output
+}
+
+func (p *ParsedPayloadParameters) Serialize() ([]byte, error) {
+	uuidBytes, err := p.Uuid.MarshalBinary()
+	if err != nil {
+		return []byte{}, builderrors.Errorf("failed to marshal payload UUID: %s", err.Error())
+	}
+
+	initOption := SerializedConfigInitOptionNone
+
+	switch p.PayloadBuildParameters.InitOptions {
+	case PayloadBuildParameterInitOptionNone:
+		initOption = SerializedConfigInitOptionNone
+	case PayloadBuildParameterInitOptionSpawnThread:
+		initOption = SerializedConfigInitOptionThread
+	case PayloadBuildParameterInitOptionDaemonize:
+		initOption = SerializedConfigInitOptionDaemonize
+	}
+
+	domains := [][32]byte{}
+	for _, domain := range p.PayloadBuildParameters.DomainList {
+		domain = strings.ToLower(domain)
+		domains = append(domains, sha256.Sum256([]byte(domain)))
+	}
+
+	hostnames := [][32]byte{}
+	for _, hostname := range p.PayloadBuildParameters.HostnameList {
+		hostname = strings.ToLower(hostname)
+		hostnames = append(hostnames, sha256.Sum256([]byte(hostname)))
+	}
+
+	usernames := [][32]byte{}
+	for _, username := range p.PayloadBuildParameters.UsernameList {
+		username = strings.ToLower(username)
+		usernames = append(usernames, sha256.Sum256([]byte(username)))
+	}
+
+	serializedFormat := SerializedBuildParameterFormat{
+		Uuid:              [16]byte(uuidBytes),
+		InitOption:        initOption,
+		WorkingHoursStart: uint64(p.PayloadBuildParameters.WorkingHours.StartTime.Seconds()),
+		WorkingHoursEnd:   uint64(p.PayloadBuildParameters.WorkingHours.EndTime.Seconds()),
+		ConnectionRetries: uint32(p.PayloadBuildParameters.ConnectionRetries),
+		Domains:           domains,
+		Hostnames:         hostnames,
+		Usernames:         usernames,
+		TlsSelfSigned:     p.PayloadBuildParameters.TlsSelfSigned,
+		SpawnTo:           p.PayloadBuildParameters.SpawnTo,
+	}
+
+	serializedConfig, err := msgpack.Marshal(&serializedFormat)
+	if err != nil {
+		return []byte{}, builderrors.Errorf("failed to serialize payload config: %s", err.Error())
+	}
+
+	return serializedConfig, nil
 }
 
 func (p *ParsedBuildParameters) String() string {

@@ -3,7 +3,6 @@ package builder
 
 import (
 	"errors"
-	"fmt"
 	"path/filepath"
 	builderrors "thanatos/builder/errors"
 
@@ -215,41 +214,8 @@ type ParsedPayloadParameters struct {
 	C2Profiles struct {
 
 		// The parameters for the HTTP C2 profile
-		HttpProfile *ParsedHttpC2ProfileParameters
+		HttpProfile *HttpC2ProfileParameters
 	}
-}
-
-const (
-	ConfigVarInitOptionNone      byte = 0
-	ConfigVarInitOptionThread    byte = 1
-	ConfigVarInitOptionDaemonize byte = 2
-)
-
-type ConfigSerializedFormat struct {
-	Uuid              [16]byte        `msgpack:"uuid"`
-	InitOption        byte            `msgpack:"init_option"`
-	WorkingHoursStart uint64          `msgpack:"working_hours_start"`
-	WorkingHoursEnd   uint64          `msgpack:"working_hours_end"`
-	ConnectionRetries uint            `msgpack:"connection_retries"`
-	Domains           [][32]byte      `msgpack:"domains"`
-	Hostnames         [][32]byte      `msgpack:"hostnames"`
-	Usernames         [][32]byte      `msgpack:"usernames"`
-	TlsSelfSigned     bool            `msgpack:"tlsselfsigned"`
-	SpawnTo           string          `msgpack:"spawn_to"`
-	Profile           *HttpConfigVars `msgpack:"profile,omitempty"`
-}
-
-func (p *ParsedPayloadParameters) String() string {
-	output := fmt.Sprintf("UUID=%s\n", p.Uuid.String())
-	output += p.PayloadBuildParameters.String()
-	if p.C2Profiles.HttpProfile != nil {
-		output += p.C2Profiles.HttpProfile.String()
-	}
-	return output
-}
-
-func (p *ParsedPayloadParameters) Serialize() ([]byte, error) {
-	return []byte{}, nil
 }
 
 // Parses the user supplied build parameters
