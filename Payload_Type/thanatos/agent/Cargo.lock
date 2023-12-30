@@ -42,6 +42,7 @@ dependencies = [
  "rmp",
  "rmp-serde",
  "serde",
+ "serde_bytes",
  "serde_repr",
  "utils",
 ]
@@ -187,6 +188,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_bytes"
+version = "0.11.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8bb1879ea93538b78549031e2d54da3e901fd7e75f2e4dc758d760937b123d10"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "serde_derive"
 version = "1.0.193"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -246,6 +256,7 @@ name = "thanatos_bin"
 version = "0.1.0"
 dependencies = [
  "config_builder",
+ "thanatos_core",
 ]
 
 [[package]]
@@ -288,6 +299,7 @@ name = "utils"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "serde_bytes",
 ]
 
 [[package]]
