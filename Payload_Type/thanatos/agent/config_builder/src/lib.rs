@@ -63,6 +63,8 @@ pub fn load() -> Vec<u8> {
 
         query_path_name: option_env!("HTTP_QUERY_PATH_NAME")
             .expect("Failed to find the 'HTTP_QUERY_PATH_NAME' environment variable"),
+
+        ..Default::default()
     };
 
     let config_data = ConfigVars {
@@ -110,7 +112,7 @@ pub fn load() -> Vec<u8> {
             .map(hash_string_list)
             .unwrap_or_default(),
 
-        profile,
+        profile: Some(profile),
     };
 
     rmp_serde::to_vec(&config_data).expect("Failed to serialize the config")
