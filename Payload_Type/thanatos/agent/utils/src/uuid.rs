@@ -1,14 +1,16 @@
 //! Module for handling uuids in string and binary form
-use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+
+use serde::{Deserialize, Serialize};
+use serde_bytes::ByteArray;
 
 /// Holds a Uuid
 #[repr(transparent)]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Uuid([u8; 16]);
+pub struct Uuid(#[serde(with = "serde_bytes")] ByteArray<16>);
 
 /// Error types when parsing Uuids
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub enum UuidError {
     /// The length of the uuid does not equal 16
     InvalidLength,
@@ -19,7 +21,7 @@ pub enum UuidError {
 
 impl From<[u8; 16]> for Uuid {
     fn from(value: [u8; 16]) -> Self {
-        Self(value)
+        Self(ByteArray::new(value))
     }
 }
 
@@ -58,7 +60,7 @@ impl FromStr for Uuid {
             uidx += 1;
         }
 
-        Ok(Self(u))
+        Ok(Self(ByteArray::new(u)))
     }
 }
 
@@ -133,7 +135,7 @@ impl AsRef<[u8; 16]> for Uuid {
 impl Uuid {
     /// Consumes the Uuid and returns the underlying data
     pub fn into_bytes(self) -> [u8; 16] {
-        self.0
+        self.0.into_array()
     }
 }
 
@@ -145,9 +147,10 @@ mod test {
 
     #[test]
     fn test_from_str() {
-        let uuid = "8958f61a-4ff8-4910-9a90-28b52414d14c";
+        let uuid = "641d7cc0-706e-4eb2-a051-60193255f914";
         let expected_uuid: [u8; 16] = [
-            137, 88, 246, 26, 79, 248, 73, 16, 154, 144, 40, 181, 36, 20, 209, 76,
+            0x64, 0x1d, 0x7c, 0xc0, 0x70, 0x6e, 0x4e, 0xb2, 0xa0, 0x51, 0x60, 0x19, 0x32, 0x55,
+            0xf9, 0x14,
         ];
 
         let parsed_uuid = Uuid::from_str(uuid).unwrap();
