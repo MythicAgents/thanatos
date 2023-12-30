@@ -2,6 +2,7 @@
 package builder
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -9,7 +10,7 @@ import (
 	builderrors "thanatos/builder/errors"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
-	"github.com/vmihailenco/msgpack"
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 // Strongly type struct containing all of the build parameters from Mythic
@@ -114,17 +115,9 @@ type SerializedBuildParameterFormat struct {
 	Profile           *HttpC2ProfileParameters   `msgpack:"profile,omitempty"`
 }
 
-func (p *ParsedPayloadParameters) String() string {
-	output := fmt.Sprintf("UUID=%s\n", p.Uuid.String())
-	output += p.PayloadBuildParameters.String()
-	if p.C2Profiles.HttpProfile != nil {
-		output += p.C2Profiles.HttpProfile.String()
-	}
-	return output
-}
-
 func (p *ParsedPayloadParameters) Serialize() ([]byte, error) {
 	uuidBytes, err := p.Uuid.MarshalBinary()
+	fmt.Printf("%x\n", uuidBytes)
 	if err != nil {
 		return []byte{}, builderrors.Errorf("failed to marshal payload UUID: %s", err.Error())
 	}
@@ -171,12 +164,22 @@ func (p *ParsedPayloadParameters) Serialize() ([]byte, error) {
 		SpawnTo:           p.PayloadBuildParameters.SpawnTo,
 	}
 
-	serializedConfig, err := msgpack.Marshal(&serializedFormat)
-	if err != nil {
+	if p.C2Profiles.HttpProfile != nil {
+		serializedFormat.Profile = p.C2Profiles.HttpProfile
+	}
+
+	var buffer bytes.Buffer
+	encoder := msgpack.NewEncoder(&buffer)
+	encoder.UseArrayEncodedStructs(true)
+	encoder.UseCompactFloats(true)
+	encoder.UseCompactInts(true)
+	encoder.UseInternedStrings(true)
+
+	if err := encoder.Encode(&serializedFormat); err != nil {
 		return []byte{}, builderrors.Errorf("failed to serialize payload config: %s", err.Error())
 	}
 
-	return serializedConfig, nil
+	return buffer.Bytes(), nil
 }
 
 func (p *ParsedBuildParameters) String() string {

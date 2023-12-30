@@ -2,13 +2,14 @@
 package builder
 
 import (
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"path/filepath"
 	builderrors "thanatos/builder/errors"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 	"github.com/google/uuid"
-	_ "github.com/vmihailenco/msgpack"
 )
 
 // Metadata defining the Mythic payload type
@@ -218,6 +219,15 @@ type ParsedPayloadParameters struct {
 	}
 }
 
+func (p *ParsedPayloadParameters) String() string {
+	output := fmt.Sprintf("UUID=%s\n", p.Uuid.String())
+	output += p.PayloadBuildParameters.String()
+	if p.C2Profiles.HttpProfile != nil {
+		output += p.C2Profiles.HttpProfile.String()
+	}
+	return output
+}
+
 // Parses the user supplied build parameters
 func parsePayloadParameters(buildMessage agentstructs.PayloadBuildMessage) (ParsedPayloadParameters, error) {
 	payloadUuid, err := uuid.Parse(buildMessage.PayloadUUID)
@@ -302,11 +312,14 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler Buil
 	}
 
 	// Print out the payload config
-	payloadBuildResponse.BuildMessage = "Payload configuration:\n"
+	payloadBuildResponse.BuildMessage = "Payload Configuration:\n"
 	payloadBuildResponse.BuildMessage += payloadConfig.String() + "\n"
 
 	// Serialize the payload config
-	_, err = payloadConfig.Serialize()
+	serializedConfig, err := payloadConfig.Serialize()
+
+	payloadBuildResponse.BuildMessage += "Serialized Payload Configuration:\n"
+	payloadBuildResponse.BuildMessage += hex.Dump(serializedConfig)
 
 	buildCommand := FormulateBuildCommand("/tmp/foo", rustTarget)
 

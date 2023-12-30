@@ -3,7 +3,9 @@ package builder
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"strconv"
 	builderrors "thanatos/builder/errors"
@@ -114,7 +116,51 @@ type HttpC2ProfileParameters struct {
 }
 
 func (p *HttpC2ProfileParameters) String() string {
-	return ""
+	output := ""
+
+	outputFormat := "HTTP_CALLBACK_HOST=%s\n" +
+		"HTTP_CALLBACK_INTERVAL=%d\n" +
+		"HTTP_CALLBACK_JITTER=%d\n" +
+		"HTTP_CALLBACK_PORT=%d\n" +
+		"HTTP_KILLDATE=%d\n" +
+		"HTTP_ENCRYPTED_EXCHANGE_CHECK=%t\n" +
+		"HTTP_HEADERS=%s\n" +
+		"HTTP_GET_URI=%s\n" +
+		"HTTP_POST_URI=%s\n" +
+		"HTTP_QUERY_PATH_NAME=%s\n"
+
+	headers, _ := json.Marshal(&p.Headers)
+	headers_encoded := base64.StdEncoding.EncodeToString(headers)
+
+	output += fmt.Sprintf(outputFormat,
+		p.CallbackHost,
+		p.CallbackInterval,
+		p.CallbackJitter,
+		p.CallbackPort,
+		p.Killdate,
+		p.EncryptedExchangeCheck,
+		headers_encoded,
+		p.GetUri,
+		p.PostUri,
+		p.QueryPathName,
+	)
+
+	if p.CryptoInfo != nil {
+		output += fmt.Sprintf("HTTP_CRYPTO_TYPE=%s\n", p.CryptoInfo.Type)
+		key := base64.StdEncoding.EncodeToString(p.CryptoInfo.Key[:])
+		output += fmt.Sprintf("HTTP_CRYPTO_KEY=%s\n", key)
+	}
+
+	if p.ProxyInfo != nil {
+		outputFormat = "HTTP_PROXY_HOST=%s\n" +
+			"HTTP_PROXY_PORT=%d\n" +
+			"HTTP_PROXY_USER=%s\n" +
+			"HTTP_PROXY_PASS=%s\n"
+
+		output += fmt.Sprintf(outputFormat, p.ProxyInfo.Host, p.ProxyInfo.Port, p.ProxyInfo.User, p.ProxyInfo.Pass)
+	}
+
+	return output
 }
 
 // Parses the HTTP C2 profile parameters
