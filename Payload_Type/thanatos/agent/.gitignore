@@ -2,3 +2,4 @@ target
 build.ps1
 tags
 .config
+.config.bin
