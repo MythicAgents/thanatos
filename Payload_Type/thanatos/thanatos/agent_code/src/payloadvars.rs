@@ -36,19 +36,25 @@ struct Aespsk {
 /// Helper function to get the payload UUID
 pub fn payload_uuid() -> String {
     // Grab the UUID from the environment variable `UUID`
-    String::from(env!("UUID"))
+    String::from(option_env!("UUID").unwrap())
 }
 
 /// Helper function to get the configured callback interval
 pub fn callback_interval() -> u64 {
     // Grab the callback interval from the environment variable `callback_interval`
-    env!("callback_interval").parse::<u64>().unwrap_or(0)
+    option_env!("callback_interval")
+        .unwrap()
+        .parse::<u64>()
+        .unwrap_or(0)
 }
 
 /// Helper function to get the configured callback jitter
 pub fn callback_jitter() -> u64 {
     // Grab the callback jitter from the environment variable `callback_jitter`
-    env!("callback_jitter").parse::<u64>().unwrap_or(0)
+    option_env!("callback_jitter")
+        .unwrap()
+        .parse::<u64>()
+        .unwrap_or(0)
 }
 
 /// Helper function to check if the agent should perform a key exchanged
@@ -56,7 +62,7 @@ pub fn encrypted_exchange_check() -> String {
     // Grab the encrypted key exchange option from the environment variable
     // `encrypted_exchange_check`
     // This variable is either set to "T" or "F"
-    String::from(env!("encrypted_exchange_check"))
+    String::from(option_env!("encrypted_exchange_check").unwrap())
 }
 
 /// Helper function to get the kill date for the agent
@@ -75,17 +81,28 @@ pub fn killdate() -> String {
 /// Helper function to get the number of checkin retries
 pub fn retries() -> u32 {
     // Grab the checkin retries from the environment variable `connection_retries`
-    env!("connection_retries").parse::<u32>().unwrap_or(1)
+    option_env!("connection_retries")
+        .unwrap()
+        .parse::<u32>()
+        .unwrap_or(1)
 }
 
 /// Helper function to get the working hours start time
 pub fn working_start() -> NaiveTime {
-    let starttime = env!("working_hours").split('-').next().unwrap();
+    let starttime = option_env!("working_hours")
+        .unwrap()
+        .split('-')
+        .next()
+        .unwrap();
     NaiveTime::parse_from_str(starttime, "%H:%M").unwrap()
 }
 
 /// Helper function to get the working hours end time
 pub fn working_end() -> NaiveTime {
-    let endtime = env!("working_hours").split('-').last().unwrap();
+    let endtime = option_env!("working_hours")
+        .unwrap()
+        .split('-')
+        .last()
+        .unwrap();
     NaiveTime::parse_from_str(endtime, "%H:%M").unwrap()
 }
