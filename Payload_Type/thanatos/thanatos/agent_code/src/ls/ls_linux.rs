@@ -82,13 +82,12 @@ impl FilePermissions {
         let creation_date = file_path
             .metadata()
             .ok()
-            .map(|meta| {
+            .and_then(|meta| {
                 meta.created().ok().and_then(|created| {
                     (created >= std::time::UNIX_EPOCH)
                         .then(|| DateTime::<Local>::from(created).timestamp())
                 })
-            })
-            .flatten();
+            });
 
         // Create a new FilePermissions object
         Self {

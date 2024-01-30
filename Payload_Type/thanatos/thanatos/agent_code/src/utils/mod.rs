@@ -44,7 +44,7 @@ pub fn unverbatim(path: PathBuf) -> PathBuf {
 pub fn parse_linux_mode(mode: u32) -> String {
     let mut str_mode = String::new();
 
-    let perms = vec![(mode & 0o700) >> 6, (mode & 0o70) >> 3, mode & 7];
+    let perms = [(mode & 0o700) >> 6, (mode & 0o70) >> 3, mode & 7];
 
     // Check if it is a directory
     if mode & 0o40000 != 0 {

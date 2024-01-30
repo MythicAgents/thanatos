@@ -44,7 +44,7 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
     output.push_str(
         format!(
             "Group: {}({})\n\n",
-            linux::get_group_from_gid(gid).unwrap_or_else(|| "".to_string()),
+            linux::get_group_from_gid(gid).unwrap_or_default(),
             gid
         )
         .as_str(),
@@ -80,7 +80,7 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
                 output.push_str(
                     format!(
                         "{}({})\n",
-                        linux::get_group_from_gid(group).unwrap_or_else(|| "".to_string()),
+                        linux::get_group_from_gid(group).unwrap_or_default(),
                         group
                     )
                     .as_str(),

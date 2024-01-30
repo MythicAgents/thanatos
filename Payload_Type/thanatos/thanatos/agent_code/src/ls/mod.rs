@@ -115,7 +115,7 @@ impl FileBrowser {
         let path = Path::new(&args.path);
 
         // Find the absolute path of the requested file listing
-        let path = Path::new(&cwd.join(&path)).canonicalize()?;
+        let path = Path::new(&cwd.join(path)).canonicalize()?;
 
         // Get the last item in the path
         let mut name = String::from(

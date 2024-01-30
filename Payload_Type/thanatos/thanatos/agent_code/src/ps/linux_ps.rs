@@ -1,5 +1,5 @@
 //! This module is only imported when targeting Linux hosts
-use chrono::{DateTime, Local, NaiveDateTime, Utc};
+use chrono::{DateTime};
 use std::error::Error;
 use std::fs;
 use std::io::prelude::*;
@@ -57,7 +57,7 @@ pub fn get_architecture(pid: u32) -> Option<String> {
     let path = fs::read_link(path).ok()?;
 
     // Open the executable registered with the pid
-    let mut f = std::fs::File::open(&path).ok()?;
+    let mut f = std::fs::File::open(path).ok()?;
 
     // Grab the executable header
     let mut exe_header: [u8; 5] = [0; 5];
@@ -81,7 +81,7 @@ pub fn get_proc_name(pid: u32) -> Option<String> {
     let path = format!("/proc/{}/comm", pid);
     let path = Path::new(&path);
 
-    let name = fs::read_to_string(&path).ok()?;
+    let name = fs::read_to_string(path).ok()?;
     Some(name.trim_end_matches('\n').to_string())
 }
 

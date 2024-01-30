@@ -117,7 +117,7 @@ impl Profile {
         let body = profile.c2send(&req_payload).unwrap();
 
         // Decode the response
-        let decoded = base64::decode(&body)?;
+        let decoded = base64::decode(body)?;
 
         // Decrypt the payload if needed
         let decrypted_body: Vec<u8> = match profile.get_aes_key() {

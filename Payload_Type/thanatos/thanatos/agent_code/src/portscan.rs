@@ -42,7 +42,7 @@ pub fn scan_ports(
     // Iterate over each port/port range
     for port in port_split {
         // Check if this is a port range
-        if port.contains(&"-") {
+        if port.contains('-') {
             // Get the start and end for the range
             let range: Vec<u16> = port.split('-').map(|p| p.parse::<u16>().unwrap()).collect();
             let start = range[0];

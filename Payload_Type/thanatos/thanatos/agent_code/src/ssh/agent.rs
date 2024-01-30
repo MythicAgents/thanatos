@@ -76,18 +76,14 @@ fn agent_connect(id: &str, socket: &str) -> Result<serde_json::Value, Box<dyn Er
         }
     };
 
-    match agent.connect() {
-        Err(e) => {
-            if let Ok(orig_socket) = orig_agent {
-                env::set_var("SSH_AUTH_SOCK", orig_socket);
-            } else {
-                env::remove_var("SSH_AUTH_SOCK");
-            }
-
-            return Err(e.into());
+    if let Err(e) = agent.connect() {
+        if let Ok(orig_socket) = orig_agent {
+            env::set_var("SSH_AUTH_SOCK", orig_socket);
+        } else {
+            env::remove_var("SSH_AUTH_SOCK");
         }
 
-        _ => (),
+        return Err(e.into());
     }
 
     // Return a successs
