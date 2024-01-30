@@ -175,15 +175,14 @@ pub fn get_start_time(pid: u32, boot_time: i64) -> Option<i64> {
     // Grab the value at the starttime index
     let starttime = i64::from_str(proc_stat[proc_stat.len() - 30 - 1]).ok()?;
 
-    // Convert the integer unix boot timestamp into the local time
-    let btime = DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp_opt(boot_time, 0)?, Utc);
-    let btime: DateTime<Local> = DateTime::from(btime);
-
     // Divide the starttime by the clock ticks
     let starttime = starttime / 100;
 
+    // Get the boot time
+    let boot_timestamp = DateTime::from_timestamp(boot_time, 0)?;
+
     // Add the boot time to the start time of the process to get the start time
-    let starttime = btime.checked_add_signed(chrono::Duration::seconds(starttime))?;
+    let starttime = boot_timestamp.checked_add_signed(chrono::Duration::seconds(starttime))?;
 
     // Return the start time
     Some(starttime.timestamp_millis())
