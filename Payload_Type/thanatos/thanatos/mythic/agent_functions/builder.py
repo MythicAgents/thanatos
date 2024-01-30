@@ -179,7 +179,7 @@ class Thanatos(PayloadType):
 
             # Add any rustflags if they exist
             if rustflags:
-                command += 'RUSTFLAGS="{}" '.format(' '.join(rustflags))
+                command += 'RUSTFLAGS="{}" '.format(" ".join(rustflags))
 
             # Loop through each C2/build parameter creating environment variable
             # key/values for each option

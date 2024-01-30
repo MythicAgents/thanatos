@@ -349,7 +349,9 @@ class SshCommand(CommandBase):
                 if len(task.args.get_arg("upload_path")) == 0:
                     task.args.add_arg("upload_path", file_name)
                 elif task.args.get_arg("upload_path")[-1] == "/":
-                    task.args.add_arg("upload_path", task.args.get_arg("upload_path") + file_name)
+                    task.args.add_arg(
+                        "upload_path", task.args.get_arg("upload_path") + file_name
+                    )
 
             except Exception as e:
                 raise Exception(
