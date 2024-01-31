@@ -1,5 +1,5 @@
 //! This module is only imported when targeting Linux hosts
-use chrono::{DateTime};
+use chrono::DateTime;
 use std::error::Error;
 use std::fs;
 use std::io::prelude::*;
