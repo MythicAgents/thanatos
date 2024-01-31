@@ -1,0 +1,37 @@
+name: Setup lint environment
+description: Sets up an environment for running checks
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install Python packages
+      working-directory: ${{ env.THANATOS_PATH }}
+      run: |
+        pip install -r requirements.txt
+        pip install pylint black
+
+    - name: Setup cargo cache
+      uses: actions/cache@v4
+      working-directory: ${{ env.AGENT_CODE }}
+      with:
+        path: ~/.cargo
+        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+          ${{ runner.os }}-cargo
+
+    - name: Setup cargo target cache
+      uses: actions/cache@v4
+      working-directory: ${{ env.AGENT_CODE }}
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+          ${{ runner.os }}-cargo-target
