@@ -38,9 +38,7 @@ class SleepArguments(TaskArguments):
                 default_value=0,
                 description="Sleep jitter.",
                 display_name="Sleep jitter.",
-                parameter_group_info=[
-                    ParameterGroupInfo(required=False, ui_position=2)
-                ],
+                parameter_group_info=[ParameterGroupInfo(required=False, ui_position=2)],
             ),
         ]
 
@@ -100,9 +98,7 @@ async def post_run_actions(
         output = f"Error during post processing:\n{output}"
 
         await SendMythicRPCResponseCreate(
-            MythicRPCResponseCreateMessage(
-                TaskID=task.TaskData.Task.ID, Response=output.encode()
-            )
+            MythicRPCResponseCreateMessage(TaskID=task.TaskData.Task.ID, Response=output.encode())
         )
 
         return PTTaskCompletionFunctionMessageResponse(

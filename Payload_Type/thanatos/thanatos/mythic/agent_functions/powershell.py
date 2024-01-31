@@ -44,9 +44,7 @@ class PowershellCommand(CommandBase):
     cmd = "powershell"
     needs_admin = False
     help_cmd = "powershell [command]"
-    description = (
-        "Execute a powershell command with 'powershell.exe /c' in a new thread."
-    )
+    description = "Execute a powershell command with 'powershell.exe /c' in a new thread."
     version = 1
     author = "@M_alphaaa"
     argument_class = PowershellArguments

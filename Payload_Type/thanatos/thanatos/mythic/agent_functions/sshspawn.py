@@ -238,9 +238,7 @@ class SshSpawnCommand(CommandBase):
 
                 if resp:
                     if resp.response["build_phase"] == "success":
-                        task.args.add_arg(
-                            "payload", resp.response["file"]["agent_file_id"]
-                        )
+                        task.args.add_arg("payload", resp.response["file"]["agent_file_id"])
                         break
 
                     if resp.response["build_phase"] == "error":
@@ -277,8 +275,6 @@ class SshSpawnCommand(CommandBase):
             else:
                 raise Exception("Error from Mythic: " + str(file_resp.error))
         except Exception as e:
-            raise Exception(
-                f"Error from Mythic: {str(sys.exc_info()[-1].tb_lineno)} {str(e)}"
-            )
+            raise Exception(f"Error from Mythic: {str(sys.exc_info()[-1].tb_lineno)} {str(e)}")
 
         return task

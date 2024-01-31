@@ -29,9 +29,7 @@ class GetEnvCommand(CommandBase):
     supported_ui_features = ["callback_table:getenv"]
     argument_class = GetEnvArguments
     attackmapping = ["T1082"]
-    browser_script = BrowserScript(
-        script_name="getenv", author="@M_alphaaa", for_new_ui=True
-    )
+    browser_script = BrowserScript(script_name="getenv", author="@M_alphaaa", for_new_ui=True)
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )

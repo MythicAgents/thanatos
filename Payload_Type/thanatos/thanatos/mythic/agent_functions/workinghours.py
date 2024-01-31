@@ -110,9 +110,7 @@ async def post_run_actions(
         output = f"Error during post processing:\n{output}"
 
         await SendMythicRPCResponseCreate(
-            MythicRPCResponseCreateMessage(
-                TaskID=task.TaskData.Task.ID, Response=output.encode()
-            )
+            MythicRPCResponseCreateMessage(TaskID=task.TaskData.Task.ID, Response=output.encode())
         )
 
         return PTTaskCompletionFunctionMessageResponse(
@@ -165,13 +163,9 @@ class WorkingHoursCommand(CommandBase):
         except IndexError:
             raise Exception("Minute portion of the start working hours not provided")
         except ValueError:
-            raise Exception(
-                "Minute portion of the start working hours is not an integer"
-            )
+            raise Exception("Minute portion of the start working hours is not an integer")
 
-        working_start = (int(working_start_hours) * 3600) + (
-            int(working_start_minutes) * 60
-        )
+        working_start = (int(working_start_hours) * 3600) + (int(working_start_minutes) * 60)
         # Parse the end portion of the working hours
         working_end = working_end.split(":")
         try:
@@ -188,9 +182,7 @@ class WorkingHoursCommand(CommandBase):
         except ValueError:
             raise Exception("Minute portion of the end working hours is not an integer")
 
-        working_end = (
-            (int(working_end_hours) * 3600) + (int(working_end_minutes) * 60) + 60
-        )
+        working_end = (int(working_end_hours) * 3600) + (int(working_end_minutes) * 60) + 60
 
         if working_start >= working_end:
             raise Exception(

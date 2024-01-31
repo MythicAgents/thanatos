@@ -57,9 +57,7 @@ class DownloadCommand(CommandBase):
     argument_class = DownloadArguments
     attackmapping = ["T1020", "T1030", "T1041"]
     supported_ui_features = ["file_browser:download"]
-    browser_script = BrowserScript(
-        script_name="download", author="@djhohnstein", for_new_ui=True
-    )
+    browser_script = BrowserScript(script_name="download", author="@djhohnstein", for_new_ui=True)
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )

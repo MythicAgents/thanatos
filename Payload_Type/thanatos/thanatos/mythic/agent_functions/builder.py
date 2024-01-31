@@ -245,23 +245,15 @@ class Thanatos(PayloadType):
             if "executable" in self.get_parameter("output"):
                 # Set the payload output to the built executable
                 target_name = (
-                    "thanatos"
-                    if self.selected_os == SupportedOS.Linux
-                    else "thanatos.exe"
+                    "thanatos" if self.selected_os == SupportedOS.Linux else "thanatos.exe"
                 )
-                payload_path = (
-                    f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
-                )
+                payload_path = f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
             elif "shared library" in self.get_parameter("output"):
                 # Set the payload output to the build shared library
                 target_name = (
-                    "libthanatos.so"
-                    if self.selected_os == SupportedOS.Linux
-                    else "thanatos.dll"
+                    "libthanatos.so" if self.selected_os == SupportedOS.Linux else "thanatos.dll"
                 )
-                payload_path = (
-                    f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
-                )
+                payload_path = f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
 
             with open(payload_path, "rb") as f:
                 resp.payload = f.read()
