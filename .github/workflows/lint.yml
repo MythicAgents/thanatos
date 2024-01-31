@@ -18,8 +18,8 @@ on:
 
 env:
   THANATOS_PATH: Payload_Type/thanatos
-  AGENT_CODE: ${{ env.THANATOS_PATH }}/thanatos/agent_code
-  MYTHIC_CODE: ${{ env.THANATOS_PATH }}/thanatos/mythic/agent_functions
+  AGENT_CODE: Payload_Type/thanatos/thanatos/agent_code
+  MYTHIC_CODE: Payload_Type/thanatos/thanatos/mythic/agent_functions
 
 
 jobs:
