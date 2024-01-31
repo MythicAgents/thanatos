@@ -1,4 +1,4 @@
-name: Stage a new release
+name: Stage release
 
 on:
   push:
@@ -14,7 +14,7 @@ env:
 
 jobs:
   lint-workflow:
-    name: Run lint.yml workflow
+    name: Lint
     uses: ./.github/workflows/lint.yml
 
   build-container:
@@ -33,7 +33,7 @@ jobs:
       - name: Get the release version from the branch name
         run: |
           GIT_BRANCH=${GITHUB_BASE_REF:-${GITHUB_REF#refs/heads/}}
-          VERSION=(echo $GIT_BRANCH | grep --color=never -Eo '[0-9]+\.[0-9]+\.[0-9]+')
+          VERSION=$(echo $GIT_BRANCH | grep --color=never -Eo '[0-9]+\.[0-9]+\.[0-9]+')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Build and push the container
