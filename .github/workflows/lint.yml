@@ -14,7 +14,7 @@ on:
       - main
       - dev
 
-  workflow_dispatch:
+  workflow_call:
 
 env:
   THANATOS_PATH: Payload_Type/thanatos
