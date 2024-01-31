@@ -66,7 +66,7 @@ jobs:
           agent-code: ${{ env.AGENT_CODE }}
 
       - name: Check Mythic code formatting
-        run: python -m black --color --diff --check ${THANATOS_PATH}/*.py ${MYTHIC_CODE}/*.py
+        run: python -m black --color --diff --check --line-length 100 ${THANATOS_PATH}/*.py ${MYTHIC_CODE}/*.py
 
       - name: Check Agent code formatting
         working-directory: ${{ env.AGENT_CODE }}
