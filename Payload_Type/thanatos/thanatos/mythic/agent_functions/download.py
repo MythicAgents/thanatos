@@ -32,9 +32,7 @@ class DownloadArguments(TaskArguments):
             if self.command_line[0] == "{":
                 temp_json = json.loads(self.command_line)
                 if "path" in temp_json:
-                    self.set_arg(
-                        "file", f"{temp_json['path']}/{temp_json['file']}"
-                    )
+                    self.set_arg("file", f"{temp_json['path']}/{temp_json['file']}")
                 else:
                     self.set_arg("file", temp_json["file"])
             else:

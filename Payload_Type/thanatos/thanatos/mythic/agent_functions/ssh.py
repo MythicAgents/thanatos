@@ -301,9 +301,7 @@ class SshCommand(CommandBase):
         "ssh [-exec <command>] [-upload <file>] "
         "[-download <path>] [-ls <path>] [-cat <file>]"
     )
-    description = (
-        "Use ssh to upload/download/cat files, get directory listings and execute commands"
-    )
+    description = "Use ssh to upload/download/cat files, get directory listings and execute commands"
     version = 1
     is_upload_file = True
     author = "@M_alphaaa"
