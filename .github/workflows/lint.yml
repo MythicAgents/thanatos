@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environment
-        uses: ./.github/workflows/lint-setup
+        uses: ./.github/actions/setup-lint
 
       - name: Check Mythic code for errors
         run: python -m pylint -f colorized --errors-only ${THANATOS_PATH}/*.py ${MYTHIC_CODE}/*.py
@@ -74,7 +74,7 @@ jobs:
           working_hours: ""
 
   lint:
-    name: Lint
+    name: Lint Code
     runs-on: ubuntu-latest
 
     steps:
