@@ -1,3 +1,4 @@
+import json
 from mythic_container.MythicCommandBase import (
     TaskArguments,
     CommandBase,
@@ -10,7 +11,6 @@ from mythic_container.MythicCommandBase import (
     PTTaskMessageAllData,
     PTTaskProcessResponseMessageResponse,
 )
-import json
 
 
 class RmArguments(TaskArguments):
@@ -39,8 +39,8 @@ class RmArguments(TaskArguments):
 
     async def parse_dictionary(self, dictionary_arguments):
         if "file" in dictionary_arguments:
-            dictionary_arguments["path"] = "{}/{}".format(
-                dictionary_arguments["path"], dictionary_arguments["file"]
+            dictionary_arguments["path"] = (
+                f"{dictionary_arguments['path']}/{dictionary_arguments['file']}"
             )
 
         self.load_args_from_dictionary(dictionary_arguments)

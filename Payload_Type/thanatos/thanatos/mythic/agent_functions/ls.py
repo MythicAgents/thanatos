@@ -1,3 +1,4 @@
+import json
 from mythic_container.MythicCommandBase import (
     BrowserScript,
     TaskArguments,
@@ -11,7 +12,6 @@ from mythic_container.MythicCommandBase import (
     PTTaskMessageAllData,
     PTTaskProcessResponseMessageResponse,
 )
-import json
 
 
 class LsArguments(TaskArguments):
@@ -47,12 +47,12 @@ class LsArguments(TaskArguments):
     async def parse_dictionary(self, dictionary_arguments):
         if "file" in dictionary_arguments:
             if dictionary_arguments["path"][-1] == "/":
-                dictionary_arguments["path"] = "{}{}".format(
-                    dictionary_arguments["path"], dictionary_arguments["file"]
+                dictionary_arguments["path"] = (
+                    f"{dictionary_arguments['path']}, {dictionary_arguments['file']}"
                 )
             else:
-                dictionary_arguments["path"] = "{}/{}".format(
-                    dictionary_arguments["path"], dictionary_arguments["file"]
+                dictionary_arguments["path"] = (
+                    f"{dictionary_arguments['path']}/{dictionary_arguments['file']}"
                 )
 
         self.load_args_from_dictionary(dictionary_arguments)
@@ -82,7 +82,8 @@ class LsCommand(CommandBase):
                 and task.callback.host != task.args.get_host("host")
             ):
                 raise Exception(
-                    "Can't get directory listings of remote hosts using ls on Linux. Use `ssh-ls` instead."
+                    "Can't get directory listings of remote hosts using ls on Linux. "
+                    "Use `ssh-ls` instead."
                 )
         else:
             task.args.add_arg("host", task.callback.host)

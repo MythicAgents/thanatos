@@ -57,9 +57,7 @@ class PowershellCommand(CommandBase):
         await SendMythicRPCArtifactCreate(
             MythicRPCArtifactCreateMessage(
                 TaskID=task.id,
-                ArtifactMessage="powershell.exe /c {}".format(
-                    task.args.get_arg("command")
-                ),
+                ArtifactMessage=f"powershell.exe /c {task.args.get_arg('command')}",
                 BaseArtifactType="Process Create",
             )
         )

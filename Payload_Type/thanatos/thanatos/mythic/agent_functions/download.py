@@ -1,3 +1,4 @@
+import json
 from mythic_container.MythicCommandBase import (
     TaskArguments,
     CommandBase,
@@ -11,7 +12,6 @@ from mythic_container.MythicCommandBase import (
     PTTaskMessageAllData,
     PTTaskProcessResponseMessageResponse,
 )
-import json
 
 
 class DownloadArguments(TaskArguments):
@@ -33,7 +33,7 @@ class DownloadArguments(TaskArguments):
                 temp_json = json.loads(self.command_line)
                 if "path" in temp_json:
                     self.set_arg(
-                        "file", "{}/{}".format(temp_json["path"], temp_json["file"])
+                        "file", f"{temp_json['path']}/{temp_json['file']}"
                     )
                 else:
                     self.set_arg("file", temp_json["file"])
@@ -42,8 +42,8 @@ class DownloadArguments(TaskArguments):
 
     async def parse_dictionary(self, dictionary_arguments):
         if "path" in dictionary_arguments:
-            dictionary_arguments["file"] = "{}/{}".format(
-                dictionary_arguments["path"], dictionary_arguments["file"]
+            dictionary_arguments["file"] = (
+                f"{dictionary_arguments['path']}, {dictionary_arguments['file']}"
             )
         self.load_args_from_dictionary(dictionary_arguments)
 

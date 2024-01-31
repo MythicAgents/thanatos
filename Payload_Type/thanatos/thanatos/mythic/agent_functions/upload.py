@@ -1,3 +1,4 @@
+import sys
 from mythic_container.MythicCommandBase import (
     TaskArguments,
     CommandBase,
@@ -14,7 +15,6 @@ from mythic_container.MythicGoRPC import (
     SendMythicRPCFileSearch,
     MythicRPCFileSearchMessage,
 )
-import sys
 
 
 class UploadArguments(TaskArguments):
@@ -96,9 +96,7 @@ class UploadCommand(CommandBase):
             return task
         except Exception as e:
             raise Exception(
-                "Error from line {}: {}".format(
-                    str(sys.exc_info()[-1].tb_lineno), str(e)
-                )
+                f"Error from line {str(sys.exc_info()[-1].tb_lineno)}: {str(e)}"
             )
 
     async def process_response(

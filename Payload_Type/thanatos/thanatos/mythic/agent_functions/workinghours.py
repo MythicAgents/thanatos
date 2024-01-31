@@ -66,7 +66,7 @@ def format_time(hour: int, minute: int) -> str:
     hour_12 = hour if hour < 12 else hour - 12
     hour_12 = hour_12 if hour_12 != 0 else 12
     tod = "am" if hour < 12 else "pm"
-    return "{}:{:02d}{} ({:02d}:{:02d})".format(hour_12, minute, tod, hour, minute)
+    return f"{hour_12}:{minute:02d}{tod} ({hour:02d}:{minute:02d})"
 
 
 # Callback function to display output to Mythic
@@ -86,9 +86,9 @@ async def formulate_output(task: PTTaskCompletionFunctionMessage):
 
     end_time_format = format_time(working_end_hours, working_end_minutes)
 
-    output = "Agent will only beacon between {} and {} following the host's system time.".format(
-        start_time_format,
-        end_time_format,
+    output = (
+        f"Agent will only beacon between {start_time_format} and"
+        f" {end_time_format} following the host's system time."
     )
 
     await SendMythicRPCResponseCreate(
@@ -107,7 +107,7 @@ async def post_run_actions(
         await formulate_output(task)
     except Exception as e:
         output = "".join(traceback.format_exception(e))
-        output = "Error during post processing:\n{}".format(output)
+        output = f"Error during post processing:\n{output}"
 
         await SendMythicRPCResponseCreate(
             MythicRPCResponseCreateMessage(
@@ -206,5 +206,8 @@ class WorkingHoursCommand(CommandBase):
 
         task.completed_callback_function = "post_run_actions"
 
-        task.display_params = f"start = {working_start_hours:02d}:{working_start_minutes:02d}, end = {working_end_hours:02d}:{working_end_minutes:02d}"
+        task.display_params = (
+            f"start = {working_start_hours:02d}:{working_start_minutes:02d}, "
+            f"end = {working_end_hours:02d}:{working_end_minutes:02d}"
+        )
         return task

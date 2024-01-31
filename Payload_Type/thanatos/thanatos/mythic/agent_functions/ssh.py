@@ -1,3 +1,5 @@
+import sys
+
 from mythic_container.MythicCommandBase import (
     TaskArguments,
     CommandBase,
@@ -15,10 +17,6 @@ from mythic_container.MythicGoRPC import (
     SendMythicRPCFileSearch,
     MythicRPCFileSearchMessage,
 )
-
-import json
-import sys
-import base64
 
 
 class SshArguments(TaskArguments):
@@ -299,8 +297,13 @@ class SshArguments(TaskArguments):
 class SshCommand(CommandBase):
     cmd = "ssh"
     needs_admin = False
-    help_cmd = "ssh [-exec <command>] [-upload <file>] [-download <path>] [-ls <path>] [-cat <file>]"
-    description = "Use ssh to upload/download/cat files, get directory listings and execute commands"
+    help_cmd = (
+        "ssh [-exec <command>] [-upload <file>] "
+        "[-download <path>] [-ls <path>] [-cat <file>]"
+    )
+    description = (
+        "Use ssh to upload/download/cat files, get directory listings and execute commands"
+    )
     version = 1
     is_upload_file = True
     author = "@M_alphaaa"
