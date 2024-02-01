@@ -88,7 +88,7 @@ jobs:
 
       - name: Set agent Cargo.toml version number
         working-directory: ${{ env.AGENT_CODE }}
-        run: sed -i "s|^version = .*$|version = \"${VERSION}\"" Cargo.toml
+        run: sed -i "s|^version = .*$|version = \"${VERSION}\"|" Cargo.toml
 
       - name: Push the updated version number changes
         uses: EndBug/add-and-commit@v9 # ref: https://github.com/marketplace/actions/add-commit
