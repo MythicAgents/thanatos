@@ -1,7 +1,7 @@
 //! This module is only imported when targeting Windows hosts
 use crate::ps::ProcessListingEntry;
 use crate::utils::windows::Handle;
-use chrono::{DateTime, Local, NaiveDateTime, Utc};
+use chrono::DateTime;
 use serde::Deserialize;
 use std::error::Error;
 use std::result::Result;
@@ -369,8 +369,7 @@ pub fn get_start_time(handle: *mut c_void) -> Option<i64> {
     let posix_epoch = win_epoch / 10000000;
 
     // Convert the timestamp to local time
-    let start_time = DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(posix_epoch, 0), Utc);
-    let start_time: DateTime<Local> = DateTime::from(start_time);
+    let start_time = DateTime::from_timestamp(posix_epoch, 0)?;
 
     Some(start_time.timestamp_millis())
 }

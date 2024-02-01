@@ -34,7 +34,7 @@ class MvArguments(TaskArguments):
         ]
 
     async def parse_arguments(self):
-        if self.tasking_locatiojn == "command_line":
+        if self.tasking_location == "command_line":
             if self.command_line[0] == "{":
                 self.load_args_from_json_string(self.command_line)
             else:

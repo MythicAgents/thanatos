@@ -44,9 +44,7 @@ class PowershellCommand(CommandBase):
     cmd = "powershell"
     needs_admin = False
     help_cmd = "powershell [command]"
-    description = (
-        "Execute a powershell command with 'powershell.exe /c' in a new thread."
-    )
+    description = "Execute a powershell command with 'powershell.exe /c' in a new thread."
     version = 1
     author = "@M_alphaaa"
     argument_class = PowershellArguments
@@ -57,9 +55,7 @@ class PowershellCommand(CommandBase):
         await SendMythicRPCArtifactCreate(
             MythicRPCArtifactCreateMessage(
                 TaskID=task.id,
-                ArtifactMessage="powershell.exe /c {}".format(
-                    task.args.get_arg("command")
-                ),
+                ArtifactMessage=f"powershell.exe /c {task.args.get_arg('command')}",
                 BaseArtifactType="Process Create",
             )
         )

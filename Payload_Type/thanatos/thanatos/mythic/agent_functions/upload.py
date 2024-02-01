@@ -1,3 +1,4 @@
+import sys
 from mythic_container.MythicCommandBase import (
     TaskArguments,
     CommandBase,
@@ -14,7 +15,6 @@ from mythic_container.MythicGoRPC import (
     SendMythicRPCFileSearch,
     MythicRPCFileSearchMessage,
 )
-import sys
 
 
 class UploadArguments(TaskArguments):
@@ -59,9 +59,7 @@ class UploadCommand(CommandBase):
     cmd = "upload"
     needs_admin = False
     help_cmd = "upload"
-    description = (
-        "Upload a file to the target machine by selecting a file from your computer."
-    )
+    description = "Upload a file to the target machine by selecting a file from your computer."
     version = 1
     is_file_upload = True
     supported_ui_features = ["file_browser:upload"]
@@ -95,11 +93,7 @@ class UploadCommand(CommandBase):
             task.display_params = f"{file_name} to {task.args.get_arg('path')}"
             return task
         except Exception as e:
-            raise Exception(
-                "Error from line {}: {}".format(
-                    str(sys.exc_info()[-1].tb_lineno), str(e)
-                )
-            )
+            raise Exception(f"Error from line {str(sys.exc_info()[-1].tb_lineno)}: {str(e)}")
 
     async def process_response(
         self, task: PTTaskMessageAllData, response: str

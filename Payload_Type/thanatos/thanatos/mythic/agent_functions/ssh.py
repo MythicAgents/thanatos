@@ -1,3 +1,5 @@
+import sys
+
 from mythic_container.MythicCommandBase import (
     TaskArguments,
     CommandBase,
@@ -15,10 +17,6 @@ from mythic_container.MythicGoRPC import (
     SendMythicRPCFileSearch,
     MythicRPCFileSearchMessage,
 )
-
-import json
-import sys
-import base64
 
 
 class SshArguments(TaskArguments):
@@ -299,17 +297,19 @@ class SshArguments(TaskArguments):
 class SshCommand(CommandBase):
     cmd = "ssh"
     needs_admin = False
-    help_cmd = "ssh [-exec <command>] [-upload <file>] [-download <path>] [-ls <path>] [-cat <file>]"
-    description = "Use ssh to upload/download/cat files, get directory listings and execute commands"
+    help_cmd = (
+        "ssh [-exec <command>] [-upload <file>] [-download <path>] [-ls <path>] [-cat <file>]"
+    )
+    description = (
+        "Use ssh to upload/download/cat files, get directory listings and execute commands"
+    )
     version = 1
     is_upload_file = True
     author = "@M_alphaaa"
     attackmapping = ["T1021.004"]
     supported_ui_features = ["ssh"]
     argument_class = SshArguments
-    browser_script = BrowserScript(
-        script_name="ssh", author="@M_alphaaa", for_new_ui=True
-    )
+    browser_script = BrowserScript(script_name="ssh", author="@M_alphaaa", for_new_ui=True)
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
@@ -352,13 +352,10 @@ class SshCommand(CommandBase):
                     task.args.add_arg("upload_path", task.args.get_arg("upload_path") + file_name)
 
             except Exception as e:
-                raise Exception(
-                    "Error from Mythic: " + str(sys.exc_info()[-1].tb_lineno) + str(e)
-                )
+                raise Exception("Error from Mythic: " + str(sys.exc_info()[-1].tb_lineno) + str(e))
 
             task.display_params = (
-                f"{user}@{host} -upload '{file_name}' to"
-                f" {task.args.get_arg('upload_path')}"
+                f"{user}@{host} -upload '{file_name}' to" f" {task.args.get_arg('upload_path')}"
             )
 
         elif cmd := task.args.get_arg("exec"):

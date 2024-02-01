@@ -30,9 +30,7 @@ class PsCommand(CommandBase):
     supported_ui_features = ["process_browser:list", "callback_table:ps"]
     argument_class = PsArguments
     attackmapping = ["T1106"]
-    browser_script = BrowserScript(
-        script_name="ps", author="@M_alphaaa", for_new_ui=True
-    )
+    browser_script = BrowserScript(script_name="ps", author="@M_alphaaa", for_new_ui=True)
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )

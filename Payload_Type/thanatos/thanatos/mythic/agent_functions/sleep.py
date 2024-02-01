@@ -38,9 +38,7 @@ class SleepArguments(TaskArguments):
                 default_value=0,
                 description="Sleep jitter.",
                 display_name="Sleep jitter.",
-                parameter_group_info=[
-                    ParameterGroupInfo(required=False, ui_position=2)
-                ],
+                parameter_group_info=[ParameterGroupInfo(required=False, ui_position=2)],
             ),
         ]
 
@@ -79,9 +77,7 @@ async def formulate_output(
     jitter = params["jitter"]
 
     # Format the output message
-    output = "Set sleep interval to {} seconds with a jitter of {}%.".format(
-        interval, jitter
-    )
+    output = f"Set sleep interval to {interval} seconds with a jitter of {jitter}%."
 
     await SendMythicRPCResponseCreate(
         MythicRPCResponseCreateMessage(
@@ -99,12 +95,10 @@ async def post_run_actions(
         await update_sleep_info(task)
     except Exception as e:
         output = "".join(traceback.format_exception(e))
-        output = "Error during post processing:\n{}".format(output)
+        output = f"Error during post processing:\n{output}"
 
         await SendMythicRPCResponseCreate(
-            MythicRPCResponseCreateMessage(
-                TaskID=task.TaskData.Task.ID, Response=output.encode()
-            )
+            MythicRPCResponseCreateMessage(TaskID=task.TaskData.Task.ID, Response=output.encode())
         )
 
         return PTTaskCompletionFunctionMessageResponse(
@@ -181,7 +175,7 @@ class SleepCommand(CommandBase):
             task.completed_callback_function = "post_run_actions"
         except Exception as e:
             output = "".join(traceback.format_exception(e))
-            output = "Error during command invocation:\n{}".format(output)
+            output = f"Error during command invocation:\n{output}"
             task.set_status(MythicStatus.Error)
             task.set_stderr(output)
 

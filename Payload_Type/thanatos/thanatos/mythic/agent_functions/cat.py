@@ -24,10 +24,7 @@ class CatArguments(TaskArguments):
         ]
 
     async def parse_arguments(self):
-        if (
-            self.tasking_location == "command_line"
-            or self.tasking_location == "browserscript"
-        ):
+        if self.tasking_location in ("command_line", "browserscript"):
             if self.command_line[0] == "{":
                 self.load_args_from_dictionary(self.command_line)
             else:

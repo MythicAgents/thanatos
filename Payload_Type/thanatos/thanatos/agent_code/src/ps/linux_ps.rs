@@ -1,5 +1,5 @@
 //! This module is only imported when targeting Linux hosts
-use chrono::{DateTime, Local, NaiveDateTime, Utc};
+use chrono::DateTime;
 use std::error::Error;
 use std::fs;
 use std::io::prelude::*;
@@ -57,7 +57,7 @@ pub fn get_architecture(pid: u32) -> Option<String> {
     let path = fs::read_link(path).ok()?;
 
     // Open the executable registered with the pid
-    let mut f = std::fs::File::open(&path).ok()?;
+    let mut f = std::fs::File::open(path).ok()?;
 
     // Grab the executable header
     let mut exe_header: [u8; 5] = [0; 5];
@@ -81,7 +81,7 @@ pub fn get_proc_name(pid: u32) -> Option<String> {
     let path = format!("/proc/{}/comm", pid);
     let path = Path::new(&path);
 
-    let name = fs::read_to_string(&path).ok()?;
+    let name = fs::read_to_string(path).ok()?;
     Some(name.trim_end_matches('\n').to_string())
 }
 
@@ -175,15 +175,14 @@ pub fn get_start_time(pid: u32, boot_time: i64) -> Option<i64> {
     // Grab the value at the starttime index
     let starttime = i64::from_str(proc_stat[proc_stat.len() - 30 - 1]).ok()?;
 
-    // Convert the integer unix boot timestamp into the local time
-    let btime = DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp_opt(boot_time, 0)?, Utc);
-    let btime: DateTime<Local> = DateTime::from(btime);
-
     // Divide the starttime by the clock ticks
     let starttime = starttime / 100;
 
+    // Get the boot time
+    let boot_timestamp = DateTime::from_timestamp(boot_time, 0)?;
+
     // Add the boot time to the start time of the process to get the start time
-    let starttime = btime.checked_add_signed(chrono::Duration::seconds(starttime))?;
+    let starttime = boot_timestamp.checked_add_signed(chrono::Duration::seconds(starttime))?;
 
     // Return the start time
     Some(starttime.timestamp_millis())

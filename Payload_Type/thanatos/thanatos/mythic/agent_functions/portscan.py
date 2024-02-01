@@ -1,3 +1,4 @@
+import ipaddress
 from mythic_container.MythicCommandBase import (
     TaskArguments,
     CommandBase,
@@ -10,7 +11,6 @@ from mythic_container.MythicCommandBase import (
     PTTaskMessageAllData,
     PTTaskProcessResponseMessageResponse,
 )
-import ipaddress
 
 
 class PortScanArguments(TaskArguments):
@@ -27,8 +27,12 @@ class PortScanArguments(TaskArguments):
             CommandParameter(
                 name="ports",
                 type=ParameterType.String,
-                description="List of ports to scan. Can use the dash character to specify a range.",
-                display_name="List of ports to scan. Can use the dash character to specify a range.",
+                description=(
+                    "List of ports to scan. Can use the dash character to specify a range."
+                ),
+                display_name=(
+                    "List of ports to scan. Can use the dash character to specify a range."
+                ),
                 parameter_group_info=[ParameterGroupInfo(ui_position=2)],
             ),
             CommandParameter(

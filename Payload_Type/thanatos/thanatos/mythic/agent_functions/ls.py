@@ -1,3 +1,4 @@
+import json
 from mythic_container.MythicCommandBase import (
     BrowserScript,
     TaskArguments,
@@ -11,7 +12,6 @@ from mythic_container.MythicCommandBase import (
     PTTaskMessageAllData,
     PTTaskProcessResponseMessageResponse,
 )
-import json
 
 
 class LsArguments(TaskArguments):
@@ -24,9 +24,7 @@ class LsArguments(TaskArguments):
                 description="Path to get the listing from.",
                 display_name="Path to get the listing from.",
                 default_value=".",
-                parameter_group_info=[
-                    ParameterGroupInfo(ui_position=1, required=False)
-                ],
+                parameter_group_info=[ParameterGroupInfo(ui_position=1, required=False)],
             ),
         ]
 
@@ -47,12 +45,12 @@ class LsArguments(TaskArguments):
     async def parse_dictionary(self, dictionary_arguments):
         if "file" in dictionary_arguments:
             if dictionary_arguments["path"][-1] == "/":
-                dictionary_arguments["path"] = "{}{}".format(
-                    dictionary_arguments["path"], dictionary_arguments["file"]
+                dictionary_arguments["path"] = (
+                    f"{dictionary_arguments['path']}, {dictionary_arguments['file']}"
                 )
             else:
-                dictionary_arguments["path"] = "{}/{}".format(
-                    dictionary_arguments["path"], dictionary_arguments["file"]
+                dictionary_arguments["path"] = (
+                    f"{dictionary_arguments['path']}/{dictionary_arguments['file']}"
                 )
 
         self.load_args_from_dictionary(dictionary_arguments)
@@ -68,21 +66,17 @@ class LsCommand(CommandBase):
     author = "@M_alphaaa"
     argument_class = LsArguments
     attackmapping = ["T1106", "T1083"]
-    browser_script = BrowserScript(
-        script_name="ls", author="@M_alphaaa", for_new_ui=True
-    )
+    browser_script = BrowserScript(script_name="ls", author="@M_alphaaa", for_new_ui=True)
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         if task.args.has_arg("host"):
-            if (
-                task.callback.host == "Linux"
-                and task.callback.host != task.args.get_host("host")
-            ):
+            if task.callback.host == "Linux" and task.callback.host != task.args.get_host("host"):
                 raise Exception(
-                    "Can't get directory listings of remote hosts using ls on Linux. Use `ssh-ls` instead."
+                    "Can't get directory listings of remote hosts using ls on Linux. "
+                    "Use `ssh-ls` instead."
                 )
         else:
             task.args.add_arg("host", task.callback.host)

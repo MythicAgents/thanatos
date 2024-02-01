@@ -24,7 +24,7 @@ pub fn make_directory(task: &AgentTask) -> Result<serde_json::Value> {
     let dir = if dir.is_absolute() {
         String::from(dir.canonicalize()?.to_string_lossy())
     } else {
-        let dir = std::env::current_dir()?.join(&dir);
+        let dir = std::env::current_dir()?.join(dir);
         String::from(dir.canonicalize()?.to_string_lossy())
     };
 

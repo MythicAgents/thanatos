@@ -1,0 +1,114 @@
+name: Lint and check code for errors
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+    paths-ignore:
+      - 'Payload_Type/thanatos/Dockerfile'
+
+  pull_request:
+    branches:
+      - main
+      - dev
+
+  workflow_call:
+
+env:
+  THANATOS_PATH: Payload_Type/thanatos
+  AGENT_CODE: thanatos/agent_code
+  MYTHIC_CODE: thanatos/mythic/agent_functions
+
+
+jobs:
+  syntax:
+    name: Check Syntax
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-lint
+        with:
+          python-requirements: ${{ env.THANATOS_PATH }}/requirements.txt
+          agent-code: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
+
+      - name: Check Mythic code for errors
+        working-directory: ${{ env.THANATOS_PATH }}
+        run: python -m pylint --rcfile pylintrc -f colorized --errors-only main.py ${MYTHIC_CODE}/*.py
+
+      - name: Check Agent code for errors
+        working-directory: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
+        run: cargo check --color always --all-targets --all-features
+        env:
+          UUID: ""
+          callback_interval: ""
+          callback_jitter: ""
+          encrypted_exchange_check: ""
+          connection_retries: ""
+          working_hours: ""
+
+  format:
+    name: Check Formatting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-lint
+        with:
+          python-requirements: ${{ env.THANATOS_PATH }}/requirements.txt
+          agent-code: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
+
+      - name: Check Mythic code formatting
+        working-directory: ${{ env.THANATOS_PATH }}
+        run: python -m black --color --diff --check main.py ${MYTHIC_CODE}/*.py
+
+      - name: Check Agent code formatting
+        working-directory: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
+        run: cargo fmt -- --color always --check
+        env:
+          UUID: ""
+          callback_interval: ""
+          callback_jitter: ""
+          encrypted_exchange_check: ""
+          connection_retries: ""
+          working_hours: ""
+
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-lint
+        with:
+          python-requirements: ${{ env.THANATOS_PATH }}/requirements.txt
+          agent-code: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
+
+      - name: Install Clippy
+        run: rustup component add clippy
+
+      - name: Lint Mythic code with pylint
+        working-directory: ${{ env.THANATOS_PATH }}
+        run: python -m pylint --rcfile pylintrc -f colorized main.py ${MYTHIC_CODE}/*.py
+
+      - name: Lint Agent code with clippy
+        working-directory: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
+        run: cargo clippy --color always --all-features --all-targets -- -D warnings
+        env:
+          UUID: ""
+          callback_interval: ""
+          callback_jitter: ""
+          encrypted_exchange_check: ""
+          connection_retries: ""
+          working_hours: ""

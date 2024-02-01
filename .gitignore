@@ -1,15 +1,2 @@
-# Compiled executables
-debug/
-target/
-
-Cargo.lock
-
-# Rustfmt backup files
-**/*.rs.bk
-
-# Mac OS metadata
+# Mac OS metadata file
 .DS_Store
-
-push.sh
-thanatos.json
-thanatos.sh

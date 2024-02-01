@@ -110,7 +110,7 @@ pub fn get_process_list(task: &AgentTask) -> Result<serde_json::Value, Box<dyn E
     for pid in get_process_ids()? {
         listing.push(ProcessListingEntry {
             process_id: pid,
-            architecture: get_architecture(pid).unwrap_or_else(|| "".to_string()),
+            architecture: get_architecture(pid).unwrap_or_default(),
             name: get_proc_name(pid),
             user: get_proc_user(pid),
             bin_path: get_bin_path(pid),

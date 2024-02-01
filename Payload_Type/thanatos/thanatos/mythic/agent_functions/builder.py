@@ -1,3 +1,11 @@
+import asyncio
+import json
+import os
+import pathlib
+import sys
+import tempfile
+import traceback
+from shutil import copytree
 from mythic_container.PayloadBuilder import (
     PayloadType,
     SupportedOS,
@@ -7,12 +15,7 @@ from mythic_container.PayloadBuilder import (
     BuildStatus,
 )
 
-import asyncio
-import os
-from shutil import copytree
-import pathlib
-import tempfile
-import json
+# pylint: disable=too-many-locals,too-many-branches,too-many-statements
 
 
 # Class defining information about the Thanatos payload
@@ -122,7 +125,8 @@ class Thanatos(PayloadType):
             rustflags = []
 
             # Windows needs to link against `libssp` since mingw on Fedora was compiled with
-            # `_FORTIFY_SOURCE=2`. Rust mingw doesn't do this on its own for Fedora 35??? https://github.com/rust-lang/rust/issues/68973
+            # `_FORTIFY_SOURCE=2`. Rust mingw doesn't do this on its own for
+            # Fedora 35??? https://github.com/rust-lang/rust/issues/68973
             if self.selected_os == SupportedOS.Windows:
                 rustflags.append("-Clink-arg=-lssp")
 
@@ -179,7 +183,8 @@ class Thanatos(PayloadType):
 
             # Add any rustflags if they exist
             if rustflags:
-                command += 'RUSTFLAGS="{}" '.format(' '.join(rustflags))
+                rustflags = " ".join(rustflags)
+                command += f'RUSTFLAGS="{rustflags}" '
 
             # Loop through each C2/build parameter creating environment variable
             # key/values for each option
@@ -240,25 +245,18 @@ class Thanatos(PayloadType):
             if "executable" in self.get_parameter("output"):
                 # Set the payload output to the built executable
                 target_name = (
-                    "thanatos"
-                    if self.selected_os == SupportedOS.Linux
-                    else "thanatos.exe"
+                    "thanatos" if self.selected_os == SupportedOS.Linux else "thanatos.exe"
                 )
-                payload_path = (
-                    f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
-                )
+                payload_path = f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
             elif "shared library" in self.get_parameter("output"):
                 # Set the payload output to the build shared library
                 target_name = (
-                    "libthanatos.so"
-                    if self.selected_os == SupportedOS.Linux
-                    else "thanatos.dll"
+                    "libthanatos.so" if self.selected_os == SupportedOS.Linux else "thanatos.dll"
                 )
-                payload_path = (
-                    f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
-                )
+                payload_path = f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
 
-            resp.payload = open(payload_path, "rb").read()
+            with open(payload_path, "rb") as f:
+                resp.payload = f.read()
 
             # Notify Mythic that the build was successful
             resp.set_build_message("Successfully built thanatos agent.")
@@ -266,9 +264,6 @@ class Thanatos(PayloadType):
             resp.build_message += str(command)
             resp.status = BuildStatus.Success
         except Exception as e:
-            # Mythic failed to build the payload
-            import traceback
-            import sys
 
             # Return the python exception to the Mythic build message
             exc_type, exc_value, exc_traceback = sys.exc_info()

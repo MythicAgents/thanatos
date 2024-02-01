@@ -44,7 +44,10 @@ class ShellCommand(CommandBase):
     cmd = "shell"
     needs_admin = False
     help_cmd = "shell [command]"
-    description = "Execute a shell command with '/bin/bash -c' on Linux or 'cmd.exe /c' on Windows in a new thread"
+    description = (
+        "Execute a shell command with '/bin/bash -c' on Linux "
+        "or 'cmd.exe /c' on Windows in a new thread"
+    )
     version = 1
     author = "@M_alphaaa"
     argument_class = ShellArguments

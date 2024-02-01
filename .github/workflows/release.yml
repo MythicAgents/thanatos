@@ -1,0 +1,101 @@
+name: Stage release
+
+on:
+  push:
+    branches:
+      - 'release/v[0-9]+.[0-9]+.*'
+
+env:
+  IMAGE_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_DESCRIPTION: "Base container image for the Thanatos Mythic C2 agent"
+  IMAGE_LICENSE: BSD-3-Clause
+  AGENT_CODE: Payload_Type/thanatos/thanatos/agent_code
+
+jobs:
+  lint-workflow:
+    name: Lint
+    uses: ./.github/workflows/lint.yml
+
+  build-container:
+    name: Build and push the base container image
+    needs: lint-workflow
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Get the release version from the branch name
+        run: |
+          GIT_BRANCH=${GITHUB_BASE_REF:-${GITHUB_REF#refs/heads/}}
+          VERSION=$(echo $GIT_BRANCH | grep --color=never -Eo '[0-9]+\.[0-9]+\.[0-9]+')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Build and push the container
+        uses: ./.github/actions/build-container
+        with:
+          image-registry: ${{ env.IMAGE_REGISTRY }}
+          image-name: ${{ env.IMAGE_NAME }}
+          image-tag: v${{ env.VERSION }}
+          image-description: ${{ env.IMAGE_DESCRIPTION }}
+          image-license: ${{ env.IMAGE_LICENSE }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  version:
+    name: Bump repository version numbers
+    needs: build-container
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: read
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Get the release version from the branch name
+        run: |
+          GIT_BRANCH=${GITHUB_BASE_REF:-${GITHUB_REF#refs/heads/}}
+          VERSION=$(echo $GIT_BRANCH | grep --color=never -Eo '[0-9]+\.[0-9]+\.[0-9]+')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Lowercase the container image name
+        run: echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+
+      - name: Set config.json version number
+        uses: jossef/action-set-json-field@v2.1
+        with:
+          file: config.json
+          field: remote_images.thanatos
+          value: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ env.VERSION }}
+
+      - name: Set agent_capabilities.json version number
+        uses: jossef/action-set-json-field@v2.1
+        with:
+          file: agent_capabilities.json
+          field: agent_version
+          value: ${{ env.VERSION }}
+
+      - name: Set base Dockerfile image reference version number
+        working-directory: Payload_Type/thanatos
+        run: sed -i "s|^FROM ghcr\.io.*$|FROM ${IMAGE_REGISTRY}/${IMAGE_NAME}:v${VERSION}|" Dockerfile
+
+      - name: Set agent Cargo.toml version number
+        working-directory: ${{ env.AGENT_CODE }}
+        run: sed -i "0,/^version = .*$/s//version = \"${VERSION}\"/" Cargo.toml
+
+      - name: Push the updated version number changes
+        uses: EndBug/add-and-commit@v9 # ref: https://github.com/marketplace/actions/add-commit
+        with:
+          add: "['config.json', 'agent_capabilities.json', 'Payload_Type/thanatos/Dockerfile', '${{ format(\'{0}/Cargo.toml\', env.AGENT_CODE) }}']"
+          default_author: github_actions
+          committer_email: github-actions[bot]@users.noreply.github.com
+          message: "Bump version number to match release '${{ env.VERSION }}'"
+          new_branch: ${{ github.ref_name }}
+          pathspec_error_handling: exitImmediately
