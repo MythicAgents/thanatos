@@ -3,7 +3,7 @@ name: Stage release
 on:
   push:
     branches:
-      - 'v[0-9]+.[0-9]+.[0-9]+-prerelease'
+      - 'release/v[0-9]+.[0-9]+.*'
 
 env:
   IMAGE_REGISTRY: ghcr.io
@@ -44,6 +44,7 @@ jobs:
           image-tag: v${{ env.VERSION }}
           image-description: ${{ env.IMAGE_DESCRIPTION }}
           image-license: ${{ env.IMAGE_LICENSE }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   version:
     name: Set repository version numbers
@@ -61,7 +62,7 @@ jobs:
       - name: Get the release version from the branch name
         run: |
           GIT_BRANCH=${GITHUB_BASE_REF:-${GITHUB_REF#refs/heads/}}
-          VERSION=(echo $GIT_BRANCH | grep --color=never -Eo '[0-9]+\.[0-9]+\.[0-9]+')
+          VERSION=$(echo $GIT_BRANCH | grep --color=never -Eo '[0-9]+\.[0-9]+\.[0-9]+')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Lowercase the container image name
