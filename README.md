@@ -3,6 +3,11 @@
 </p>
 
 # Thanatos
+
+[![GitHub License](https://img.shields.io/github/license/MythicAgents/thanatos)](https://github.com/MythicAgents/thanatos/blob/main/LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/MythicAgents/thanatos)](https://github.com/MythicAgents/thanatos/releases/latest)
+[![CI](https://github.com/MythicAgents/thanatos/workflows/Stage%20release/badge.svg)](https://github.com/MythicAgents/thanatos/actions?query=branch%3Amain)
+
 Thanatos is a Windows and Linux C2 agent written in rust.
 
 # Installation
