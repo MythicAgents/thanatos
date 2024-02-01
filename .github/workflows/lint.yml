@@ -5,9 +5,9 @@ on:
     branches:
       - main
       - dev
-
-    paths-ignore:
-      - 'Payload_Type/thanatos/Dockerfile'
+    paths:
+      - Payload_Type/thanatos/thanatos/agent_code
+      - Payload_Type/thanatos/**.py
 
   pull_request:
     branches:
