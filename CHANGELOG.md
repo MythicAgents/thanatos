@@ -5,6 +5,25 @@ Changes to the Thanatos project.
 
 This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.6] - 2023-01-31
+
+### Added
+
+- `remote_images` key in config.json metadata a109d9b
+- Agent capabilities metadata file `agent_capabilities.json` cc3cc48
+- Github Actions workflow for running static analyzers against codebase
+- Github Actions workflow for staging releases in a `release/**` branch
+
+### Changed
+
+- Separated out the `.gitignore` file to multiple directories
+
+### Fixed
+
+- Typo in the Mythic code for the `mv` command
+- Removed all build warnings
+- Replaced deprecated for supported ones 81dde08
+
 ## [0.1.5] - 2023-12-18
 
 ### Fixed
@@ -62,6 +81,7 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 Initial public release
 
 
+[0.1.6]: https://github.com/MythicAgents/thanatos/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/MythicAgents/thanatos/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/MythicAgents/thanatos/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/MythicAgents/thanatos/compare/v0.1.2...v0.1.3
