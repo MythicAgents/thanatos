@@ -73,7 +73,7 @@ impl Profile {
     /// * `uuid` - Initial configured UUID
     pub fn new(uuid: String) -> Self {
         // Create a list of configured profiles
-        let profiles: Vec<Box<dyn C2Profile>> = Vec::new();
+        let mut profiles: Vec<Box<dyn C2Profile>> = Vec::new();
 
         // HTTP profile specified
         #[cfg(http)]

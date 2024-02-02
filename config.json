@@ -6,6 +6,6 @@
   "exclude_documentation_wrapper": true,
   "exclude_agent_icons": false,
   "remote_images": {
-    "thanatos": "ghcr.io/mythicagents/thanatos:v0.1.6"
+    "thanatos": "ghcr.io/mythicagents/thanatos:v0.1.7"
   }
 }

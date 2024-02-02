@@ -5,7 +5,19 @@ Changes to the Thanatos project.
 
 This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
-## [0.1.6] - 2023-01-31
+## [0.1.7] - 2024-02-02
+
+### Changed
+
+- Modify lint workflow to include HTTP configuration 60b34aa
+
+### Fixed
+
+- Fix build error due to profiles not being mut 7a29fe4
+- Fix typo in sshspawn command parameter description 93e5bb3
+- fix(#19): Add Thanatos artifacts into base image e3dbd69
+
+## [0.1.6] - 2024-01-31
 
 ### Added
 
@@ -81,6 +93,7 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 Initial public release
 
 
+[0.1.7]: https://github.com/MythicAgents/thanatos/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/MythicAgents/thanatos/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/MythicAgents/thanatos/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/MythicAgents/thanatos/compare/v0.1.3...v0.1.4

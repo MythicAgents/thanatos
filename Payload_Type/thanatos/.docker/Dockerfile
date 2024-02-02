@@ -83,5 +83,8 @@ RUN rm -f sccache.tar.gz
 COPY .docker/config.toml /root/.cargo/config.toml
 
 WORKDIR /Mythic/
+
+COPY main.py main.py
+COPY thanatos thanatos
 ENV SCCACHE_DIR /Mythic/.cache/sccache
 CMD ["python3.11", "main.py"]

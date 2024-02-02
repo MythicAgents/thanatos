@@ -109,7 +109,7 @@ pub mod profilevars {
         headers
             .get("User-Agent")
             .map(|agent| agent.to_owned())
-            .unwrap_or_else(|| "".to_string())
+            .unwrap_or_default()
     }
 
     // Helper function to get the other headers

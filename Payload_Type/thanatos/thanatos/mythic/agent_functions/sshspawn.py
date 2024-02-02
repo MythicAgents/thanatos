@@ -152,7 +152,7 @@ class SshSpawnArguments(TaskArguments):
                 type=ParameterType.String,
                 description=(
                     "Command used to run the payload "
-                    "({path} is the path to the payload on the remote system)",
+                    "({path} is the path to the payload on the remote system)"
                 ),
                 display_name=(
                     "Command used to run the payload "
