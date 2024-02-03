@@ -1,7 +1,8 @@
-TARGET    := thanatos
-SOURCES   := $(wildcard ./**.go)
-MODULE    ?= ./...
-GOARGS    ?=
+TARGET		:= thanatos
+SOURCES		:= $(wildcard ./**.go)
+MODULE		?= ./...
+GOARGS		?=
+TEST		?=
 
 .PHONY: help
 help: # Print out this help info
@@ -30,8 +31,8 @@ test-verbose: # Run the Go tests but in "verbose" mode
 
 .PHONY: test-mockbuild
 test-mockbuild: # Run all of the build tests with mock handlers
-	@$(MAKE) GOARGS="$(GOARGS) -run \"^TestPayloadMockBuild\$\"" MODULE=./builder test
+	@$(MAKE) GOARGS="$(GOARGS) -run \"^TestPayloadMockBuild/$(TEST)\$\"" MODULE=./builder test
 
 .PHONY: test-fullbuild
 test-fullbuild: # Run all of the build tests
-	@$(MAKE) GOARGS="$(GOARGS) -run \"^TestPayloadFullBuild\$\"" MODULE=./builder test
+	@$(MAKE) GOARGS="$(GOARGS) -run \"^TestPayloadFullBuild/$(TEST)\$\"" MODULE=./builder test

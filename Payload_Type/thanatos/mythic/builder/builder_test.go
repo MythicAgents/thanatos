@@ -4,8 +4,8 @@ package builder
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
-	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
@@ -16,13 +16,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Directory which holds the JSON files with the test data. This data includes the
-// build/profile parameters and expected results from the build
-const buildTestDataDir string = "./testdata/buildtests"
-
-var (
-	savedCwd string = ""
-)
+const testDataPath string = "tests/buildtests"
 
 // Options for when testing if the build succeeded. This is for checking if the result
 // BuildStdout, BuildStderr and BuildMessage contain correct values
@@ -82,20 +76,20 @@ type testSpec struct {
 
 // Type which contains the mock implementations of the handler routines. This will
 // essentially "no-op" expensive function or Mythic RPC calls
-type MockPayloadHandler struct{}
+type MockBuildPayloadHandler struct{}
 
 // Mock implementation for the payload build
-func (handler MockPayloadHandler) Build(target string, outform PayloadBuildParameterOutputFormat, command string) ([]byte, error) {
+func (handler MockBuildPayloadHandler) Build(target string, outform PayloadBuildParameterOutputFormat, command string) ([]byte, error) {
 	return []byte{}, nil
 }
 
 // Mock implementation for installing a Rust target
-func (handler MockPayloadHandler) InstallBuildTarget(target string) error {
+func (handler MockBuildPayloadHandler) InstallBuildTarget(target string) error {
 	return nil
 }
 
 // Mock implementation for updating a build step in Mythic
-func (handler MockPayloadHandler) UpdateBuildStep(input mythicrpc.MythicRPCPayloadUpdateBuildStepMessage) (*mythicrpc.MythicRPCPayloadUpdateBuildStepMessageResponse, error) {
+func (handler MockBuildPayloadHandler) UpdateBuildStep(input mythicrpc.MythicRPCPayloadUpdateBuildStepMessage) (*mythicrpc.MythicRPCPayloadUpdateBuildStepMessageResponse, error) {
 	response := mythicrpc.MythicRPCPayloadUpdateBuildStepMessageResponse{
 		Success: true,
 		Error:   "",
@@ -120,7 +114,7 @@ func (handler FullBuildPayloadHandler) InstallBuildTarget(target string) error {
 
 // Runs the mock Mythic RPC function
 func (handler FullBuildPayloadHandler) UpdateBuildStep(input mythicrpc.MythicRPCPayloadUpdateBuildStepMessage) (*mythicrpc.MythicRPCPayloadUpdateBuildStepMessageResponse, error) {
-	return MockPayloadHandler{}.UpdateBuildStep(input)
+	return MockBuildPayloadHandler{}.UpdateBuildStep(input)
 }
 
 // Prints out a set of data using the testing logger
@@ -291,76 +285,77 @@ func checkResults(t *testing.T, payloadUUID string, buildResult agentstructs.Pay
 }
 
 // Function which runs all of the tests with a specified handler
-func testPayloadBuildImpl(t *testing.T, handler BuildHandler) {
-	if savedCwd == "" {
-		savedCwd, _ = os.Getwd()
+func runTest(t *testing.T, handler BuildHandler, testData testSpec) {
+	testLogPrintData(t, testData)
+
+	payloadUUID := uuid.NewString()
+	payloadFileUUID := uuid.NewString()
+
+	payloadBuildMsg := agentstructs.PayloadBuildMessage{
+		PayloadType: "thanatos",
+		Filename:    testData.Filename,
+		CommandList: testData.CommandList,
+		SelectedOS:  testData.SelectedOS,
+		BuildParameters: agentstructs.PayloadBuildArguments{
+			Parameters: testData.BuildParameters,
+		},
+		C2Profiles:         testData.C2Profiles,
+		WrappedPayload:     nil,
+		WrappedPayloadUUID: nil,
+		PayloadUUID:        payloadUUID,
+		PayloadFileUUID:    payloadFileUUID,
 	}
 
-	os.Chdir(savedCwd + "/../..")
+	buildResult := buildPayload(payloadBuildMsg, handler)
+	t.Logf("[BUILD MESSAGE]: %s", buildResult.BuildMessage)
+	t.Logf("[BUILD STDOUT]: %s", buildResult.BuildStdOut)
+	t.Logf("[BUILD STDERR]: %s", buildResult.BuildStdErr)
+	checkResults(t, payloadUUID, buildResult, testData)
+}
 
-	cwd, _ := os.Getwd()
-	t.Log(cwd)
+func setupTests(t *testing.T, handler BuildHandler) {
+	os.Chdir("..")
 
-	testSpecs, err := os.ReadDir(filepath.Join("mythic", buildTestDataDir))
+	testDir := os.DirFS(testDataPath).(fs.ReadDirFS)
+	testSpecs, err := testDir.ReadDir(".")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, specPath := range testSpecs {
-		testDataSpecPath := specPath.Name()
+		if specPath.IsDir() {
+			continue
+		}
 
-		t.Run(strings.TrimSuffix(specPath.Name(), ".json"), func(t *testing.T) {
+		testRawData, err := fs.ReadFile(testDir, specPath.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testData := testSpec{}
+		if err := json.Unmarshal(testRawData, &testData); err != nil {
+			t.Fatal(err)
+		}
+
+		testName := strings.TrimSuffix(specPath.Name(), ".json")
+		t.Logf("%s\n", testName)
+
+		t.Run(testName, func(t *testing.T) {
 			t.Parallel()
-
-			rawData, err := os.ReadFile(filepath.Join("mythic", buildTestDataDir, testDataSpecPath))
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			testData := testSpec{}
-			if err := json.Unmarshal(rawData, &testData); err != nil {
-				t.Fatal(err)
-			}
-
-			testLogPrintData(t, testData)
-
-			payloadUUID := uuid.NewString()
-			payloadFileUUID := uuid.NewString()
-
-			payloadBuildMsg := agentstructs.PayloadBuildMessage{
-				PayloadType: "thanatos",
-				Filename:    testData.Filename,
-				CommandList: testData.CommandList,
-				SelectedOS:  testData.SelectedOS,
-				BuildParameters: agentstructs.PayloadBuildArguments{
-					Parameters: testData.BuildParameters,
-				},
-				C2Profiles:         testData.C2Profiles,
-				WrappedPayload:     nil,
-				WrappedPayloadUUID: nil,
-				PayloadUUID:        payloadUUID,
-				PayloadFileUUID:    payloadFileUUID,
-			}
-
-			buildResult := buildPayload(payloadBuildMsg, handler)
-			t.Logf("[BUILD MESSAGE]: %s", buildResult.BuildMessage)
-			t.Logf("[BUILD STDOUT]: %s", buildResult.BuildStdOut)
-			t.Logf("[BUILD STDERR]: %s", buildResult.BuildStdErr)
-			checkResults(t, payloadUUID, buildResult, testData)
+			runTest(t, handler, testData)
 		})
+
 	}
 }
 
-// Test function which mocks all of the payload building and Mythic RPC functions
-// This test can be skipped by setting the `BUILDTEST` environment variable to "fullonly"
+// Test function which mocks all of the payload building and tests the build responses
 func TestPayloadMockBuild(t *testing.T) {
-	handler := MockPayloadHandler{}
-	testPayloadBuildImpl(t, handler)
+	handler := MockBuildPayloadHandler{}
+	setupTests(t, handler)
 }
 
 // Test function which will build the payload in the test
-// This test will not run unless the `BUILDTEST` environment variable is set to "full"
 func TestPayloadFullBuild(t *testing.T) {
 	handler := FullBuildPayloadHandler{}
-	testPayloadBuildImpl(t, handler)
+	setupTests(t, handler)
 }
