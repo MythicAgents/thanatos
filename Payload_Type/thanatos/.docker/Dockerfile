@@ -63,9 +63,10 @@ WORKDIR /thanatos
 COPY agent agent
 
 RUN mkdir mythic
-COPY mythic/assets mythic/assets
-COPY mythic/browserscript mythic/browserscript
+WORKDIR /thanatos/mythic
+COPY mythic/assets assets
+COPY mythic/browserscript browserscript
 
-COPY --from=mythic-builder /opt/mythic/mythic-server /mythic-server
-RUN chmod +x /mythic-server
+COPY --from=mythic-builder /opt/mythic/mythic-server .
+RUN chmod +x ./mythic-server
 CMD ["./mythic-server"]
