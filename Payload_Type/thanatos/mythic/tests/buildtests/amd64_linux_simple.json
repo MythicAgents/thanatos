@@ -1,13 +1,15 @@
 {
   "$schema": "../schemas/payload_build_spec.schema.json",
   "filename": "thanatos",
-  "commands": [],
+  "commands": [
+    "exit"
+  ],
   "selected_os": "Linux",
   "build_parameters": {
     "architecture": "amd64",
     "initoptions": "none",
     "connection_retries": 1,
-    "cryptolib": "system (wincrypto-ng/openssl)",
+    "cryptolib": "system (Windows CNG/Linux OpenSSL)",
     "working_hours": "00:00-23:59",
     "output": "executable"
   },

@@ -1,7 +1,9 @@
 {
   "$schema": "../schemas/payload_build_spec.schema.json",
   "filename": "thanatos",
-  "commands": [],
+  "commands": [
+    "exit"
+  ],
   "selected_os": "Windows",
   "build_parameters": {
     "architecture": "amd64",

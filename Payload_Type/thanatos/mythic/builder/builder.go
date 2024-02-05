@@ -5,8 +5,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
-	builderrors "thanatos/builder/errors"
+	thanatoserror "thanatos/errors"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 	"github.com/google/uuid"
@@ -74,7 +75,7 @@ var payloadDefinition = agentstructs.PayloadType{
 			Choices: []string{
 				string(PayloadBuildParameterInitOptionNone),
 				string(PayloadBuildParameterInitOptionSpawnThread),
-				string(PayloadBuildParameterInitOptionDaemonize),
+				string(PayloadBuildParameterInitOptionFork),
 			},
 			ParameterType: agentstructs.BUILD_PARAMETER_TYPE_CHOOSE_ONE,
 			Required:      true,
@@ -84,7 +85,7 @@ var payloadDefinition = agentstructs.PayloadType{
 		// there is a failed connection
 		{
 			Name:          "connection_retries",
-			Description:   "Number of times to try and reconnect to Mythic",
+			Description:   "Number of times to try and reconnect to Mythic on failed connections",
 			DefaultValue:  1,
 			ParameterType: agentstructs.BUILD_PARAMETER_TYPE_NUMBER,
 			Required:      true,
@@ -92,10 +93,10 @@ var payloadDefinition = agentstructs.PayloadType{
 
 		// This affects what library is used for doing any sort of cryptography. The
 		// internal library uses statically linked pure Rust crypto routines. The system
-		// library will use openssl on Linux and Windows crypto-ng libraries
+		// library will use openssl on Linux and Windows CNG libraries
 		{
 			Name:         "cryptolib",
-			Description:  "Library to use for doing crypto routines",
+			Description:  "Library to use for doing cryptographic functions",
 			DefaultValue: string(PayloadBuildParameterCryptoLibrarySystem),
 			Choices: []string{
 				string(PayloadBuildParameterCryptoLibraryInternal),
@@ -109,7 +110,7 @@ var payloadDefinition = agentstructs.PayloadType{
 		// outside of this interval and it will shutdown any active jobs
 		{
 			Name:          "working_hours",
-			Description:   "Working hours for the agent (use 24 hour time)",
+			Description:   "Working hours for the agent (use 24 hour UTC time)",
 			DefaultValue:  "00:00-23:59",
 			VerifierRegex: "^[0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9]",
 			ParameterType: agentstructs.BUILD_PARAMETER_TYPE_STRING,
@@ -154,7 +155,7 @@ var payloadDefinition = agentstructs.PayloadType{
 		// List defining what libraries should be statically linked to
 		{
 			Name:          "static",
-			Description:   "Libraries to statically link to (Linux only)",
+			Description:   "Statically link the following libraries (Linux only)",
 			ParameterType: agentstructs.BUILD_PARAMETER_TYPE_CHOOSE_MULTIPLE,
 			Choices: []string{
 				string(PayloadBuildParameterStaticOptionOpenSSL),
@@ -166,8 +167,8 @@ var payloadDefinition = agentstructs.PayloadType{
 		// This option determines whether the agent should connect to Mythic via a
 		// self-signed TLS certificate
 		{
-			Name:          "tlsselfsigned",
-			Description:   "Allow HTTPs connections to self-signed TLS certificates",
+			Name:          "tlsuntrusted",
+			Description:   "Allow HTTPs connections to untrusted TLS certificates",
 			DefaultValue:  false,
 			ParameterType: agentstructs.BUILD_PARAMETER_TYPE_BOOLEAN,
 			Required:      false,
@@ -182,6 +183,15 @@ var payloadDefinition = agentstructs.PayloadType{
 			Required:      false,
 		},
 
+		// Name of the shared library export if building as a shared library
+		{
+			Name:          "libexport",
+			Description:   "Shared library export name (if building as a shared library)",
+			DefaultValue:  "init",
+			ParameterType: agentstructs.BUILD_PARAMETER_TYPE_STRING,
+			Required:      false,
+		},
+
 		// The output format for the build
 		{
 			Name:          "output",
@@ -190,9 +200,11 @@ var payloadDefinition = agentstructs.PayloadType{
 			ParameterType: agentstructs.BUILD_PARAMETER_TYPE_CHOOSE_ONE,
 			Choices: []string{
 				string(PayloadBuildParameterOutputFormatExecutable),
-				string(PayloadBuildParameterOutputFormatSharedLibrary),
 				string(PayloadBuildParameterOutputFormatSharedLibraryInit),
+				string(PayloadBuildParameterOutputFormatSharedLibraryExport),
+				string(PayloadBuildParameterOutputFormatReflectiveSharedLibrary),
 				string(PayloadBuildParameterOutputFormatWindowsShellcode),
+				string(PayloadBuildParameterOutputFormatSourceCode),
 			},
 			Required: true,
 		},
@@ -207,6 +219,9 @@ var payloadDefinition = agentstructs.PayloadType{
 type ParsedPayloadParameters struct {
 	// UUID of the agent
 	Uuid uuid.UUID
+
+	// Selected OS
+	SelectedOS string
 
 	// The payload parameters
 	PayloadBuildParameters ParsedBuildParameters
@@ -232,16 +247,17 @@ func (p *ParsedPayloadParameters) String() string {
 func parsePayloadParameters(buildMessage agentstructs.PayloadBuildMessage) (ParsedPayloadParameters, error) {
 	payloadUuid, err := uuid.Parse(buildMessage.PayloadUUID)
 	if err != nil {
-		return ParsedPayloadParameters{}, builderrors.Errorf("failed to parse the payload UUID: %v", err)
+		return ParsedPayloadParameters{}, thanatoserror.Errorf("failed to parse the payload UUID: %v", err)
 	}
 
 	payloadParameters := ParsedPayloadParameters{
-		Uuid: payloadUuid,
+		Uuid:       payloadUuid,
+		SelectedOS: buildMessage.SelectedOS,
 	}
 
 	buildParameters, err := parsePayloadBuildParameters(buildMessage)
 	if err != nil {
-		return payloadParameters, errors.Join(builderrors.New("failed to parse to payload build parameters"), err)
+		return payloadParameters, errors.Join(thanatoserror.New("failed to parse to payload build parameters"), err)
 	}
 
 	payloadParameters.PayloadBuildParameters = buildParameters
@@ -252,7 +268,7 @@ func parsePayloadParameters(buildMessage agentstructs.PayloadBuildMessage) (Pars
 		if profileParameter.Name == "http" {
 			httpProfile, err := parseHttpProfileParameters(profileParameter)
 			if err != nil {
-				return payloadParameters, errors.Join(builderrors.New("failed to parse the profile parameters for the HTTP C2 profile"), err)
+				return payloadParameters, errors.Join(thanatoserror.New("failed to parse the profile parameters for the HTTP C2 profile"), err)
 			}
 
 			payloadParameters.C2Profiles.HttpProfile = httpProfile
@@ -298,18 +314,12 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler Buil
 	// Parse all of the payload parameters
 	payloadConfig, err := parsePayloadParameters(payloadBuildMsg)
 	if err != nil {
-		payloadBuildResponse.BuildStdErr = errors.Join(builderrors.New("failed to parse the payload parameters"), err).Error()
+		payloadBuildResponse.BuildStdErr = errors.Join(thanatoserror.New("failed to parse the payload parameters"), err).Error()
 		return payloadBuildResponse
 	}
 
 	// Get the Rust target for the payload build
 	rustTarget := getRustTriple(payloadBuildMsg.SelectedOS, payloadConfig.PayloadBuildParameters.Architecture)
-
-	// Install the Rust target in order to build the payload
-	if err := handler.InstallBuildTarget(rustTarget); err != nil {
-		payloadBuildResponse.BuildStdErr = errors.Join(builderrors.Errorf("failed to install the '%s' Rust target", rustTarget), err).Error()
-		return payloadBuildResponse
-	}
 
 	// Print out the payload config
 	payloadBuildResponse.BuildMessage = "Payload Configuration:\n"
@@ -321,12 +331,27 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler Buil
 	payloadBuildResponse.BuildMessage += "Serialized Payload Configuration:\n"
 	payloadBuildResponse.BuildMessage += hex.Dump(serializedConfig)
 
-	buildCommand := FormulateBuildCommand("/tmp/foo", rustTarget)
+	configFile, err := os.CreateTemp("", "thanatos-config*")
+	if err != nil {
+		payloadBuildResponse.BuildStdErr = thanatoserror.Errorf("failed to create tempfile for config: %s", err.Error()).Error()
+		return payloadBuildResponse
+	}
+	defer os.Remove(configFile.Name())
+
+	if _, err := configFile.Write(serializedConfig); err != nil {
+		payloadBuildResponse.BuildStdErr = thanatoserror.Errorf("failed to write config to config file: %s", err.Error()).Error()
+		return payloadBuildResponse
+	}
+
+	buildCommand := FormulateBuildCommand(configFile.Name(), rustTarget, payloadConfig)
+
+	payloadBuildResponse.BuildStdOut += "Build Command:\n"
+	payloadBuildResponse.BuildStdOut += buildCommand
 
 	// Build the payload
-	payload, err := handler.Build(rustTarget, PayloadBuildParameterOutputFormat(payloadBuildMsg.SelectedOS), buildCommand)
+	payload, err := handler.Build(rustTarget, payloadConfig, buildCommand)
 	if err != nil {
-		payloadBuildResponse.BuildStdErr = errors.Join(builderrors.New("failed to build the payload"), err).Error()
+		payloadBuildResponse.BuildStdErr = errors.Join(thanatoserror.New("failed to build the payload"), err).Error()
 		return payloadBuildResponse
 	}
 
@@ -345,6 +370,6 @@ func mythicBuildPayloadFunction(payloadBuildMsg agentstructs.PayloadBuildMessage
 // Initializes the payload build routines in Mythic
 func Initialize() {
 	agentstructs.AllPayloadData.Get("thanatos").AddPayloadDefinition(payloadDefinition)
-	agentstructs.AllPayloadData.Get("thanatos").AddIcon(filepath.Join(".", "mythic", "assets", "thanatos.svg"))
+	agentstructs.AllPayloadData.Get("thanatos").AddIcon(filepath.Join(".", "assets", "thanatos.svg"))
 	agentstructs.AllPayloadData.Get("thanatos").AddBuildFunction(mythicBuildPayloadFunction)
 }

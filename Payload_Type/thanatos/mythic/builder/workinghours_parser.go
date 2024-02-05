@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
-	builderrors "thanatos/builder/errors"
+	thanatoserror "thanatos/errors"
 	"time"
 )
 
@@ -21,35 +21,35 @@ func workingHoursValueToDuration(value string) (time.Duration, error) {
 	// Split the duration into separate hour and minute values
 	stringSplit := strings.Split(value, ":")
 	if len(stringSplit) == 1 {
-		return parsedDuration, builderrors.New("did not find a ':' delimiter in the working hour time")
+		return parsedDuration, thanatoserror.New("did not find a ':' delimiter in the working hour time")
 	} else if len(stringSplit) != 2 {
-		return parsedDuration, builderrors.New("working hour time is malformed")
+		return parsedDuration, thanatoserror.New("working hour time is malformed")
 	}
 
 	// Convert the hour portion to an integer
 	hour, err := strconv.Atoi(stringSplit[0])
 	if err != nil {
-		return parsedDuration, builderrors.New("failed to parse the hours portion of the working hours")
+		return parsedDuration, thanatoserror.New("failed to parse the hours portion of the working hours")
 	}
 
 	// Validate the hour portion
 	if hour > 23 {
-		return parsedDuration, builderrors.New("hour portion cannot be greater than 23")
+		return parsedDuration, thanatoserror.New("hour portion cannot be greater than 23")
 	} else if hour < 0 {
-		return parsedDuration, builderrors.New("hour portion is negative")
+		return parsedDuration, thanatoserror.New("hour portion is negative")
 	}
 
 	// Convert the minute portion to an integer
 	minute, err := strconv.Atoi(stringSplit[1])
 	if err != nil {
-		return parsedDuration, builderrors.New("failed to parse the minutes potion of the working hours")
+		return parsedDuration, thanatoserror.New("failed to parse the minutes potion of the working hours")
 	}
 
 	// Validate the minute portion
 	if minute > 60 {
-		return parsedDuration, builderrors.New("minute portion is greater than 60")
+		return parsedDuration, thanatoserror.New("minute portion is greater than 60")
 	} else if minute < 0 {
-		return parsedDuration, builderrors.New("minute portion is negative")
+		return parsedDuration, thanatoserror.New("minute portion is negative")
 	}
 
 	// Convert the hour period to seconds
@@ -74,17 +74,17 @@ func parseWorkingHours(workingHours string) (ParsedWorkingHours, error) {
 
 	workingHoursSplit := strings.Split(workingHours, "-")
 	if len(workingHoursSplit) == 1 {
-		return ParsedWorkingHours{}, builderrors.New("working hours value does not contain a '-' delimiter")
+		return ParsedWorkingHours{}, thanatoserror.New("working hours value does not contain a '-' delimiter")
 	}
 
 	workingStart, err := workingHoursValueToDuration(workingHoursSplit[0])
 	if err != nil {
-		return ParsedWorkingHours{}, errors.Join(builderrors.New("failed to parse the start portion for the working hours"), err)
+		return ParsedWorkingHours{}, errors.Join(thanatoserror.New("failed to parse the start portion for the working hours"), err)
 	}
 
 	workingEnd, err = workingHoursValueToDuration(workingHoursSplit[1])
 	if err != nil {
-		return ParsedWorkingHours{}, errors.Join(builderrors.New("failed to parse the end portion for the working hours"), err)
+		return ParsedWorkingHours{}, errors.Join(thanatoserror.New("failed to parse the end portion for the working hours"), err)
 	}
 
 	if workingEnd == 0 {

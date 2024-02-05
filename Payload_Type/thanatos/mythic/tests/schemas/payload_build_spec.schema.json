@@ -63,8 +63,8 @@
           "description": "Library to use for doing crypto routines",
           "type": "string",
           "enum": [
-            "internal",
-            "system (wincrypto-ng/openssl)"
+            "internal (RustCrypto)",
+            "system (Windows CNG/Linux OpenSSL)"
           ]
         },
         "working_hours": {

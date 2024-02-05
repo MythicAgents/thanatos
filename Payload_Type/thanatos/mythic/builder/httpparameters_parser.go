@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
-	builderrors "thanatos/builder/errors"
+	thanatoserror "thanatos/errors"
 	"time"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
@@ -171,43 +171,43 @@ func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (
 
 	callbackPort, err := parameters.GetNumberArg("callback_port")
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf(errorFormatStr, "callback_port", err.Error())
+		return &parsedParameters, thanatoserror.Errorf(errorFormatStr, "callback_port", err.Error())
 	}
 
 	if callbackPort < 1 || callbackPort > 65535 {
-		return &parsedParameters, builderrors.New("configured callback port for the HTTP profile is not between 1 and 65535")
+		return &parsedParameters, thanatoserror.New("configured callback port for the HTTP profile is not between 1 and 65535")
 	}
 
 	parsedParameters.CallbackPort = uint16(callbackPort)
 
 	killdate, err := parameters.GetDateArg("killdate")
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf(errorFormatStr, "killdate", err.Error())
+		return &parsedParameters, thanatoserror.Errorf(errorFormatStr, "killdate", err.Error())
 	}
 
 	killdateTime, err := time.Parse(time.DateOnly, killdate)
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf("failed to parse the HTTP profile killdate: %s", err.Error())
+		return &parsedParameters, thanatoserror.Errorf("failed to parse the HTTP profile killdate: %s", err.Error())
 	}
 
 	// Check if killdate timestamp integer conversion has overflowed. This shouldn't
 	// happen until about another 292 billion years from now so I'll fix it then
 	if killdateTime.Unix() > math.MaxInt64 {
-		return &parsedParameters, builderrors.Errorf("are you from the future?")
+		return &parsedParameters, thanatoserror.Errorf("are you from the future?")
 	}
 
 	parsedParameters.Killdate = uint64(killdateTime.Unix())
 
 	encryptedExchangeCheck, err := parameters.GetBooleanArg("encrypted_exchange_check")
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf(errorFormatStr, "encrypted_exchange_check", err.Error())
+		return &parsedParameters, thanatoserror.Errorf(errorFormatStr, "encrypted_exchange_check", err.Error())
 	}
 
 	parsedParameters.EncryptedExchangeCheck = encryptedExchangeCheck
 
 	callbackJitter, err := parameters.GetNumberArg("callback_jitter")
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf(errorFormatStr, "callback_jitter", err.Error())
+		return &parsedParameters, thanatoserror.Errorf(errorFormatStr, "callback_jitter", err.Error())
 	}
 
 	if callbackJitter < 0 || callbackJitter > 100 {
@@ -218,20 +218,20 @@ func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (
 
 	headers, err := parameters.GetDictionaryArg("headers")
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf(errorFormatStr, "headers", err.Error())
+		return &parsedParameters, thanatoserror.Errorf(errorFormatStr, "headers", err.Error())
 	}
 
 	parsedParameters.Headers = headers
 
 	aespsk, err := parameters.GetCryptoArg("AESPSK")
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf(errorFormatStr, "AESPSK", err.Error())
+		return &parsedParameters, thanatoserror.Errorf(errorFormatStr, "AESPSK", err.Error())
 	}
 
 	if aespsk.Value != "none" {
 		aeskey, err := base64.StdEncoding.DecodeString(aespsk.EncKey)
 		if err != nil {
-			return &parsedParameters, builderrors.Errorf("failed to base64 decode HTTP encryption key: %s", err.Error())
+			return &parsedParameters, thanatoserror.Errorf("failed to base64 decode HTTP encryption key: %s", err.Error())
 		}
 
 		parsedParameters.CryptoInfo.Type = aespsk.Value
@@ -242,60 +242,60 @@ func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (
 
 	callbackHost, err := parameters.GetStringArg("callback_host")
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf(errorFormatStr, "callback_host", err.Error())
+		return &parsedParameters, thanatoserror.Errorf(errorFormatStr, "callback_host", err.Error())
 	}
 
 	parsedParameters.CallbackHost = callbackHost
 
 	getUri, err := parameters.GetStringArg("get_uri")
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf(errorFormatStr, "get_uri", err.Error())
+		return &parsedParameters, thanatoserror.Errorf(errorFormatStr, "get_uri", err.Error())
 	}
 
 	parsedParameters.GetUri = getUri
 
 	postUri, err := parameters.GetStringArg("post_uri")
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf(errorFormatStr, "post_uri", err.Error())
+		return &parsedParameters, thanatoserror.Errorf(errorFormatStr, "post_uri", err.Error())
 	}
 
 	parsedParameters.PostUri = postUri
 
 	queryPathName, err := parameters.GetStringArg("query_path_name")
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf(errorFormatStr, "query_path_name", err.Error())
+		return &parsedParameters, thanatoserror.Errorf(errorFormatStr, "query_path_name", err.Error())
 	}
 
 	parsedParameters.QueryPathName = queryPathName
 
 	proxyHost, err := parameters.GetStringArg("proxy_host")
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf(errorFormatStr, "proxy_host", err.Error())
+		return &parsedParameters, thanatoserror.Errorf(errorFormatStr, "proxy_host", err.Error())
 	}
 
 	proxyPortStr, err := parameters.GetStringArg("proxy_port")
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf(errorFormatStr, "proxy_port", err.Error())
+		return &parsedParameters, thanatoserror.Errorf(errorFormatStr, "proxy_port", err.Error())
 	}
 
 	proxyUser, err := parameters.GetStringArg("proxy_user")
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf(errorFormatStr, "proxy_user", err.Error())
+		return &parsedParameters, thanatoserror.Errorf(errorFormatStr, "proxy_user", err.Error())
 	}
 
 	proxyPass, err := parameters.GetStringArg("proxy_pass")
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf(errorFormatStr, "proxy_pass", err.Error())
+		return &parsedParameters, thanatoserror.Errorf(errorFormatStr, "proxy_pass", err.Error())
 	}
 
 	// Proxy information is present
 	if proxyHost != "" || proxyPortStr != "" || proxyUser != "" || proxyPass != "" {
 		if proxyHost == "" {
-			return &parsedParameters, builderrors.New("HTTP C2 profile proxy information supplied but proxy host is empty")
+			return &parsedParameters, thanatoserror.New("HTTP C2 profile proxy information supplied but proxy host is empty")
 		}
 
 		if proxyPortStr == "" {
-			return &parsedParameters, builderrors.New("HTTP C2 profile proxy information supplied but proxy port is empty")
+			return &parsedParameters, thanatoserror.New("HTTP C2 profile proxy information supplied but proxy port is empty")
 		}
 
 		parsedParameters.ProxyInfo = &HttpC2ProfileProxyParameters{}
@@ -303,11 +303,11 @@ func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (
 
 		proxyPort, err := strconv.Atoi(proxyPortStr)
 		if err != nil {
-			return &parsedParameters, builderrors.Errorf("could not parse the 'proxy_port' value from the HTTP C2 profile parameters: %s", err.Error())
+			return &parsedParameters, thanatoserror.Errorf("could not parse the 'proxy_port' value from the HTTP C2 profile parameters: %s", err.Error())
 		}
 
 		if proxyPort < 1 || proxyPort > 65535 {
-			return &parsedParameters, builderrors.New("proxy port value for the HTTP C2 profile is outside the possible port range of 1-65535")
+			return &parsedParameters, thanatoserror.New("proxy port value for the HTTP C2 profile is outside the possible port range of 1-65535")
 		}
 
 		parsedParameters.ProxyInfo.Port = uint16(proxyPort)
@@ -319,11 +319,11 @@ func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (
 
 	callbackInterval, err := parameters.GetNumberArg("callback_interval")
 	if err != nil {
-		return &parsedParameters, builderrors.Errorf(errorFormatStr, "callback_interval", err.Error())
+		return &parsedParameters, thanatoserror.Errorf(errorFormatStr, "callback_interval", err.Error())
 	}
 
 	if callbackInterval < 0 {
-		return &parsedParameters, builderrors.New("callback interval for the HTTP C2 profile is less than 0")
+		return &parsedParameters, thanatoserror.New("callback interval for the HTTP C2 profile is less than 0")
 	}
 
 	parsedParameters.CallbackInterval = uint32(callbackInterval)

@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	builderrors "thanatos/builder/errors"
+	thanatoserror "thanatos/errors"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 	"github.com/vmihailenco/msgpack/v5"
@@ -43,7 +43,7 @@ type ParsedBuildParameters struct {
 	StaticOptions []PayloadBuildParameterStaticOption
 
 	// Whether the agent should connect to self signed TLS certificates
-	TlsSelfSigned bool
+	TlsUntrusted bool
 
 	// Initial spawnto value
 	SpawnTo string
@@ -71,9 +71,9 @@ pub enum InitOption {
 type SerializedConfigInitOption byte
 
 const (
-	SerializedConfigInitOptionNone      SerializedConfigInitOption = 0
-	SerializedConfigInitOptionThread    SerializedConfigInitOption = 1
-	SerializedConfigInitOptionDaemonize SerializedConfigInitOption = 2
+	SerializedConfigInitOptionNone   SerializedConfigInitOption = 0
+	SerializedConfigInitOptionThread SerializedConfigInitOption = 1
+	SerializedConfigInitOptionFork   SerializedConfigInitOption = 2
 )
 
 /*
@@ -94,9 +94,9 @@ pub struct ConfigVars<'a> {
     domains: Vec<[u8; 32]>,
     hostnames: Vec<[u8; 32]>,
     usernames: Vec<[u8; 32]>,
-    tlsselfsigned: bool,
+    tlsuntrusted: bool,
     spawn_to: &'a str,
-    profile: Option<HttpConfigVars<'a>>,
+    http_profile: Option<HttpConfigVars<'a>>,
 }
 */
 
@@ -110,16 +110,16 @@ type SerializedBuildParameterFormat struct {
 	Domains           [][32]byte                 `msgpack:"domains"`
 	Hostnames         [][32]byte                 `msgpack:"hostnames"`
 	Usernames         [][32]byte                 `msgpack:"usernames"`
-	TlsSelfSigned     bool                       `msgpack:"tlsselfsigned"`
+	TlsUntrusted      bool                       `msgpack:"tlsuntrusted"`
 	SpawnTo           string                     `msgpack:"spawn_to"`
-	Profile           *HttpC2ProfileParameters   `msgpack:"profile,omitempty"`
+	HttpProfile       *HttpC2ProfileParameters   `msgpack:"http_profile,omitempty"`
 }
 
 func (p *ParsedPayloadParameters) Serialize() ([]byte, error) {
 	uuidBytes, err := p.Uuid.MarshalBinary()
 	fmt.Printf("%x\n", uuidBytes)
 	if err != nil {
-		return []byte{}, builderrors.Errorf("failed to marshal payload UUID: %s", err.Error())
+		return []byte{}, thanatoserror.Errorf("failed to marshal payload UUID: %s", err.Error())
 	}
 
 	initOption := SerializedConfigInitOptionNone
@@ -129,8 +129,8 @@ func (p *ParsedPayloadParameters) Serialize() ([]byte, error) {
 		initOption = SerializedConfigInitOptionNone
 	case PayloadBuildParameterInitOptionSpawnThread:
 		initOption = SerializedConfigInitOptionThread
-	case PayloadBuildParameterInitOptionDaemonize:
-		initOption = SerializedConfigInitOptionDaemonize
+	case PayloadBuildParameterInitOptionFork:
+		initOption = SerializedConfigInitOptionFork
 	}
 
 	domains := [][32]byte{}
@@ -160,12 +160,12 @@ func (p *ParsedPayloadParameters) Serialize() ([]byte, error) {
 		Domains:           domains,
 		Hostnames:         hostnames,
 		Usernames:         usernames,
-		TlsSelfSigned:     p.PayloadBuildParameters.TlsSelfSigned,
+		TlsUntrusted:      p.PayloadBuildParameters.TlsUntrusted,
 		SpawnTo:           p.PayloadBuildParameters.SpawnTo,
 	}
 
 	if p.C2Profiles.HttpProfile != nil {
-		serializedFormat.Profile = p.C2Profiles.HttpProfile
+		serializedFormat.HttpProfile = p.C2Profiles.HttpProfile
 	}
 
 	var buffer bytes.Buffer
@@ -176,7 +176,7 @@ func (p *ParsedPayloadParameters) Serialize() ([]byte, error) {
 	encoder.UseInternedStrings(true)
 
 	if err := encoder.Encode(&serializedFormat); err != nil {
-		return []byte{}, builderrors.Errorf("failed to serialize payload config: %s", err.Error())
+		return []byte{}, thanatoserror.Errorf("failed to serialize payload config: %s", err.Error())
 	}
 
 	return buffer.Bytes(), nil
@@ -188,8 +188,8 @@ func (p *ParsedBuildParameters) String() string {
 	initOption := "none"
 
 	switch p.InitOptions {
-	case PayloadBuildParameterInitOptionDaemonize:
-		initOption = "daemonize"
+	case PayloadBuildParameterInitOptionFork:
+		initOption = "fork"
 	case PayloadBuildParameterInitOptionSpawnThread:
 		initOption = "thread"
 	}
@@ -214,7 +214,7 @@ func (p *ParsedBuildParameters) String() string {
 		output += fmt.Sprintf("USERNAME_LIST=%s\n", strings.Join(p.UsernameList, ","))
 	}
 
-	output += fmt.Sprintf("TLS_SELF_SIGNED=%t\n", p.TlsSelfSigned)
+	output += fmt.Sprintf("TLS_UNTRUSTED=%t\n", p.TlsUntrusted)
 	if len(p.SpawnTo) > 0 {
 		output += fmt.Sprintf("SPAWN_TO=%s\n", p.SpawnTo)
 	}
@@ -234,48 +234,48 @@ func parsePayloadBuildParameters(buildMessage agentstructs.PayloadBuildMessage) 
 
 	architecture, err := parameters.GetStringArg("architecture")
 	if err != nil {
-		return parsedParameters, builderrors.Errorf(errorFormatStr, "architecture", err.Error())
+		return parsedParameters, thanatoserror.Errorf(errorFormatStr, "architecture", err.Error())
 	}
 
 	parsedParameters.Architecture = PayloadBuildParameterArchitecture(architecture)
 
 	initOptions, err := parameters.GetStringArg("initoptions")
 	if err != nil {
-		return parsedParameters, builderrors.Errorf(errorFormatStr, "initoptions", err.Error())
+		return parsedParameters, thanatoserror.Errorf(errorFormatStr, "initoptions", err.Error())
 	}
 
 	parsedParameters.InitOptions = PayloadBuildParameterInitOptions(initOptions)
 
 	connectionRetries, err := parameters.GetNumberArg("connection_retries")
 	if err != nil {
-		return parsedParameters, builderrors.Errorf(errorFormatStr, "connection_retries", err.Error())
+		return parsedParameters, thanatoserror.Errorf(errorFormatStr, "connection_retries", err.Error())
 	}
 
 	if connectionRetries <= 0 {
-		return parsedParameters, builderrors.New("connection_retries value is <= 0")
+		return parsedParameters, thanatoserror.New("connection_retries value is <= 0")
 	}
 
 	parsedParameters.ConnectionRetries = int(connectionRetries)
 
 	cryptoLib, err := parameters.GetStringArg("cryptolib")
 	if err != nil {
-		return parsedParameters, builderrors.Errorf(errorFormatStr, "cryptolib", err.Error())
+		return parsedParameters, thanatoserror.Errorf(errorFormatStr, "cryptolib", err.Error())
 	}
 
 	parsedParameters.CryptoLib = PayloadBuildParameterCryptoLibrary(cryptoLib)
 
 	workingHoursStr, err := parameters.GetStringArg("working_hours")
 	if err != nil {
-		return parsedParameters, builderrors.Errorf(errorFormatStr, "working_hours", err.Error())
+		return parsedParameters, thanatoserror.Errorf(errorFormatStr, "working_hours", err.Error())
 	}
 
 	workingHours, err := parseWorkingHours(workingHoursStr)
 	if err != nil {
-		return parsedParameters, errors.Join(builderrors.New("failed to parse the payload's working hours"), err)
+		return parsedParameters, errors.Join(thanatoserror.New("failed to parse the payload's working hours"), err)
 	}
 
 	if workingHours.StartTime >= workingHours.EndTime {
-		return parsedParameters, builderrors.New("working hours start time is after the working hours end time")
+		return parsedParameters, thanatoserror.New("working hours start time is after the working hours end time")
 	}
 
 	parsedParameters.WorkingHours = workingHours
@@ -307,11 +307,11 @@ func parsePayloadBuildParameters(buildMessage agentstructs.PayloadBuildMessage) 
 		parsedParameters.StaticOptions = []PayloadBuildParameterStaticOption{}
 	}
 
-	tlsselfsigned, err := parameters.GetBooleanArg("tlsselfsigned")
+	tlsuntrusted, err := parameters.GetBooleanArg("tlsuntrusted")
 	if err == nil {
-		parsedParameters.TlsSelfSigned = tlsselfsigned
+		parsedParameters.TlsUntrusted = tlsuntrusted
 	} else {
-		parsedParameters.TlsSelfSigned = false
+		parsedParameters.TlsUntrusted = false
 	}
 
 	spawnto, err := parameters.GetStringArg("spawnto")
@@ -323,7 +323,7 @@ func parsePayloadBuildParameters(buildMessage agentstructs.PayloadBuildMessage) 
 
 	output, err := parameters.GetStringArg("output")
 	if err != nil {
-		return parsedParameters, builderrors.Errorf(errorFormatStr, "output", err.Error())
+		return parsedParameters, thanatoserror.Errorf(errorFormatStr, "output", err.Error())
 	}
 
 	parsedParameters.Output = PayloadBuildParameterOutputFormat(output)
