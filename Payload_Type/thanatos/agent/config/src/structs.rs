@@ -15,7 +15,7 @@ pub enum InitOption {
     Thread = 1,
 
     /// Payload should fork to the background
-    Daemonize = 2,
+    Fork = 2,
 }
 
 /// HTTP C2 profile proxy information
@@ -66,9 +66,9 @@ pub struct ConfigVars<'a> {
     domains: Vec<[u8; 32]>,
     hostnames: Vec<[u8; 32]>,
     usernames: Vec<[u8; 32]>,
-    tlsselfsigned: bool,
+    tlsuntrusted: bool,
     spawn_to: &'a str,
-    profile: Option<HttpConfigVars<'a>>,
+    http_profile: Option<HttpConfigVars<'a>>,
 }
 
 impl ConfigVars<'_> {

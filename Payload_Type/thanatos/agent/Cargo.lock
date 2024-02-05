@@ -37,28 +37,13 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "config"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "rmp",
  "rmp-serde",
  "serde",
  "serde_bytes",
  "serde_repr",
- "utils",
-]
-
-[[package]]
-name = "config_builder"
-version = "0.1.0"
-dependencies = [
- "base64",
- "config",
- "rmp",
- "rmp-serde",
- "serde",
- "serde_json",
- "serde_repr",
- "sha2",
  "utils",
 ]
 
@@ -93,7 +78,21 @@ dependencies = [
 
 [[package]]
 name = "ffiwrappers"
-version = "0.1.0"
+version = "0.2.0"
+
+[[package]]
+name = "genconfig"
+version = "0.2.0"
+dependencies = [
+ "base64",
+ "rmp",
+ "rmp-serde",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "sha2",
+ "utils",
+]
 
 [[package]]
 name = "generic-array"
@@ -252,16 +251,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "thanatos_bin"
-version = "0.1.0"
-dependencies = [
- "config_builder",
- "thanatos_core",
-]
-
-[[package]]
 name = "thanatos_core"
-version = "2.0.0"
+version = "0.2.0"
 dependencies = [
  "base64",
  "config",
@@ -275,11 +266,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "thanatos_lib"
-version = "0.1.0"
+name = "thanatos_http"
+version = "0.2.0"
 dependencies = [
- "config_builder",
- "thanatos_core",
+ "config",
+ "rmp",
+ "rmp-serde",
+]
+
+[[package]]
+name = "thanatos_http_binary"
+version = "0.2.0"
+dependencies = [
+ "thanatos_http",
+]
+
+[[package]]
+name = "thanatos_http_cdylib"
+version = "0.2.0"
+dependencies = [
+ "thanatos_http",
 ]
 
 [[package]]
@@ -296,7 +302,7 @@ checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
 
 [[package]]
 name = "utils"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_bytes",

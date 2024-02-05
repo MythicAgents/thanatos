@@ -3,11 +3,12 @@
 resolver = "2"
 members = [
   "config",
-  "config_builder",
   "ffiwrappers",
-  "thanatos_bin",
+  "genconfig",
   "thanatos_core",
-  "thanatos_lib",
+  "thanatos_http",
+  "thanatos_http/cdylib",
+  "thanatos_http/binary",
   "utils",
 ]
 
@@ -22,6 +23,7 @@ authors = ["@M_alphaaa"]
 edition = "2021"
 homepage = "https://github.com/MythicAgents/thanatos"
 license = "BSD-3-Clause"
+version = "0.2.0"
 
 
 ##### WORKSPACE DEPENDENCIES #####
@@ -39,23 +41,6 @@ version = "1"
 features = ["derive"]
 
 ##### WORKSPACE SETTINGS #####
-[workspace.lints.rust]
-elided_lifetimes_in_paths = "warn"
-explicit_outlives_requirements = "warn"
-keyword_idents = "deny"
-macro_use_extern_crate = "deny"
-missing_docs = "warn"
-non_ascii_idents = "deny"
-pointer_structural_match = "deny"
-single_use_lifetimes = "warn"
-unreachable_pub = "warn"
-unsafe_op_in_unsafe_fn = "deny"
-unused_import_braces = "warn"
-unused_lifetimes = "warn"
-unused_macro_rules = "warn"
-unused_qualifications = "warn"
-unused_tuple_struct_fields = "warn"
-variant_size_differences = "warn"
 
 ##### BUILD SETTINGS #####
 [profile.release]
@@ -64,6 +49,3 @@ codegen-units = 1
 panic = "abort"
 strip = true
 opt-level = 'z'
-
-[profile.dev]
-panic = "abort"

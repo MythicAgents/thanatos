@@ -1,12 +1,10 @@
 [package]
-name = "utils"
+name = "thanatos_http_binary"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
 license.workspace = true
 version.workspace = true
 
-
 [dependencies]
-serde.workspace = true
-serde_bytes.workspace = true
+thanatos_http = { path = ".." }

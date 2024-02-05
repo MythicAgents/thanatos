@@ -1,22 +1,18 @@
 CARGOARGS	?=
 TARGET		?= x86_64-unknown-linux-gnu
-CONFIG		?= .config
-SOURCES		:= $(wildcard ./**.rs)
-
-
-ifneq (,$(wildcard $(CONFIG)))
-	include $(CONFIG)
-	export $(shell sed 's/=.*//' $(CONFIG))
-endif
+CONFIG		?= $(PWD)/.config.bin
+SOURCES		= $(wildcard ./**.rs)
+SRC_CONFIG	?= $(PWD)/.config
+PACKAGE		?=
 
 
 .PHONY: help
 help: # Print out this help info
-	@awk 'match($$0, /^([a-zA-Z\-\.]+):.*(#.*)/, m) { print m[1] ":", m[2] }' Makefile
+	@awk 'match($$0, /^([a-zA-Z].*):.*(#.*)/, m) { print m[1] ":", m[2] }' Makefile
 
 .PHONY: list
 list: # List all the targets
-	@awk 'match($$0, /^([a-zA-Z][a-zA-Z\-\.]*):/, m) { print m[1] }' Makefile
+	@awk 'match($$0, /^([a-zA-Z].*):/, m) { print m[1] }' Makefile
 
 define newline
 
@@ -42,54 +38,48 @@ HTTP_POST_URI=data
 HTTP_QUERY_PATH_NAME=q
 endef
 
+
+$(SRC_CONFIG):
+	@echo -e '$(subst $(newline),\n,${DEFAULT_CONFIG})' > $(SRC_CONFIG)
+
+$(CONFIG): $(SRC_CONFIG)
+	SRC_CONFIG=$(SRC_CONFIG) CONFIG=$(CONFIG) cargo build -p genconfig
+
+.config:
+	@echo -e '$(subst $(newline),\n,${DEFAULT_CONFIG})' > $(SRC_CONFIG)
+
+.config.bin: .config
+	SRC_CONFIG=$(SRC_CONFIG) CONFIG=$(CONFIG) cargo build -p genconfig
+
 .PHONY: test
 test: # Run all of the tests
 	cargo test --workspace --target $(TARGET) $(CARGOARGS)
 
 .PHONY: genconfig
-genconfig: # Generate a configuration file for building the agent
-ifeq (,$(wildcard $(CONFIG)))
-	@echo -e '$(subst $(newline),\n,${DEFAULT_CONFIG})' > $(CONFIG)
-	cat $(CONFIG)
-endif
+genconfig: $(CONFIG) # Generate a configuration file for building the agent
 
 .PHONY: clean
 clean: # Remove the built binaries
 	cargo clean
-	rm -vf thanatos thanatos.exe thanatos.dll thanatos.so
 
 .PHONY: distclean
 distclean: # Remove the build configuration
 	rm -vf $(CONFIG)
 
-.PHONY: all
-all: thanatos thanatos.so thanatos.exe thanatos.dll # Builds all of the build targets
+.PHONY: http
+http: # Build the HTTP version of the thanatos agent
+	@$(MAKE) _http PACKAGE=thanatos_http_binary
+	@$(MAKE) _http PACKAGE=thanatos_http_cdylib
 
-.PHONY: core
-core: # Build the core agent
-	cargo build -p thanatos_core --target $(TARGET) $(CARGOARGS)
+.PHONY: http_binary
+http_binary: # Build the HTTP version of the thanatos agent as a binary
+	@$(MAKE) _http PACKAGE=thanatos_http_binary
 
-.PHONY: thanatos
-thanatos: # Build the Linux executable version of the thanatos agent
-	@$(MAKE) _binary
-
-.PHONY: thanatos.so
-thanatos.so: # Build the Linux shared object version of the thanatos agent
-	@$(MAKE) _library
-
-.PHONY: thanatos.exe
-thanatos.exe: # Build the Windows executable version of the thanatos agent
-	@$(MAKE) TARGET="x86_64-pc-windows-gnu" _binary
-
-.PHONY: thanatos.dll
-thanatos.dll: # Build the Windows DLL version of the thanatos agent
-	@$(MAKE) TARGET="x86_64-pc-windows-gnu" _library
+.PHONY: http_library
+http_library: # Build the HTTP version of the thanatos agent as a library
+	@$(MAKE) _http PACKAGE=thanatos_http_cdylib
 
 # Hidden build targets for abstracting the other build targets
-.PHONY: _binary
-_binary: $(CONFIG) $(SOURCES) core
-	cargo build -p thanatos_bin --target $(TARGET) $(CARGOARGS)
-
-.PHONY: _library
-_library: $(CONFIG) $(SOURCES) core
-	cargo build -p thanatos_lib --target $(TARGET) $(CARGOARGS)
+.PHONY: _http
+_http: $(CONFIG)
+	CONFIG=$(CONFIG) cargo build -p $(PACKAGE) --target $(TARGET) $(CARGOARGS)
