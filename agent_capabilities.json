@@ -1,0 +1,41 @@
+{
+  "os": [
+    "Windows",
+    "Linux"
+  ],
+  "languages": [
+    "Rust"
+  ],
+  "features": {
+    "mythic": [
+      "artifacts",
+      "browser scripts",
+      "file browser",
+      "file chunking",
+      "process browser",
+      "process responses"
+    ],
+    "custom": [
+      "key exchange",
+      "killdate",
+      "ssh client",
+      "working hours"
+    ]
+  },
+  "payload_output": [
+    "exe",
+    "elf",
+    "so",
+    "dll"
+  ],
+  "architectures": [
+    "x86",
+    "amd64"
+  ],
+  "c2": [
+    "http"
+  ],
+  "mythic_version": "3.2",
+  "agent_version": "0.2.0",
+  "supported_wrappers": []
+}
