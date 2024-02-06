@@ -376,4 +376,8 @@ func Initialize() {
 	agentstructs.AllPayloadData.Get("thanatos").AddPayloadDefinition(payloadDefinition)
 	agentstructs.AllPayloadData.Get("thanatos").AddIcon(filepath.Join(".", "assets", "thanatos.svg"))
 	agentstructs.AllPayloadData.Get("thanatos").AddBuildFunction(mythicBuildPayloadFunction)
+
+
+
+
 }

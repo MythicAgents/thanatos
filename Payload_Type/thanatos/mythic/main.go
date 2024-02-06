@@ -16,6 +16,23 @@ func main() {
 	// Initialize the commands
 	commands.Initialize()
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	// Start communicating with Mythic
 	MythicContainer.StartAndRunForever([]MythicContainer.MythicServices{
 		MythicContainer.MythicServicePayload,
