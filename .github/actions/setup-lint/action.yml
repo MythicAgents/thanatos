@@ -1,43 +1,42 @@
 name: Setup lint environment
 description: Sets up an environment for running checks
 inputs:
-  python-requirements:
-    description: Path to the requiremets.txt for python packages
-    required: true
-
   agent-code:
     description: Path to the agent code
     required: true
 
+  mythic-code:
+    description: Path to the Mythic code
+
 runs:
   using: "composite"
   steps:
-    - name: Install Python
-      uses: actions/setup-python@v5
+    - name: Install Golang
+      uses: actions/setup-go@v5
       with:
-        python-version: '3.11'
-        cache: 'pip'
+        go-version: '1.21'
 
-    - name: Install Python packages
+    - name: Install Golang modules
       shell: bash
-      run: |
-        pip install -r ${{ inputs.python-requirements }}
-        pip install pylint black
+      working-directory: ${{ inputs.mythic-code }}
+      run: go mod download
 
     - name: Setup cargo cache
       uses: actions/cache@v4
+      working-directory: ${{ inputs.agent-code }}
       with:
         path: ~/.cargo
-        key: ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.toml', inputs.agent-code)) }}
+        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
         restore-keys: |
-          ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.toml', inputs.agent-code)) }}
+          ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
           ${{ runner.os }}-cargo
 
     - name: Setup cargo target cache
       uses: actions/cache@v4
+      working-directory: ${{ inputs.agent-code }}
       with:
-        path: ${{ inputs.AGENT_CODE }}/target
-        key: ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.toml', inputs.agent-code)) }}
+        path: target
+        key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
         restore-keys: |
-          ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.toml', inputs.agent-code)) }}
+          ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
           ${{ runner.os }}-cargo-target

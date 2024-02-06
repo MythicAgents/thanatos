@@ -6,20 +6,22 @@ on:
       - main
       - dev
     paths:
-      - Payload_Type/thanatos/thanatos/agent_code
-      - Payload_Type/thanatos/**.py
+      - Payload_Type/thanatos/agent
+      - Payload_Type/thanatos/mythic
 
   pull_request:
     branches:
       - main
       - dev
+    paths:
+      - Payload_Type/thanatos/agent
+      - Payload_Type/thanatos/mythic
 
   workflow_call:
 
 env:
-  THANATOS_PATH: Payload_Type/thanatos
-  AGENT_CODE: thanatos/agent_code
-  MYTHIC_CODE: thanatos/mythic/agent_functions
+  AGENT_CODE: Payload_Type/thanatos/agent
+  MYTHIC_CODE: Payload_Type/thanatos/mythic
 
 
 jobs:
@@ -34,30 +36,18 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup-lint
         with:
-          python-requirements: ${{ env.THANATOS_PATH }}/requirements.txt
-          agent-code: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
+          agent-code: ${{ env.AGENT_CODE }}
+          mythic-code: ${{ env.MYTHIC_CODE }}
 
       - name: Check Mythic code for errors
-        working-directory: ${{ env.THANATOS_PATH }}
-        run: python -m pylint --rcfile pylintrc -f colorized --errors-only main.py ${MYTHIC_CODE}/*.py
+        working-directory: ${{ env.MYTHIC_CODE }}
+        run: gofmt -e **/**.go 1>/dev/null
 
       - name: Check Agent code for errors
-        working-directory: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
-        run: cargo check --color always --all-targets --all-features
-        env:
-          RUSTFLAGS: "--cfg http"
-          UUID: ""
-          AESPSK: ""
-          callback_host: ""
-          callback_interval: ""
-          callback_jitter: ""
-          callback_port: ""
-          connection_retries: ""
-          encrypted_exchange_check: ""
-          get_uri: ""
-          headers: ""
-          post_uri: ""
-          working_hours: ""
+        working-directory: ${{ env.AGENT_CODE }}
+        run: |
+          make genconfig
+          env SRC_CONFIG=$(pwd)/.config CONFIG=$(pwd)/.config.bin cargo check --color always --workspace --exclude genconfig --all-targets --all-features
 
   format:
     name: Check Formatting
@@ -70,30 +60,16 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup-lint
         with:
-          python-requirements: ${{ env.THANATOS_PATH }}/requirements.txt
-          agent-code: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
+          agent-code: ${{ env.AGENT_CODE }}
+          mythic-code: ${{ env.MYTHIC_CODE }}
 
       - name: Check Mythic code formatting
-        working-directory: ${{ env.THANATOS_PATH }}
-        run: python -m black --color --diff --check main.py ${MYTHIC_CODE}/*.py
+        working-directory: ${{ env.MYTHIC_CODE }}
+        run: gofmt -l -d **/**.go
 
       - name: Check Agent code formatting
-        working-directory: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
-        run: cargo fmt -- --color always --check
-        env:
-          RUSTFLAGS: "--cfg http"
-          UUID: ""
-          AESPSK: ""
-          callback_host: ""
-          callback_interval: ""
-          callback_jitter: ""
-          callback_port: ""
-          connection_retries: ""
-          encrypted_exchange_check: ""
-          get_uri: ""
-          headers: ""
-          post_uri: ""
-          working_hours: ""
+        working-directory: ${{ env.AGENT_CODE }}
+        run: cargo fmt --all -- --color always --check
 
   lint:
     name: Lint Code
@@ -106,30 +82,18 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup-lint
         with:
-          python-requirements: ${{ env.THANATOS_PATH }}/requirements.txt
-          agent-code: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
+          agent-code: ${{ env.AGENT_CODE }}
+          mythic-code: ${{ env.MYTHIC_CODE }}
 
       - name: Install Clippy
         run: rustup component add clippy
 
-      - name: Lint Mythic code with pylint
-        working-directory: ${{ env.THANATOS_PATH }}
-        run: python -m pylint --rcfile pylintrc -f colorized main.py ${MYTHIC_CODE}/*.py
+      - name: Lint Mythic code with golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: ${{ env.MYTHIC_CODE }}
 
       - name: Lint Agent code with clippy
-        working-directory: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
+        working-directory: ${{ env.AGENT_CODE }}
         run: cargo clippy --color always --all-features --all-targets -- -D warnings
-        env:
-          RUSTFLAGS: "--cfg http"
-          UUID: ""
-          AESPSK: ""
-          callback_host: ""
-          callback_interval: ""
-          callback_jitter: ""
-          callback_port: ""
-          connection_retries: ""
-          encrypted_exchange_check: ""
-          get_uri: ""
-          headers: ""
-          post_uri: ""
-          working_hours: ""
