@@ -1,2 +1,4 @@
 # Mac OS metadata file
 .DS_Store
+
+/sync.sh
