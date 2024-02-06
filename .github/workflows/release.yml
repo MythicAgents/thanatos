@@ -5,6 +5,11 @@ on:
     branches:
       - 'release/v[0-9]+.[0-9]+.*'
 
+    paths:
+      - Payload_Type/thanatos/**
+      - config.json
+      - agent_capabilities.json
+
 env:
   IMAGE_REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
