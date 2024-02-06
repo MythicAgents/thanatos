@@ -98,7 +98,9 @@ async def post_run_actions(
         output = f"Error during post processing:\n{output}"
 
         await SendMythicRPCResponseCreate(
-            MythicRPCResponseCreateMessage(TaskID=task.TaskData.Task.ID, Response=output.encode())
+            MythicRPCResponseCreateMessage(
+                TaskID=task.TaskData.Task.ID, Response=output.encode()
+            )
         )
 
         return PTTaskCompletionFunctionMessageResponse(

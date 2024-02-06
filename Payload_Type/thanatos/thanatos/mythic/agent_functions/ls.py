@@ -73,7 +73,10 @@ class LsCommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         if task.args.has_arg("host"):
-            if task.callback.host == "Linux" and task.callback.host != task.args.get_host("host"):
+            if (
+                task.callback.host == "Linux"
+                and task.callback.host != task.args.get_host("host")
+            ):
                 raise Exception(
                     "Can't get directory listings of remote hosts using ls on Linux. "
                     "Use `ssh-ls` instead."

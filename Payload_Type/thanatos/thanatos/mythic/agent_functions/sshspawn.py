@@ -223,7 +223,9 @@ class SshSpawnCommand(CommandBase):
                 task.id,
                 PayloadUUID=payload_uuid,
                 RemoteHost=task.args.get_arg("host"),
-                NewDescription=f"{task.operator}'s spawned session from task {str(task.id)}",
+                NewDescription=(
+                    f"{task.operator}'s spawned session from task {str(task.id)}"
+                ),
             )
         )
 
@@ -238,12 +240,15 @@ class SshSpawnCommand(CommandBase):
 
                 if resp:
                     if resp.response["build_phase"] == "success":
-                        task.args.add_arg("payload", resp.response["file"]["agent_file_id"])
+                        task.args.add_arg(
+                            "payload", resp.response["file"]["agent_file_id"]
+                        )
                         break
 
                     if resp.response["build_phase"] == "error":
                         raise Exception(
-                            f"Failed to build new payload: {resp.response['error_message']}"
+                            "Failed to build new payload: "
+                            f"{resp.response['error_message']}"
                         )
 
                     if resp.response["build_phase"] == "building":
@@ -275,6 +280,8 @@ class SshSpawnCommand(CommandBase):
             else:
                 raise Exception("Error from Mythic: " + str(file_resp.error))
         except Exception as e:
-            raise Exception(f"Error from Mythic: {str(sys.exc_info()[-1].tb_lineno)} {str(e)}")
+            raise Exception(
+                f"Error from Mythic: {str(sys.exc_info()[-1].tb_lineno)} {str(e)}"
+            )
 
         return task
