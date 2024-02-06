@@ -18,25 +18,24 @@ runs:
 
     - name: Install Golang modules
       shell: bash
-      working-directory: ${{ inputs.mythic-code }}
-      run: go mod download
+      run: cd ${MYTHIC_CODE} && go mod download
+      env:
+        MYTHIC_CODE: ${{ inputs.mythic-code }}
 
     - name: Setup cargo cache
       uses: actions/cache@v4
-      working-directory: ${{ inputs.agent-code }}
       with:
         path: ~/.cargo
-        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+        key: ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.toml', inputs.agent-code)) }}
         restore-keys: |
-          ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+          ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.toml', inputs.agent-code)) }}
           ${{ runner.os }}-cargo
 
     - name: Setup cargo target cache
       uses: actions/cache@v4
-      working-directory: ${{ inputs.agent-code }}
       with:
-        path: target
-        key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+        path: ${{ inputs.AGENT_CODE }}/target
+        key: ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.toml', inputs.agent-code)) }}
         restore-keys: |
-          ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+          ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.toml', inputs.agent-code)) }}
           ${{ runner.os }}-cargo-target
