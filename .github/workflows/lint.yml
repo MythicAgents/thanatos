@@ -9,6 +9,7 @@ on:
     paths:
       - Payload_Type/thanatos/agent/**
       - Payload_Type/thanatos/mythic/**
+      - .github/**
 
   pull_request:
     branches:
