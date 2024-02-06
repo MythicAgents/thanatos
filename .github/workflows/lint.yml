@@ -7,16 +7,16 @@ on:
       - dev
       - test/**
     paths:
-      - Payload_Type/thanatos/agent
-      - Payload_Type/thanatos/mythic
+      - Payload_Type/thanatos/agent/**
+      - Payload_Type/thanatos/mythic/**
 
   pull_request:
     branches:
       - main
       - dev
     paths:
-      - Payload_Type/thanatos/agent
-      - Payload_Type/thanatos/mythic
+      - Payload_Type/thanatos/agent/**
+      - Payload_Type/thanatos/mythic/**
 
   workflow_call:
 
