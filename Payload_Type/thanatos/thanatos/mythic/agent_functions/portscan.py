@@ -28,17 +28,21 @@ class PortScanArguments(TaskArguments):
                 name="ports",
                 type=ParameterType.String,
                 description=(
-                    "List of ports to scan. Can use the dash character to specify a range."
+                    "List of ports to scan. "
+                    "Can use the dash character to specify a range."
                 ),
                 display_name=(
-                    "List of ports to scan. Can use the dash character to specify a range."
+                    "List of ports to scan. "
+                    "Can use the dash character to specify a range."
                 ),
                 parameter_group_info=[ParameterGroupInfo(ui_position=2)],
             ),
             CommandParameter(
                 name="interval",
                 type=ParameterType.Number,
-                description="Interval in milli-seconds to sleep before scanning a new port/host.",
+                description=(
+                    "Interval in milli-seconds to sleep before scanning a new port/host."
+                ),
                 default_value=1000,
                 parameter_group_info=[ParameterGroupInfo(ui_position=3)],
             ),

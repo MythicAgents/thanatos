@@ -1,6 +1,3 @@
-[project]
-name = "thanatos"
-
 [tool.black]
-line-length = 100
+line-length = 90
 target-version = ['py311']

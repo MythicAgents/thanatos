@@ -116,7 +116,10 @@ class RedirectArguments(TaskArguments):
 class RedirectCommand(CommandBase):
     cmd = "redirect"
     needs_admin = False
-    help_cmd = "redirect -bindhost [host] -bindport [port] -connecthost [host] -connectport [port]"
+    help_cmd = (
+        "redirect -bindhost [host] -bindport [port] "
+        "-connecthost [host] -connectport [port]"
+    )
     description = "Set up a TCP redirector on the machine."
     version = 1
     author = "@M_alphaaa"

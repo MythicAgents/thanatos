@@ -31,8 +31,11 @@ class Thanatos(PayloadType):
     ]
     wrapper = False
     wrapped_payloads = []
-    note = "Linux and Windows agent written in Rust"  # Note about the payload displayed in Mythic
-    supports_dynamic_loading = False  # Payload does not support dynamic loading
+    # Description of the payload in Mythic
+    note = "Linux and Windows agent written in Rust"
+
+    # Payload does not support dynamic loading
+    supports_dynamic_loading = False
     mythic_encrypts = True
     build_parameters = [
         # Add a build option which specifies whether the agent should fork in the
@@ -40,7 +43,9 @@ class Thanatos(PayloadType):
         BuildParameter(
             name="daemonize",
             parameter_type=BuildParameterType.Boolean,
-            description="Daemonize the process on Linux/Hide the console window on Windows.",
+            description=(
+                "Daemonize the process on Linux/Hide the console window on Windows."
+            ),
             default_value=False,
             required=True,
         ),
@@ -48,7 +53,9 @@ class Thanatos(PayloadType):
         BuildParameter(
             name="connection_retries",
             parameter_type=BuildParameterType.String,
-            description="Number of times to try and reconnect if the initial checkin fails.",
+            description=(
+                "Number of times to try and reconnect if the initial checkin fails."
+            ),
             default_value="1",
             verifier_regex="^[0-9]+$",
             required=True,
@@ -75,7 +82,9 @@ class Thanatos(PayloadType):
         BuildParameter(
             name="static",
             parameter_type=BuildParameterType.Boolean,
-            description="Statically link payload. (For Linux. Only works for 64 bit builds)",
+            description=(
+                "Statically link payload. (For Linux. Only works for 64 bit payloads)"
+            ),
             default_value=False,
             required=True,
         ),
@@ -124,12 +133,6 @@ class Thanatos(PayloadType):
             # Start formulating the rust flags
             rustflags = []
 
-            # Windows needs to link against `libssp` since mingw on Fedora was compiled with
-            # `_FORTIFY_SOURCE=2`. Rust mingw doesn't do this on its own for
-            # Fedora 35??? https://github.com/rust-lang/rust/issues/68973
-            if self.selected_os == SupportedOS.Windows:
-                rustflags.append("-Clink-arg=-lssp")
-
             # Add the C2 profile to the compile flags
             rustflags.append(f"--cfg {profile}")
 
@@ -139,10 +142,12 @@ class Thanatos(PayloadType):
                 if self.get_parameter("static"):
                     rustflags.append("-C target-feature=+crt-static")
                     abi = "musl"
+            elif self.selected_os == SupportedOS.Windows:
+                rustflags.append("-C target-feature=+crt-static")
 
             # Fail if trying to build a 32 bit statically linked payload.
-            # This is a limitation in musl/openssl since 32 bit musl libc does not allow
-            # enough precision for openssl.
+            # This is a limitation in musl/openssl since 32 bit integers in musl libc
+            # do not allow for enough precision in openssl.
             if arch == "i686" and abi == "musl":
                 raise Exception("Cannot build 32 bit statically linked payload.")
 
@@ -165,14 +170,16 @@ class Thanatos(PayloadType):
             # Start formulating the command to build the agent
             command = "env "
 
-            # Manually specify the C compiler for 32 bit Linux builds since Rust cannot
-            # find the right compiler by itself for some reason
+            # Manually specify the C compiler for 32 bit Linux builds.
+            # The native library (libz, libssl, libssh2) build scripts
+            # try to use `i686-unknown-linux-gcc` as a compiler even though
+            # it doesn't exist and fails to find clang.
             if arch == "i686" and self.selected_os == SupportedOS.Linux:
                 command += "CC_i686-unknown-linux-gnu=clang "
 
             # Set up openssl environment variables
             openssl_env = "OPENSSL_STATIC=yes "
-            if arch == "x86_64":
+            if arch == "x64":
                 openssl_env += "OPENSSL_LIB_DIR=/usr/lib64 "
             else:
                 openssl_env += "OPENSSL_LIB_DIR=/usr/lib "
@@ -245,15 +252,23 @@ class Thanatos(PayloadType):
             if "executable" in self.get_parameter("output"):
                 # Set the payload output to the built executable
                 target_name = (
-                    "thanatos" if self.selected_os == SupportedOS.Linux else "thanatos.exe"
+                    "thanatos"
+                    if self.selected_os == SupportedOS.Linux
+                    else "thanatos.exe"
                 )
-                payload_path = f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
+                payload_path = (
+                    f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
+                )
             elif "shared library" in self.get_parameter("output"):
                 # Set the payload output to the build shared library
                 target_name = (
-                    "libthanatos.so" if self.selected_os == SupportedOS.Linux else "thanatos.dll"
+                    "libthanatos.so"
+                    if self.selected_os == SupportedOS.Linux
+                    else "thanatos.dll"
                 )
-                payload_path = f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
+                payload_path = (
+                    f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
+                )
 
             with open(payload_path, "rb") as f:
                 resp.payload = f.read()
