@@ -36,7 +36,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environment
-        uses: ./.github/actions/setup-lint
+        uses: ./.github/actions/setup-env
         with:
           agent-code: ${{ env.AGENT_CODE }}
           mythic-code: ${{ env.MYTHIC_CODE }}
@@ -60,7 +60,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environment
-        uses: ./.github/actions/setup-lint
+        uses: ./.github/actions/setup-env
         with:
           agent-code: ${{ env.AGENT_CODE }}
           mythic-code: ${{ env.MYTHIC_CODE }}
@@ -82,7 +82,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environment
-        uses: ./.github/actions/setup-lint
+        uses: ./.github/actions/setup-env
         with:
           agent-code: ${{ env.AGENT_CODE }}
           mythic-code: ${{ env.MYTHIC_CODE }}

@@ -1,0 +1,76 @@
+name: Run tests
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - test/**
+    paths:
+      - Payload_Type/thanatos/agent/**
+      - Payload_Type/thanatos/mythic/**
+      - .github/**
+
+  workflow_call:
+
+env:
+  AGENT_CODE: Payload_Type/thanatos/agent
+  MYTHIC_CODE: Payload_Type/thanatos/mythic
+
+
+jobs:
+  agent:
+    name: Agent tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-env
+        with:
+          agent-code: ${{ env.AGENT_CODE }}
+          mythic-code: ${{ env.MYTHIC_CODE }}
+
+      - name: Run agent tests
+        working-directory: ${{ env.AGENT_CODE }}
+        run: |
+          make genconfig
+          env CONFIG=$(pwd)/.config.bin cargo test --color always --workspace --exclude genconfig --all-targets --all-features
+
+  commands:
+    name: Run Mythic command tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-lint
+        with:
+          agent-code: ${{ env.AGENT_CODE }}
+          mythic-code: ${{ env.MYTHIC_CODE }}
+
+      - name: Run command tests
+        working-directory: ${{ env.MYTHIC_CODE }}
+        run: go test ./commands/...
+
+  mockbuild:
+    name: Run payload mock build tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-lint
+        with:
+          agent-code: ${{ env.AGENT_CODE }}
+          mythic-code: ${{ env.MYTHIC_CODE }}
+
+      - name: Run mockbuild tests
+        working-directory: ${{ env.MYTHIC_CODE }}
+        run: go test -run "^TestPayloadMockBuild/" ./builder

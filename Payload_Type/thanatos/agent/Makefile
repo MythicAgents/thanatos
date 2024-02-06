@@ -40,7 +40,7 @@ endef
 
 
 $(SRC_CONFIG):
-	@echo '$(subst $(newline),\n,${DEFAULT_CONFIG})' > $(SRC_CONFIG)
+	@echo -e '$(subst $(newline),\n,${DEFAULT_CONFIG})' > $(SRC_CONFIG)
 
 $(CONFIG): $(SRC_CONFIG)
 	SRC_CONFIG=$(SRC_CONFIG) CONFIG=$(CONFIG) cargo build -p genconfig
