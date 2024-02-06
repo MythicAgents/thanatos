@@ -5,6 +5,19 @@ Changes to the Thanatos project.
 
 This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.8] - 2024-02-06
+
+### Added
+
+- Scripts for running CI lint tests locally
+- Path triggers for release workflow
+
+### Changed
+
+- Removed `libssp-0.dll` runtime dependency for Windows agents
+- Set line length for Mythic code CI checks to 90 columns
+- Bumped docker container Fedora version to Fedora 39
+
 ## [0.1.7] - 2024-02-02
 
 ### Changed
@@ -93,6 +106,7 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 Initial public release
 
 
+[0.1.8]: https://github.com/MythicAgents/thanatos/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/MythicAgents/thanatos/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/MythicAgents/thanatos/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/MythicAgents/thanatos/compare/v0.1.4...v0.1.5
