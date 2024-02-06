@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - dev
+      - test/**
     paths:
       - Payload_Type/thanatos/agent
       - Payload_Type/thanatos/mythic
