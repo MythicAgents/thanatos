@@ -43,7 +43,7 @@ jobs:
 
       - name: Check Mythic code for errors
         working-directory: ${{ env.MYTHIC_CODE }}
-        run: gofmt -e **/**.go 1>/dev/null
+        run: gofmt -e . 1>/dev/null
 
       - name: Check Agent code for errors
         working-directory: ${{ env.AGENT_CODE }}
@@ -67,7 +67,7 @@ jobs:
 
       - name: Check Mythic code formatting
         working-directory: ${{ env.MYTHIC_CODE }}
-        run: gofmt -l -d **/**.go
+        run: gofmt -l -d . | diff -u /dev/null -
 
       - name: Check Agent code formatting
         working-directory: ${{ env.AGENT_CODE }}
