@@ -317,7 +317,7 @@ var testCases = []cmdtesting.TestCase{
 
 func TestSleepCommand(t *testing.T) {
 	cmdFunctions := SleepCommand{
-		rpc: cmdtesting.MockRPCExecutor{},
+		rpc: &cmdtesting.MockRPCExecutor{},
 	}
 
 	cmdtesting.RunTestCases(t, sleepCommandMetadata, cmdFunctions, cmdFunctions, testCases)

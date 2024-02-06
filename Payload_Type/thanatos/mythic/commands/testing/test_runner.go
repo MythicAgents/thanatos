@@ -50,7 +50,9 @@ func createTaskData(t *testing.T, command agentstructs.Command) agentstructs.PTT
 	}
 
 	for _, param := range command.CommandParameters {
-		taskData.Args.AddArg(param)
+		if err := taskData.Args.AddArg(param); err != nil {
+			t.Fatalf("failed to add parameter '%s': %s", param.Name, err.Error())
+		}
 	}
 
 	return taskData
@@ -68,12 +70,11 @@ func runPreTaskingTests(
 	commandTaskFns utils.CommandTaskFunction,
 	testCase TestCase,
 ) bool {
-
 	if !runParseArgsTest(t, inputTask, command, commandTaskFns, testCase) {
 		return false
 	}
 
-	return true
+	return runCreateTaskingTest(t, inputTask, command, commandTaskFns, testCase)
 }
 
 func runParseArgsTest(

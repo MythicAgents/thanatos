@@ -28,14 +28,13 @@ impl From<[u8; 16]> for Uuid {
 impl FromStr for Uuid {
     type Err = UuidError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let s = s.replace("-", "");
+        let s = s.replace('-', "");
         if s.len() != 32 {
             return Err(UuidError::InvalidLength);
         }
 
         let mut u = [0u8; 16];
-        let mut uidx = 0;
-        for (idx, c) in s.as_bytes().chunks(2).enumerate() {
+        for (uidx, (idx, c)) in s.as_bytes().chunks(2).enumerate().enumerate() {
             if (c[0] < b'0' || c[0] > b'z') || (c[0] > b'9' && c[0] < b'a') {
                 return Err(UuidError::InvalidChar(idx));
             }
@@ -57,7 +56,6 @@ impl FromStr for Uuid {
             }
 
             u[uidx] |= lsb;
-            uidx += 1;
         }
 
         Ok(Self(ByteArray::new(u)))

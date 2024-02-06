@@ -2,7 +2,7 @@ package testing
 
 import "github.com/MythicMeta/MythicContainer/mythicrpc"
 
-func (rpc MockRPCExecutor) SendMythicRPCCallbackUpdate(
+func (rpc *MockRPCExecutor) SendMythicRPCCallbackUpdate(
 	input mythicrpc.MythicRPCCallbackUpdateMessage,
 ) (*mythicrpc.MythicRPCCallbackUpdateMessageResponse, error) {
 	rpc.Callback = input
@@ -12,7 +12,7 @@ func (rpc MockRPCExecutor) SendMythicRPCCallbackUpdate(
 	}, nil
 }
 
-func (rpc MockRPCExecutor) SendMythicRPCResponseCreate(
+func (rpc *MockRPCExecutor) SendMythicRPCResponseCreate(
 	input mythicrpc.MythicRPCResponseCreateMessage,
 ) (*mythicrpc.MythicRPCResponseCreateMessageResponse, error) {
 	rpc.Response = string(input.Response)

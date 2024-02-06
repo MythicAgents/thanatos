@@ -304,7 +304,9 @@ func runTest(t *testing.T, handler BuildHandler, testData testSpec) {
 }
 
 func setupTests(t *testing.T, handler BuildHandler) {
-	os.Chdir("..")
+	if err := os.Chdir(".."); err != nil {
+		t.Fatal(err)
+	}
 
 	testDir := os.DirFS(testDataPath).(fs.ReadDirFS)
 	testSpecs, err := testDir.ReadDir(".")

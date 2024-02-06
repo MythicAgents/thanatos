@@ -26,7 +26,7 @@ var sleepCommandMetadata = agentstructs.Command{
 			subtask *agentstructs.SubtaskGroupName,
 		) agentstructs.PTTaskCompletionFunctionMessageResponse {
 			return SleepCommand{
-				rpc: utils.MythicRPCExecutor{},
+				rpc: &utils.MythicRPCExecutor{},
 			}.PostRunAction(task, data, subtask)
 		},
 	},
@@ -74,18 +74,17 @@ var sleepCommandMetadata = agentstructs.Command{
 
 	TaskFunctionParseArgString: func(args *agentstructs.PTTaskMessageArgsData, input string) error {
 		return SleepCommand{
-			rpc: utils.MythicRPCExecutor{},
+			rpc: &utils.MythicRPCExecutor{},
 		}.ParseArgString(args, input)
 	},
 
 	TaskFunctionParseArgDictionary: func(args *agentstructs.PTTaskMessageArgsData, input map[string]interface{}) error {
-		args.LoadArgsFromDictionary(input)
-		return nil
+		return args.LoadArgsFromDictionary(input)
 	},
 
 	TaskFunctionCreateTasking: func(task *agentstructs.PTTaskMessageAllData) agentstructs.PTTaskCreateTaskingMessageResponse {
 		return SleepCommand{
-			rpc: utils.MythicRPCExecutor{},
+			rpc: &utils.MythicRPCExecutor{},
 		}.CreateTasking(task)
 	},
 }
@@ -93,7 +92,9 @@ var sleepCommandMetadata = agentstructs.Command{
 func (c SleepCommand) ParseArgString(args *agentstructs.PTTaskMessageArgsData, input string) error {
 	cmdLineArgs := strings.Split(input, " ")
 
-	args.SetArgValue("interval", cmdLineArgs[0])
+	if err := args.SetArgValue("interval", cmdLineArgs[0]); err != nil {
+		return thanatoserror.Errorf("failed to set interval value: %s", err.Error())
+	}
 
 	if len(cmdLineArgs) > 1 {
 		jitter, err := strconv.Atoi(cmdLineArgs[1])
@@ -101,9 +102,13 @@ func (c SleepCommand) ParseArgString(args *agentstructs.PTTaskMessageArgsData, i
 			return thanatoserror.Errorf("failed to parse the sleep jitter value from the command line: %s", err)
 		}
 
-		args.SetArgValue("jitter", jitter)
+		if err := args.SetArgValue("jitter", jitter); err != nil {
+			return thanatoserror.Errorf("failed to set jitter value: %s", err.Error())
+		}
 	} else {
-		args.SetArgValue("jitter", 0)
+		if err := args.SetArgValue("jitter", 0); err != nil {
+			return thanatoserror.Errorf("failed to set jitter value to 0: %s", err.Error())
+		}
 	}
 
 	return nil
@@ -168,13 +173,23 @@ func (c SleepCommand) CreateTasking(
 		return taskResponse
 	}
 
-	task.Args.RemoveArg("interval")
-	task.Args.AddArg(agentstructs.CommandParameter{
+	if err := task.Args.RemoveArg("interval"); err != nil {
+		taskResponse.Error = thanatoserror.Errorf("failed to remove existing interval parameter: %s", err.Error()).Error()
+		return taskResponse
+	}
+
+	if err := task.Args.AddArg(agentstructs.CommandParameter{
 		Name:          "interval",
 		ParameterType: agentstructs.COMMAND_PARAMETER_TYPE_NUMBER,
-	})
+	}); err != nil {
+		taskResponse.Error = thanatoserror.Errorf("failed to create interval parameter: %s", err.Error()).Error()
+		return taskResponse
+	}
 
-	task.Args.SetArgValue("interval", float64(realInterval))
+	if err := task.Args.SetArgValue("interval", float64(realInterval)); err != nil {
+		taskResponse.Error = thanatoserror.Errorf("failed to set interval parameter value: %s", err.Error()).Error()
+		return taskResponse
+	}
 
 	displayInterval := int(realInterval / conversionFactor)
 	displayParams := fmt.Sprintf("interval = %d%s, jitter = %d%%", displayInterval, timeUnit, int(jitter))

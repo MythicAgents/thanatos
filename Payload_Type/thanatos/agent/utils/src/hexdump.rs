@@ -50,7 +50,11 @@ impl HexdumpFormatter for CompactFormatter {
             .iter()
             .map(|b| {
                 let c = char::from(*b);
-                (c >= ' ' && c <= '~').then_some(c).unwrap_or('.')
+                if (' '..='~').contains(&c) {
+                    c
+                } else {
+                    '.'
+                }
             })
             .collect();
 
@@ -82,7 +86,11 @@ impl HexdumpFormatter for XxdFormatter {
             .iter()
             .map(|b| {
                 let c = char::from(*b);
-                (c >= ' ' && c <= '~').then_some(c).unwrap_or('.')
+                if (' '..='~').contains(&c) {
+                    c
+                } else {
+                    '.'
+                }
             })
             .collect();
 
@@ -117,7 +125,7 @@ impl HexdumpFormatter for XxdColoredFormatter {
     fn hexdump_bytes(&self, data: &[u8]) -> String {
         let mut output = String::new();
         for word in data.chunks(2) {
-            for b in word.into_iter() {
+            for b in word.iter() {
                 if *b == 0x9 || *b == 0xa || *b == 0xd {
                     output.push_str(&format!(
                         "{}{:0>2x}{}",
@@ -174,7 +182,7 @@ impl HexdumpFormatter for XxdColoredFormatter {
                     AnsiColor::Reset.as_str(),
                 ));
             } else {
-                output.push_str(".");
+                output.push('.');
             }
         }
 

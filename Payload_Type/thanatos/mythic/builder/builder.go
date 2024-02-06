@@ -327,6 +327,10 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler Buil
 
 	// Serialize the payload config
 	serializedConfig, err := payloadConfig.Serialize()
+	if err != nil {
+		payloadBuildResponse.BuildStdErr = thanatoserror.Errorf("failed to serialize payload config: %s", err.Error()).Error()
+		return payloadBuildResponse
+	}
 
 	payloadBuildResponse.BuildMessage += "Serialized Payload Configuration:\n"
 	payloadBuildResponse.BuildMessage += hex.Dump(serializedConfig)

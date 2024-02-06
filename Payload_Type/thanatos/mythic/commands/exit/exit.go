@@ -1,9 +1,8 @@
 package exit
 
 import (
-	"fmt"
-
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
+	thanatoserrors "thanatos/errors"
 )
 
 type exitOption string
@@ -53,8 +52,7 @@ var exitCommandMetadata = agentstructs.Command{
 	},
 
 	TaskFunctionParseArgDictionary: func(args *agentstructs.PTTaskMessageArgsData, input map[string]interface{}) error {
-		args.LoadArgsFromDictionary(input)
-		return nil
+		return args.LoadArgsFromDictionary(input)
 	},
 
 	TaskFunctionCreateTasking: func(task *agentstructs.PTTaskMessageAllData) agentstructs.PTTaskCreateTaskingMessageResponse {
@@ -65,11 +63,15 @@ var exitCommandMetadata = agentstructs.Command{
 func (c ExitCommand) ParseArgString(args *agentstructs.PTTaskMessageArgsData, input string) error {
 	switch input {
 	case "process":
-		args.SetArgValue("option", string(exitProcess))
+		if err := args.SetArgValue("option", string(exitProcess)); err != nil {
+			return thanatoserrors.Errorf("failed to set option parameter: %s", err.Error())
+		}
 	case "thread":
-		args.SetArgValue("option", string(exitThread))
+		if err := args.SetArgValue("option", string(exitThread)); err != nil {
+			return thanatoserrors.Errorf("failed to set option parameter: %s", err.Error())
+		}
 	default:
-		return fmt.Errorf("%s is an invalid exit option. Option must either be 'process' or 'thread'", input)
+		return thanatoserrors.Errorf("%s is an invalid exit option. Option must either be 'process' or 'thread'", input)
 	}
 	return nil
 }

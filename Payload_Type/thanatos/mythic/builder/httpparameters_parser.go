@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"strconv"
 	thanatoserror "thanatos/errors"
 	"time"
@@ -188,12 +187,6 @@ func parseHttpProfileParameters(parameters agentstructs.PayloadBuildC2Profile) (
 	killdateTime, err := time.Parse(time.DateOnly, killdate)
 	if err != nil {
 		return &parsedParameters, thanatoserror.Errorf("failed to parse the HTTP profile killdate: %s", err.Error())
-	}
-
-	// Check if killdate timestamp integer conversion has overflowed. This shouldn't
-	// happen until about another 292 billion years from now so I'll fix it then
-	if killdateTime.Unix() > math.MaxInt64 {
-		return &parsedParameters, thanatoserror.Errorf("are you from the future?")
 	}
 
 	parsedParameters.Killdate = uint64(killdateTime.Unix())
