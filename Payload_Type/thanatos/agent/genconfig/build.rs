@@ -18,6 +18,9 @@ fn hash_string_list(s: &str) -> Vec<[u8; 32]> {
 }
 
 fn main() {
+    println!("cargo:rerun-if-changed={}", SRC_CONFIG_PATH);
+    println!("cargo:rerun-if-changed={}", CONFIG_PATH);
+
     let config_data =
         std::fs::read_to_string(SRC_CONFIG_PATH).expect("Failed to load source config");
 

@@ -48,8 +48,10 @@ jobs:
       - name: Check Agent code for errors
         working-directory: ${{ env.AGENT_CODE }}
         run: |
+          make .config
+          sed -i 's/-e //' .config
           make genconfig
-          env SRC_CONFIG=$(pwd)/.config CONFIG=$(pwd)/.config.bin cargo check --color always --workspace --exclude genconfig --all-targets --all-features
+          env CONFIG=$(pwd)/.config.bin cargo check --color always --workspace --exclude genconfig --all-targets --all-features
 
   format:
     name: Check Formatting
