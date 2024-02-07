@@ -1,16 +1,6 @@
 name: Run tests
 
 on:
-  push:
-    branches:
-      - main
-      - dev
-      - test/**
-    paths:
-      - Payload_Type/thanatos/agent/**
-      - Payload_Type/thanatos/mythic/**
-      - .github/**
-
   workflow_call:
 
 env:

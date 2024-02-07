@@ -1,0 +1,26 @@
+name: Development CI
+
+on:
+  push:
+    branches:
+      - dev
+      - test/**
+
+    paths:
+      - Payload_Type/thanatos/agent/**
+      - Payload_Type/thanatos/mythic/**
+      - .github/**
+
+
+env:
+  AGENT_CODE: Payload_Type/thanatos/agent
+  MYTHIC_CODE: Payload_Type/thanatos/mythic
+
+jobs:
+  lint-workflow:
+    name: Lint
+    uses: ./.github/workflows/lint.yml
+
+  test-workflow:
+    name: Test
+    uses: ./.github/workflows/test.yml
