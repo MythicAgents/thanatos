@@ -3,7 +3,7 @@ name: Development CI
 on:
   push:
     branches:
-      - dev
+      - rewrite
       - test/**
 
     paths:
