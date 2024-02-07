@@ -23,8 +23,15 @@ RUN strip -s mythic-server
 FROM docker.io/library/debian:bookworm-slim
 
 # Install required system packages
-RUN apt-get update -y && apt-get install -y \
+RUN dpkg --add-architecture i386 && \
+    apt-get update -y && apt-get install -y \
+        make \
         curl \
+        gcc \
+        libc6:i386 \
+        libc6-dev:i386 \
+        lib32gcc-12-dev \
+        mingw-w64 \
         && apt-get clean
 
 WORKDIR /tmp
