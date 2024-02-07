@@ -10,7 +10,7 @@ env:
 
 jobs:
   agent:
-    name: Agent tests
+    name: Agent Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -32,7 +32,7 @@ jobs:
           env CONFIG=$(pwd)/.config.bin cargo test --color always --workspace --exclude genconfig --all-targets --all-features
 
   commands:
-    name: Run Mythic command tests
+    name: Mythic Command Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -50,7 +50,7 @@ jobs:
         run: go test ./commands/...
 
   mockbuild:
-    name: Run payload mock build tests
+    name: Payload Mock Build Tests
     runs-on: ubuntu-latest
 
     steps:

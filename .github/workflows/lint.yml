@@ -10,7 +10,7 @@ env:
 
 jobs:
   syntax:
-    name: Check Syntax
+    name: Syntax
     runs-on: ubuntu-latest
 
     steps:
@@ -36,7 +36,7 @@ jobs:
           env CONFIG=$(pwd)/.config.bin cargo check --color always --workspace --exclude genconfig --all-targets --all-features
 
   format:
-    name: Check Formatting
+    name: Code Formatting
     runs-on: ubuntu-latest
 
     steps:
@@ -58,7 +58,7 @@ jobs:
         run: cargo fmt --all -- --color always --check
 
   lint:
-    name: Lint Code
+    name: Linting
     runs-on: ubuntu-latest
 
     steps:
