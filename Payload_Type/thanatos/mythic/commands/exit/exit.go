@@ -17,9 +17,10 @@ type ExitCommand struct{}
 var exitCommandMetadata = agentstructs.Command{
 	Name:                "exit",
 	Description:         "Exit the current session and kill the agent.",
-	HelpString:          "exit",
+	HelpString:          "exit [thread/process]",
 	Version:             1,
 	MitreAttackMappings: []string{},
+	SupportedUIFeatures: []string{"callback_table:exit"},
 	Author:              "@M_alphaaa",
 	CommandAttributes: agentstructs.CommandAttribute{
 		SupportedOS: []string{
@@ -38,6 +39,7 @@ var exitCommandMetadata = agentstructs.Command{
 				string(exitProcess),
 				string(exitThread),
 			},
+			DefaultValue: string(exitThread),
 			ParameterGroupInformation: []agentstructs.ParameterGroupInfo{
 				{
 					ParameterIsRequired: true,
