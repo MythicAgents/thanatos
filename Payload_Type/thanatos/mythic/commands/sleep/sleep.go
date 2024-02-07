@@ -207,7 +207,12 @@ func (c SleepCommand) PostRunAction(
 	data *agentstructs.PTTaskMessageAllData,
 	subtask *agentstructs.SubtaskGroupName,
 ) agentstructs.PTTaskCompletionFunctionMessageResponse {
-	return agentstructs.PTTaskCompletionFunctionMessageResponse{}
+	response := agentstructs.PTTaskCompletionFunctionMessageResponse{
+		Success: true,
+		TaskID:  task.Task.ID,
+	}
+
+	return response
 }
 
 func Initialize() {
