@@ -24,8 +24,10 @@ jobs:
       - name: Install Clippy
         run: rustup component add clippy
 
+      - name: Install system libraries
+        run: sudo apt-get update -y && sudo apt-get install -y libdbus-1-dev
+
       - name: Lint agent code
-        continue-on-error: true
         run: cargo clippy --color always --all-features --all-targets -- -D warnings
 
       - name: Check agent code formatting
@@ -52,7 +54,6 @@ jobs:
         run: go mod download
 
       - name: Lint Mythic code
-        continue-on-error: true
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest

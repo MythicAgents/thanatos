@@ -58,7 +58,6 @@ jobs:
         run: go mod download
 
       - name: Command tests
-        continue-on-error: true
         run: go test ./commands/...
 
       - name: Mockbuild tests
