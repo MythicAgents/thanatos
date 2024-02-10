@@ -24,6 +24,6 @@ path = "../ffiwrappers"
 optional = true
 
 [features]
-default = ["internal"]
+default = ["internal", "system"]
 internal = ["dep:sha2"]
 system = ["dep:openssl", "dep:ffiwrappers"]

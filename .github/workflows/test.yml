@@ -11,7 +11,16 @@ env:
 jobs:
   agent:
     name: Agent Tests
-    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        platform:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+
+    runs-on: ${{ matrix.platform.os }}
 
     defaults:
       run:
@@ -40,10 +49,11 @@ jobs:
             ${{ runner.os }}-cargo-target
 
       - name: Install system libraries
+        if: ${{ runner.os == 'Linux' }}
         run: sudo apt-get update -y && sudo apt-get install -y libdbus-1-dev
 
-      - name: Agent tests
-        run: cargo test --color always --workspace --exclude genconfig --all-features
+      - name: Run tests
+        run: cargo test --color always --workspace --exclude genconfig --all-features --target ${{ matrix.platform.target }}
 
   mythic:
     name: Mythic Tests

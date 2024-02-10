@@ -1,5 +1,5 @@
 mod alghandle;
-pub use alghandle::{BCryptAlgHandle, BCryptProvider};
+pub use alghandle::BCryptAlgHandle;
 
 mod hash;
 pub use hash::BCryptHashHandle;

@@ -1,7 +1,7 @@
 use errors::ThanatosError;
 
 use windows::{
-    core::PSTR,
+    core::{Error as WinError, PSTR},
     Win32::{Foundation::ERROR_INSUFFICIENT_BUFFER, System::WindowsProgramming::GetUserNameA},
 };
 
@@ -15,7 +15,7 @@ pub fn username() -> Result<String, ThanatosError> {
     // This is the error code returned when the buffer is not large enough.
     match unsafe { GetUserNameA(PSTR(std::ptr::null_mut()), &mut username_length) } {
         // Check if 'ERROR_MORE_DATA' was returned
-        Err(e) if e.code() == windows::core::Error::from(ERROR_INSUFFICIENT_BUFFER).code() => (),
+        Err(e) if e.code() == WinError::from(ERROR_INSUFFICIENT_BUFFER).code() => (),
 
         // Check if any other error was returned
         Err(e) => return Err(ThanatosError::from_windows(e)),

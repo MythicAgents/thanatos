@@ -1,7 +1,7 @@
 use errors::ThanatosError;
 
 use windows::{
-    core::PSTR,
+    core::{Error as WinError, PSTR},
     Win32::{
         Foundation::ERROR_MORE_DATA,
         System::SystemInformation::{ComputerNameDnsHostname, GetComputerNameExA},
@@ -24,7 +24,7 @@ pub fn hostname() -> Result<String, ThanatosError> {
         )
     } {
         // Check if 'ERROR_MORE_DATA' was returned
-        Err(e) if e.code() == windows::core::Error::from(ERROR_MORE_DATA).code() => (),
+        Err(e) if e.code() == WinError::from(ERROR_MORE_DATA).code() => (),
 
         // Check if any other error was returned
         Err(e) => return Err(ThanatosError::from_windows(e)),

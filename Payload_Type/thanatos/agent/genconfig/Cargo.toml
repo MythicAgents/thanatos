@@ -16,3 +16,4 @@ serde_json.workspace = true
 serde_repr.workspace = true
 utils = { path = "../utils" }
 sha2.workspace = true
+lazy_static = "1.4"

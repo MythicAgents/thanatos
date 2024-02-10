@@ -1,5 +1,25 @@
-const SRC_CONFIG_PATH: &'static str = env!("SRC_CONFIG");
-const CONFIG_PATH: &'static str = env!("CONFIG");
+lazy_static::lazy_static! {
+static ref SRC_CONFIG_PATH: &'static str = option_env!("SRC_CONFIG").unwrap_or("../.config");
+static ref CONFIG_PATH: &'static str = option_env!("CONFIG").unwrap_or("../.config.bin");
+}
+
+const DEFAULT_CONFIG: &'static str = r#"UUID=00000000-0000-0000-0000-000000000000
+INIT_OPTION=none
+WORKING_HOURS_START=0
+WORKING_HOURS_END=86400
+CONNECTION_RETRIES=1
+TLS_SELF_SIGNED=false
+HTTP_CALLBACK_HOST=http://mythic
+HTTP_CALLBACK_INTERVAL=10
+HTTP_CALLBACK_JITTER=23
+HTTP_CALLBACK_PORT=80
+HTTP_KILLDATE=4070908800
+HTTP_ENCRYPTED_EXCHANGE_CHECK=true
+HTTP_HEADERS=eyJVc2VyLUFnZW50IjoidGVzdCJ9
+HTTP_GET_URI=index
+HTTP_POST_URI=data
+HTTP_QUERY_PATH_NAME=q
+"#;
 
 use sha2::Digest;
 use std::{io::Write, str::FromStr};
@@ -18,11 +38,18 @@ fn hash_string_list(s: &str) -> Vec<[u8; 32]> {
 }
 
 fn main() {
-    println!("cargo:rerun-if-changed={}", SRC_CONFIG_PATH);
-    println!("cargo:rerun-if-changed={}", CONFIG_PATH);
+    let config_data = match std::fs::read_to_string(*SRC_CONFIG_PATH) {
+        Ok(src) => src,
+        Err(_) => {
+            let mut w = std::fs::File::create(*SRC_CONFIG_PATH)
+                .expect("Failed to create new 'SRC_CONFIG' file");
 
-    let config_data =
-        std::fs::read_to_string(SRC_CONFIG_PATH).expect("Failed to load source config");
+            w.write_all(DEFAULT_CONFIG.as_bytes())
+                .expect("Failed to write default 'SRC_CONFIG' file");
+
+            DEFAULT_CONFIG.to_owned()
+        }
+    };
 
     let mut config_map: HashMap<&str, &str> = config_data
         .lines()
@@ -63,9 +90,12 @@ fn main() {
     let mut f = std::fs::OpenOptions::new()
         .write(true)
         .create(true)
-        .open(CONFIG_PATH)
+        .open(*CONFIG_PATH)
         .expect("Failed to open destination config");
 
     f.write_all(&serialized_config)
         .expect("Failed to write out config");
+
+    println!("cargo:rerun-if-changed={}", *SRC_CONFIG_PATH);
+    println!("cargo:rerun-if-changed={}", *CONFIG_PATH);
 }
