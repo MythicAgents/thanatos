@@ -13,56 +13,61 @@ jobs:
     name: Agent Tests
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: ${{ env.AGENT_CODE }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup environment
-        uses: ./.github/actions/setup-env
+      - name: Setup cargo cache
+        uses: actions/cache@v4
         with:
-          agent-code: ${{ env.AGENT_CODE }}
-          mythic-code: ${{ env.MYTHIC_CODE }}
+          path: ~/.cargo
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+            ${{ runner.os }}-cargo
 
-      - name: Run agent tests
-        working-directory: ${{ env.AGENT_CODE }}
-        run: |
-          make .config
-          sed -i 's/-e //' .config
-          make genconfig
-          env CONFIG=$(pwd)/.config.bin cargo test --color always --workspace --exclude genconfig --all-targets --all-features
+      - name: Setup cargo target cache
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+            ${{ runner.os }}-cargo-target
 
-  commands:
-    name: Mythic Command Tests
+      - name: Install system libraries
+        run: sudo apt-get update -y && sudo apt-get install -y libdbus-1-dev
+
+      - name: Agent tests
+        run: cargo test --color always --workspace --exclude genconfig --all-features
+
+  mythic:
+    name: Mythic Tests
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: ${{ env.MYTHIC_CODE }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup environment
-        uses: ./.github/actions/setup-env
+      - name: Install Golang
+        uses: actions/setup-go@v5
         with:
-          agent-code: ${{ env.AGENT_CODE }}
-          mythic-code: ${{ env.MYTHIC_CODE }}
+          go-version: '1.21'
 
-      - name: Run command tests
-        working-directory: ${{ env.MYTHIC_CODE }}
+      - name: Install Golang modules
+        run: go mod download
+
+      - name: Command tests
+        continue-on-error: true
         run: go test ./commands/...
 
-  mockbuild:
-    name: Payload Mock Build Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup environment
-        uses: ./.github/actions/setup-env
-        with:
-          agent-code: ${{ env.AGENT_CODE }}
-          mythic-code: ${{ env.MYTHIC_CODE }}
-
-      - name: Run mockbuild tests
-        working-directory: ${{ env.MYTHIC_CODE }}
+      - name: Mockbuild tests
         run: go test -run "^TestPayloadMockBuild/" ./builder

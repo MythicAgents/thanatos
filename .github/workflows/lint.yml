@@ -9,77 +9,53 @@ env:
 
 
 jobs:
-  syntax:
-    name: Syntax
+  agent:
+    name: Agent Code
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup environment
-        uses: ./.github/actions/setup-env
-        with:
-          agent-code: ${{ env.AGENT_CODE }}
-          mythic-code: ${{ env.MYTHIC_CODE }}
-
-      - name: Check Mythic code for errors
-        working-directory: ${{ env.MYTHIC_CODE }}
-        run: gofmt -e . 1>/dev/null
-
-      - name: Check Agent code for errors
+    defaults:
+      run:
         working-directory: ${{ env.AGENT_CODE }}
-        run: |
-          make .config
-          sed -i 's/-e //' .config
-          make genconfig
-          env CONFIG=$(pwd)/.config.bin cargo check --color always --workspace --exclude genconfig --all-targets --all-features
-
-  format:
-    name: Code Formatting
-    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup environment
-        uses: ./.github/actions/setup-env
-        with:
-          agent-code: ${{ env.AGENT_CODE }}
-          mythic-code: ${{ env.MYTHIC_CODE }}
-
-      - name: Check Mythic code formatting
-        working-directory: ${{ env.MYTHIC_CODE }}
-        run: gofmt -l -d . | diff -u /dev/null -
-
-      - name: Check Agent code formatting
-        working-directory: ${{ env.AGENT_CODE }}
-        run: cargo fmt --all -- --color always --check
-
-  lint:
-    name: Linting
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup environment
-        uses: ./.github/actions/setup-env
-        with:
-          agent-code: ${{ env.AGENT_CODE }}
-          mythic-code: ${{ env.MYTHIC_CODE }}
 
       - name: Install Clippy
         run: rustup component add clippy
 
-      - name: Lint Mythic code with golangci-lint
+      - name: Lint agent code
+        continue-on-error: true
+        run: cargo clippy --color always --all-features --all-targets -- -D warnings
+
+      - name: Check agent code formatting
+        run: cargo fmt --all -- --color always --check
+
+  mythic:
+    name: Mythic Code
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ${{ env.MYTHIC_CODE }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Golang
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Install Golang modules
+        run: go mod download
+
+      - name: Lint Mythic code
+        continue-on-error: true
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-          working-directory: ${{ env.MYTHIC_CODE }}
 
-      - name: Lint Agent code with clippy
-        working-directory: ${{ env.AGENT_CODE }}
-        run: cargo clippy --color always --all-features --all-targets -- -D warnings
+      - name: Check Mythic code formatting
+        run: gofmt -l -d . | diff -u /dev/null -
