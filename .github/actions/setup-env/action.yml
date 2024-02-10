@@ -24,7 +24,7 @@ runs:
 
     - name: Install system libraries
       shell: bash
-      run: apt-get update -y && apt-get install -y libdbus-1-dev
+      run: sudo apt-get update -y && sudo apt-get install -y libdbus-1-dev
 
     - name: Setup cargo cache
       uses: actions/cache@v4
