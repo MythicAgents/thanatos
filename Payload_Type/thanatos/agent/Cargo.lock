@@ -85,6 +85,7 @@ dependencies = [
 name = "cryptolib"
 version = "0.2.0"
 dependencies = [
+ "cfg-if",
  "ffiwrappers",
  "hex-literal",
  "openssl",
@@ -396,6 +397,7 @@ name = "thanatos_core"
 version = "0.2.0"
 dependencies = [
  "base64",
+ "cfg-if",
  "config",
  "cryptolib",
  "dbus",

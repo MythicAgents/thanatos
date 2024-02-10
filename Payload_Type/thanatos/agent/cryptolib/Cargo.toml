@@ -9,6 +9,7 @@ version.workspace = true
 
 [dependencies]
 hex-literal.workspace = true
+cfg-if.workspace = true
 
 [dependencies.sha2]
 workspace = true

@@ -11,24 +11,18 @@ where
     F: Fn(&'a ConfigVars<'b>),
 {
     let domains = config.domains();
-    if !domains.is_empty() {
-        if !guardrails::check_domain(domains) {
-            return;
-        }
+    if !domains.is_empty() && !guardrails::check_domain(domains) {
+        return;
     }
 
     let hostnames = config.hostnames();
-    if !hostnames.is_empty() {
-        if !guardrails::check_hostname(hostnames) {
-            return;
-        }
+    if !hostnames.is_empty() && !guardrails::check_hostname(hostnames) {
+        return;
     }
 
     let usernames = config.usernames();
-    if !usernames.is_empty() {
-        if !guardrails::check_username(usernames) {
-            return;
-        }
+    if !usernames.is_empty() && !guardrails::check_username(usernames) {
+        return;
     }
 
     f(config)

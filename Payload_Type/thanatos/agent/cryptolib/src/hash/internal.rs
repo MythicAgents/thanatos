@@ -17,6 +17,12 @@ impl Sha256 {
     }
 }
 
+impl Default for Sha256 {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Sha256;

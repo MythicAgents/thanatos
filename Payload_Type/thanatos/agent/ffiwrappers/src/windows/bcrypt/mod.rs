@@ -2,7 +2,7 @@ mod alghandle;
 pub use alghandle::{BCryptAlgHandle, BCryptProvider};
 
 mod hash;
-pub use hash::*;
+pub use hash::BCryptHashHandle;
 
 pub mod algorithms;
 

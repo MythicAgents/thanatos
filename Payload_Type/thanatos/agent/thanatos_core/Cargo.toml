@@ -9,6 +9,7 @@ version.workspace = true
 
 [dependencies]
 base64.workspace = true
+cfg-if.workspace = true
 rmp.workspace = true
 rmp-serde.workspace = true
 serde.workspace = true
@@ -35,3 +36,6 @@ path = "../utils"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 dbus.workspace = true
+
+[features]
+crypto-system = ["cryptolib/system"]
