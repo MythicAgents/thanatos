@@ -57,6 +57,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
+          working-directory: ${{ env.MYTHIC_CODE }}
 
       - name: Check Mythic code formatting
         run: gofmt -l -d . | diff -u /dev/null -
