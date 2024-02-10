@@ -14,13 +14,9 @@ jobs:
 
     strategy:
       matrix:
-        platform:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
+        os: [ubuntu-latest, windows-latest]
 
-    runs-on: ${{ matrix.platform.os }}
+    runs-on: ${{ matrix.os }}
 
     defaults:
       run:
@@ -30,12 +26,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup cargo cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo
+          key: ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
+            ${{ runner.os }}-cargo
+
+      - name: Setup cargo target cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.AGENT_CODE }}/target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
+            ${{ runner.os }}-cargo-target
+
       - name: Install system libraries
         if: ${{ runner.os == 'Linux' }}
         run: sudo apt-get update -y && sudo apt-get install -y libdbus-1-dev
 
       - name: Run tests
-        run: cargo test --color always --workspace --exclude genconfig --all-features --target ${{ matrix.platform.target }}
+        run: cargo test --color always --workspace --exclude genconfig --all-features
 
   mythic:
     name: Mythic Tests
