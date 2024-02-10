@@ -15,9 +15,23 @@ serde.workspace = true
 serde_json.workspace = true
 serde_repr.workspace = true
 sha2.workspace = true
+hex-literal.workspace = true
+
 
 [dependencies.config]
 path = "../config"
 
+[dependencies.cryptolib]
+path = "../cryptolib"
+
+[dependencies.errors]
+path = "../errors"
+
+[dependencies.ffiwrappers]
+path = "../ffiwrappers"
+
 [dependencies.utils]
 path = "../utils"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+dbus.workspace = true

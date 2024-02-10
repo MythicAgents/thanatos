@@ -1,5 +1,5 @@
 [package]
-name = "ffiwrappers"
+name = "errors"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
@@ -8,10 +8,9 @@ version.workspace = true
 
 
 [dependencies]
-generic-array = "0.14.7"
-windows.workspace = true
-libc.workspace = true
-hex-literal.workspace = true
 
-[dependencies.errors]
-path = "../errors"
+[target.'cfg(target_os = "windows")'.dependencies]
+windows.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+dbus.workspace = true

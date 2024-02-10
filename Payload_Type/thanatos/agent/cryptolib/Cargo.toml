@@ -1,0 +1,29 @@
+[package]
+name = "cryptolib"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+version.workspace = true
+
+
+[dependencies]
+hex-literal.workspace = true
+
+[dependencies.sha2]
+workspace = true
+optional = true
+
+[target.'cfg(target_os = "linux")'.dependencies.openssl]
+version = "0.10"
+features = ["vendored"]
+optional = true
+
+[target.'cfg(target_os = "windows")'.dependencies.ffiwrappers]
+path = "../ffiwrappers"
+optional = true
+
+[features]
+default = ["internal"]
+internal = ["dep:sha2"]
+system = ["dep:openssl", "dep:ffiwrappers"]

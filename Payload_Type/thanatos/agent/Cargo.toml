@@ -10,6 +10,8 @@ members = [
   "thanatos_http/cdylib",
   "thanatos_http/binary",
   "utils",
+  "cryptolib",
+  "errors",
 ]
 
 default-members = ["thanatos_core"]
@@ -29,6 +31,7 @@ version = "0.2.0"
 ##### WORKSPACE DEPENDENCIES #####
 [workspace.dependencies]
 base64 = "0.21.5"
+hex-literal = "0.4.1"
 rmp = "0.8.12"
 rmp-serde = "1.1.2"
 serde_json = "1"
@@ -36,9 +39,26 @@ serde_repr = "0.1"
 serde_bytes = "0.11"
 sha2 = "0.10.8"
 
+[workspace.dependencies.dbus]
+version = "0.9.7"
+default-features = false
+
+[workspace.dependencies.libc]
+version = "0.2"
+
 [workspace.dependencies.serde]
 version = "1"
 features = ["derive"]
+
+[workspace.dependencies.windows]
+version = "0.52.0"
+features = [
+  "Win32_Foundation",
+  "Win32_System",
+  "Win32_System_SystemInformation",
+  "Win32_Security_Cryptography",
+  "Win32_System_WindowsProgramming",
+]
 
 ##### WORKSPACE SETTINGS #####
 

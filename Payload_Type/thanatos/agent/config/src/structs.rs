@@ -81,4 +81,16 @@ impl ConfigVars<'_> {
     pub fn init_option(&self) -> InitOption {
         self.init_option
     }
+
+    pub fn domains(&self) -> &Vec<[u8; 32]> {
+        &self.domains
+    }
+
+    pub fn hostnames(&self) -> &Vec<[u8; 32]> {
+        &self.hostnames
+    }
+
+    pub fn usernames(&self) -> &Vec<[u8; 32]> {
+        &self.usernames
+    }
 }

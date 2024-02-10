@@ -12,3 +12,6 @@ rmp-serde.workspace = true
 
 [dependencies.config]
 path = "../config"
+
+[dependencies.thanatos_core]
+path = "../thanatos_core"
