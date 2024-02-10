@@ -22,6 +22,10 @@ runs:
       env:
         MYTHIC_CODE: ${{ inputs.mythic-code }}
 
+    - name: Install system libraries
+      shell: bash
+      run: apt-get update -y && apt-get install -y libdbus-1-dev
+
     - name: Setup cargo cache
       uses: actions/cache@v4
       with:
