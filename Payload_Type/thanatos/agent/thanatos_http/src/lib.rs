@@ -6,11 +6,11 @@
 
 use config::ConfigVars;
 
-pub fn entrypoint(config_bytes: &[u8]) {
-    let agent_config: ConfigVars = rmp_serde::from_slice(config_bytes).unwrap();
-    thanatos_core::initialize_agent(run_agent, &agent_config);
+pub fn entrypoint(config_bytes: &'static [u8]) {
+    let config = rmp_serde::from_slice(config_bytes).unwrap();
+    thanatos_core::initialize_agent(run_agent, config);
 }
 
-fn run_agent(config: &ConfigVars) {
+fn run_agent(config: ConfigVars) {
     thanatos_core::debug!(config);
 }

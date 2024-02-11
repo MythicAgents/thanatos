@@ -1,14 +1,14 @@
 #![forbid(unsafe_code)]
 
-use config::ConfigVars;
+use config::{ConfigVars, InitOption};
 
 mod guardrails;
 pub mod logging;
 pub mod native;
 
-pub fn initialize_agent<'a, 'b: 'a, F>(f: F, config: &'a ConfigVars<'b>)
+pub fn initialize_agent<F>(f: F, config: ConfigVars<'static>)
 where
-    F: Fn(&'a ConfigVars<'b>),
+    F: Fn(ConfigVars<'static>) + Send + Sync + 'static,
 {
     let domains = config.domains();
     if !domains.is_empty() && !guardrails::check_domain(domains) {
@@ -25,5 +25,14 @@ where
         return;
     }
 
-    f(config)
+    match config.init_option() {
+        InitOption::Thread => {
+            std::thread::spawn(move || f(config));
+        }
+        #[cfg(target_os = "linux")]
+        InitOption::Fork => todo!(),
+        InitOption::None => {
+            f(config);
+        }
+    }
 }

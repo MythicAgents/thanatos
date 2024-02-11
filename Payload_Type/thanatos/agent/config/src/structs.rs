@@ -15,6 +15,7 @@ pub enum InitOption {
     Thread = 1,
 
     /// Payload should fork to the background
+    #[cfg(target_os = "linux")]
     Fork = 2,
 }
 
@@ -82,15 +83,15 @@ impl ConfigVars<'_> {
         self.init_option
     }
 
-    pub fn domains(&self) -> &Vec<[u8; 32]> {
+    pub fn domains(&self) -> &[[u8; 32]] {
         &self.domains
     }
 
-    pub fn hostnames(&self) -> &Vec<[u8; 32]> {
+    pub fn hostnames(&self) -> &[[u8; 32]] {
         &self.hostnames
     }
 
-    pub fn usernames(&self) -> &Vec<[u8; 32]> {
+    pub fn usernames(&self) -> &[[u8; 32]] {
         &self.usernames
     }
 }
