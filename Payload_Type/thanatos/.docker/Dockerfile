@@ -3,7 +3,7 @@
 #   `docker build -t ghcr.io/mythicagents/thanatos:{TAG} -f .docker/Dockerfile .`
 
 # Build the Mythic server side code
-FROM docker.io/library/golang:alpine as mythic-builder
+FROM docker.io/library/golang:1.21-alpine as mythic-builder
 
 RUN apk update \
     && apk add binutils \
