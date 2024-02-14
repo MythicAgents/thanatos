@@ -70,7 +70,8 @@ jobs:
       - name: Install Golang
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version-file: ${{ env.MYTHIC_CODE }}/go.mod
+          cache-dependency-path: ${{ env.MYTHIC_CODE }}/go.sum
 
       - name: Install Golang modules
         run: go mod download
