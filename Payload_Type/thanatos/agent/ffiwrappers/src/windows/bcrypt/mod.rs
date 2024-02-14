@@ -15,6 +15,6 @@ pub mod traits {
     }
 
     pub trait HashAlgorithm: Algorithm {
-        type LEN: ArrayLength<u8>;
+        type LEN: ArrayLength;
     }
 }

@@ -37,25 +37,25 @@ func (handler MythicPayloadHandler) Build(target string, config ParsedPayloadPar
 
 	outpath := fmt.Sprintf("%s/target/%s/release", agentCodePath, target)
 
-	profile := ""
-	if config.C2Profiles.HttpProfile != nil {
-		profile = "http"
+	profileType := ""
+	if config.IsP2P {
+		profileType = "p2p"
 	} else {
-		panic("Unimplemented build profile")
+		profileType = "egress"
 	}
 
 	filename := ""
 	if config.SelectedOS == agentstructs.SUPPORTED_OS_LINUX {
-		if config.PayloadBuildParameters.Output != PayloadBuildParameterOutputFormatExecutable {
-			filename = fmt.Sprintf("libthanatos_%s_cdylib.so", profile)
+		if config.BuildParameters.Output != PayloadBuildParameterOutputFormatExecutable {
+			filename = fmt.Sprintf("libthanatos_%s_cdylib.so", profileType)
 		} else {
-			filename = fmt.Sprintf("thanatos_%s_binary", profile)
+			filename = fmt.Sprintf("thanatos_%s_binary", profileType)
 		}
 	} else if config.SelectedOS == agentstructs.SUPPORTED_OS_WINDOWS {
-		if config.PayloadBuildParameters.Output == PayloadBuildParameterOutputFormatExecutable {
-			filename = fmt.Sprintf("thanatos_%s_binary.exe", profile)
+		if config.BuildParameters.Output == PayloadBuildParameterOutputFormatExecutable {
+			filename = fmt.Sprintf("thanatos_%s_binary.exe", profileType)
 		} else {
-			filename = fmt.Sprintf("thanatos_%s_cdylib.dll", profile)
+			filename = fmt.Sprintf("thanatos_%s_cdylib.dll", profileType)
 		}
 	}
 

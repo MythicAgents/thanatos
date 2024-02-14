@@ -2,352 +2,167 @@
 package builder
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/fs"
-	"os"
-	"reflect"
-	"regexp"
-	"strings"
 	"testing"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
-	"github.com/MythicMeta/MythicContainer/mythicrpc"
-	"github.com/google/uuid"
 )
 
-const testDataPath string = "tests/buildtests"
-
-// Options for when testing if the build succeeded. This is for checking if the result
-// BuildStdout, BuildStderr and BuildMessage contain correct values
-type expectCompareOptions struct {
-	// Option to check if the build result contains a specified string
-	Contains *string `json:"contains"`
-
-	// Option to check if the build result matches a regex pattern
-	Regex *string `json:"regex"`
-
-	// Option to check if the build result matches a specified string exactly
-	Is *string `json:"is"`
-
-	// Modifier signifying that the comparison should be case insensitive
-	Insensitive *bool `json:"case_insensitive"`
-}
-
-// Expected BuildStdout, BuildStderr and BuildMessage values from a payload build
-type expectValues struct {
-	// Whether the build should be successful or not
-	Success bool `json:"success"`
-
-	// Expected build message
-	Message *expectCompareOptions `json:"message"`
-
-	// Expected build stdout
-	Stdout *expectCompareOptions `json:"stdout"`
-
-	// Expected build stderr
-	Stderr *expectCompareOptions `json:"stderr"`
-
-	// Expected new filename
-	Filename *expectCompareOptions `json:"filename"`
-}
-
-// Definition for a new test. This contains the build parameters for the build along with
-// a set of expected results
-type testSpec struct {
-	// Input filename for the build
-	Filename string `json:"filename"`
-
-	// List of commands for the build
-	CommandList []string `json:"commands"`
-
-	// Selected OS for the build
-	SelectedOS string `json:"selected_os"`
-
-	// Payload parameters for the build
-	BuildParameters map[string]interface{} `json:"build_parameters"`
-
-	// C2 profile parameters for the build
-	C2Profiles []agentstructs.PayloadBuildC2Profile `json:"c2profiles"`
-
-	// Expected build results
-	Expect expectValues `json:"expect"`
-}
-
-// Type which contains the mock implementations of the handler routines. This will
-// essentially "no-op" expensive function or Mythic RPC calls
-type MockBuildPayloadHandler struct{}
-
-// Mock implementation for the payload build
-func (handler MockBuildPayloadHandler) Build(target string, config ParsedPayloadParameters, command string) ([]byte, error) {
-	return []byte{}, nil
-}
-
-// Mock implementation for updating a build step in Mythic
-func (handler MockBuildPayloadHandler) UpdateBuildStep(input mythicrpc.MythicRPCPayloadUpdateBuildStepMessage) (*mythicrpc.MythicRPCPayloadUpdateBuildStepMessageResponse, error) {
-	response := mythicrpc.MythicRPCPayloadUpdateBuildStepMessageResponse{
-		Success: true,
-		Error:   "",
-	}
-	return &response, nil
-}
-
-// Type which contains the full implementations for building a payload. This will build
-// the payload and install the required Rust tool chain. This will mock the Mythic RPC
-// calls
-type FullBuildPayloadHandler struct{}
-
-// Runs the real build command for the build handler
-func (handler FullBuildPayloadHandler) Build(target string, config ParsedPayloadParameters, command string) ([]byte, error) {
-	return MythicPayloadHandler{}.Build(target, config, command)
-}
-
-// Runs the mock Mythic RPC function
-func (handler FullBuildPayloadHandler) UpdateBuildStep(input mythicrpc.MythicRPCPayloadUpdateBuildStepMessage) (*mythicrpc.MythicRPCPayloadUpdateBuildStepMessageResponse, error) {
-	return MockBuildPayloadHandler{}.UpdateBuildStep(input)
-}
-
-// Prints out a set of data using the testing logger
-func testLogPrintData(t *testing.T, data ...any) {
-	for _, v := range data {
-		p, err := json.MarshalIndent(v, "", "  ")
-		if err != nil {
-			continue
-		}
-
-		typeName := reflect.TypeOf(v).String()
-		t.Logf("%s:\n%s", typeName, string(p))
-	}
-}
-
-// Checks the payload build results with the expected results
-func checkResults(t *testing.T, payloadUUID string, buildResult agentstructs.PayloadBuildResponse, testData testSpec) {
-	if buildResult.PayloadUUID != payloadUUID {
-		testLogPrintData(t, testData, buildResult)
-		t.Fatalf("Resulting payload UUID did not match expected UUID. Found '%s' expected '%s'", buildResult.PayloadUUID, payloadUUID)
-	}
-
-	if buildResult.Success != testData.Expect.Success {
-		testLogPrintData(t, testData, buildResult)
-		t.Logf("(buildResult.Success = %t) != (testData.Expect.Success = %t)", buildResult.Success, testData.Expect.Success)
-		if buildResult.Success {
-			t.Fatal("Payload build was successful but the test expected it to fail")
-		} else {
-			t.Fatal("Payload build was unsuccessful but the test expected it to succeed")
-		}
-	}
-
-	logMsgBuffer := []string{}
-
-	if testData.Expect.Message != nil {
-		compareData := testData.Expect.Message
-		value := buildResult.BuildMessage
-
-		if compareData.Contains != nil {
-			if !strings.Contains(value, *compareData.Contains) {
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("buildResult.BuildMessage:\n%s\n", buildResult.BuildMessage))
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("testData.Expec.Message.Contains = %s", *compareData.Contains))
-				logMsgBuffer = append(logMsgBuffer, "Expected build message does not match returned build message")
-			}
-		} else if compareData.Is != nil {
-			if value != *compareData.Is {
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("buildResult.BuildMessage:\n%s\n", buildResult.BuildMessage))
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("testData.Expect.Message.Is = %s", *compareData.Is))
-				logMsgBuffer = append(logMsgBuffer, "Expected build message does not match returned build message")
-			}
-		} else if compareData.Regex != nil {
-			re := regexp.MustCompile(*compareData.Regex)
-			if re.FindStringIndex(value) == nil {
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("buildResult.BuildMessage:\n%s\n", buildResult.BuildMessage))
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("testData.Expect.Message.Regex = %s", *compareData.Regex))
-				logMsgBuffer = append(logMsgBuffer, "Expected build message does not match returned build message")
-			}
-		}
-	}
-
-	if testData.Expect.Stdout != nil {
-		compareData := testData.Expect.Stdout
-		value := buildResult.BuildStdOut
-
-		if compareData.Contains != nil {
-			if !strings.Contains(value, *compareData.Contains) {
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("buildResult.BuildStdOut:\n%s\n", buildResult.BuildStdOut))
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("testData.Expect.Stdout.Contains = %s", *compareData.Contains))
-				logMsgBuffer = append(logMsgBuffer, "Expected build stdout does not match returned build stdout")
-			}
-		} else if compareData.Is != nil {
-			if value != *compareData.Is {
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("buildResult.BuildStdOut:\n%s\n", buildResult.BuildStdOut))
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("testData.Expect.StdOut.Is = %s", *compareData.Is))
-				logMsgBuffer = append(logMsgBuffer, "Expected build stdout does not match returned build stdout")
-			}
-		} else if compareData.Regex != nil {
-			re := regexp.MustCompile(*compareData.Regex)
-			if re.FindStringIndex(value) == nil {
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("buildResult.BuildStdOut:\n%s\n", buildResult.BuildStdOut))
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("testData.Expect.StdOut.Regex = %s", *compareData.Regex))
-				logMsgBuffer = append(logMsgBuffer, "Expected build stdout does not match returned build stdout")
-			}
-		}
-	}
-
-	if testData.Expect.Stderr != nil {
-		compareData := testData.Expect.Stderr
-		value := buildResult.BuildStdErr
-
-		if compareData.Contains != nil {
-			if !strings.Contains(value, *compareData.Contains) {
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("buildResult.BuildStdErr:\n%s\n", buildResult.BuildStdErr))
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("testData.Expect.Stderr.Contains = %s", *compareData.Contains))
-				logMsgBuffer = append(logMsgBuffer, "Expected build stderr does not match returned build stderr")
-			}
-		} else if compareData.Is != nil {
-			if value != *compareData.Is {
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("buildResult.BuildStdErr:\n%s\n", buildResult.BuildStdErr))
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("testData.Expect.Stderr.Is = %s", *compareData.Is))
-				logMsgBuffer = append(logMsgBuffer, "Expected build stderr does not match returned build stderr")
-			}
-		} else if compareData.Regex != nil {
-			re := regexp.MustCompile(*compareData.Regex)
-			if re.FindStringIndex(value) == nil {
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("buildResult.BuildStdErr:\n%s\n", buildResult.BuildStdErr))
-				logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("testData.Expect.Stderr.Regex = %s", *compareData.Regex))
-				logMsgBuffer = append(logMsgBuffer, "Expected build stderr does not match returned build stderr")
-			}
-		}
-	}
-
-	if testData.Expect.Filename != nil {
-		if buildResult.UpdatedFilename != nil {
-			compareData := testData.Expect.Filename
-			value := *buildResult.UpdatedFilename
-
-			if compareData.Contains != nil {
-				if !strings.Contains(value, *compareData.Contains) {
-					logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("buildResult.UpdatedFilename = %s", *buildResult.UpdatedFilename))
-					logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("testData.Expect.Filename.Contains = %s", *compareData.Contains))
-					logMsgBuffer = append(logMsgBuffer, "Expected updated filename does not match returned filename")
-				}
-			} else if compareData.Is != nil {
-				if value != *compareData.Is {
-					logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("buildResult.UpdatedFilename = %s", *buildResult.UpdatedFilename))
-					logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("testData.Expect.Filename.Is = %s", *compareData.Is))
-					logMsgBuffer = append(logMsgBuffer, "Expected updated filename does not match returned filename")
-				}
-			} else if compareData.Regex != nil {
-				re := regexp.MustCompile(*compareData.Regex)
-				if re.FindStringIndex(value) == nil {
-					logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("buildResult.UpdatedFilename = %s", *buildResult.UpdatedFilename))
-					logMsgBuffer = append(logMsgBuffer, fmt.Sprintf("testData.Expect.Filename.Regex = %s", *compareData.Regex))
-					logMsgBuffer = append(logMsgBuffer, "Expected updated filename does not match returned filename")
-				}
-			}
-		} else {
-			logMsgFormatStr := "%s = %s"
-			logMsg := ""
-			if testData.Expect.Filename.Contains != nil {
-				logMsg = fmt.Sprintf(logMsgFormatStr, "testData.Expect.Filename.Contains", testData.Expect.Filename.Contains)
-			} else if testData.Expect.Filename.Is != nil {
-				logMsg = fmt.Sprintf(logMsgFormatStr, "testData.Expect.Filename.Is", testData.Expect.Filename.Is)
-			} else if testData.Expect.Filename.Regex != nil {
-				logMsg = fmt.Sprintf(logMsgFormatStr, "testData.Expect.Filename.Regex", testData.Expect.Filename.Regex)
-			}
-
-			if testData.Expect.Filename.Insensitive != nil {
-				logMsg = fmt.Sprintf("%s, case_insensitive = %t", logMsg, *testData.Expect.Filename.Insensitive)
-			}
-
-			logMsgBuffer = append(logMsgBuffer, "buildResult.UpdatedFilename = nil")
-			logMsgBuffer = append(logMsgBuffer, logMsg)
-			logMsgBuffer = append(logMsgBuffer, "Build result did not return an updated filename but expected it to be present")
-		}
-	}
-
-	if len(logMsgBuffer) > 0 {
-		testLogPrintData(t, testData, buildResult)
-		for _, m := range logMsgBuffer {
-			t.Log(m)
-		}
-
-		t.Logf("Test '%s' failed", t.Name())
-		t.Fail()
-	}
-}
-
-// Function which runs all of the tests with a specified handler
-func runTest(t *testing.T, handler BuildHandler, testData testSpec) {
-	testLogPrintData(t, testData)
-
-	payloadUUID := uuid.NewString()
-	payloadFileUUID := uuid.NewString()
-
-	payloadBuildMsg := agentstructs.PayloadBuildMessage{
-		PayloadType: "thanatos",
-		Filename:    testData.Filename,
-		CommandList: testData.CommandList,
-		SelectedOS:  testData.SelectedOS,
-		BuildParameters: agentstructs.PayloadBuildArguments{
-			Parameters: testData.BuildParameters,
+var testCases = []TestCase{
+	{
+		Name:       "linux_amd64_basic",
+		Filename:   "thanatos",
+		SelectedOS: agentstructs.SUPPORTED_OS_LINUX,
+		CommandList: []string{
+			"exit",
+			"sleep",
 		},
-		C2Profiles:         testData.C2Profiles,
-		WrappedPayload:     nil,
-		WrappedPayloadUUID: nil,
-		PayloadUUID:        payloadUUID,
-		PayloadFileUUID:    payloadFileUUID,
-	}
-
-	buildResult := buildPayload(payloadBuildMsg, handler)
-	t.Logf("[BUILD MESSAGE]: %s", buildResult.BuildMessage)
-	t.Logf("[BUILD STDOUT]: %s", buildResult.BuildStdOut)
-	t.Logf("[BUILD STDERR]: %s", buildResult.BuildStdErr)
-	checkResults(t, payloadUUID, buildResult, testData)
-}
-
-func setupTests(t *testing.T, handler BuildHandler) {
-	if err := os.Chdir(".."); err != nil {
-		t.Fatal(err)
-	}
-
-	testDir := os.DirFS(testDataPath).(fs.ReadDirFS)
-	testSpecs, err := testDir.ReadDir(".")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for _, specPath := range testSpecs {
-		if specPath.IsDir() {
-			continue
-		}
-
-		testRawData, err := fs.ReadFile(testDir, specPath.Name())
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		testData := testSpec{}
-		if err := json.Unmarshal(testRawData, &testData); err != nil {
-			t.Fatal(err)
-		}
-
-		testName := strings.TrimSuffix(specPath.Name(), ".json")
-		t.Logf("%s\n", testName)
-
-		t.Run(testName, func(t *testing.T) {
-			t.Parallel()
-			runTest(t, handler, testData)
-		})
-
-	}
+		BuildParameters: map[string]interface{}{
+			"architecture":       string(PayloadBuildParameterArchitectureAmd64),
+			"initoptions":        string(PayloadBuildParameterInitOptionNone),
+			"connection_retries": 1,
+			"cryptolib":          string(PayloadBuildParameterCryptoLibraryInternal),
+			"working_hours":      "00:00-23:59",
+			"output":             string(PayloadBuildParameterOutputFormatExecutable),
+		},
+		C2Profiles: []agentstructs.PayloadBuildC2Profile{
+			{
+				Name:  "http",
+				IsP2P: false,
+				Parameters: map[string]interface{}{
+					"callback_port":            80,
+					"killdate":                 "2099-01-01",
+					"encrypted_exchange_check": true,
+					"callback_jitter":          23,
+					"headers": map[string]interface{}{
+						"User-Agent": "test",
+					},
+					"AESPSK": map[string]string{
+						"value": "none",
+					},
+					"callback_host":     "http://mythic",
+					"get_uri":           "index",
+					"post_uri":          "data",
+					"query_path_name":   "q",
+					"proxy_host":        "",
+					"proxy_user":        "",
+					"proxy_port":        "",
+					"proxy_pass":        "",
+					"callback_interval": 10,
+				},
+			},
+		},
+		Expect: TestCaseResult{
+			Success:      true,
+			BuildCommand: "cargo build -p thanatos_binary --target x86_64-unknown-linux-gnu --features crypto-internal,http --release",
+		},
+	},
+	{
+		Name:       "linux_amd64_system_crypto",
+		Filename:   "thanatos",
+		SelectedOS: agentstructs.SUPPORTED_OS_LINUX,
+		CommandList: []string{
+			"exit",
+			"sleep",
+		},
+		BuildParameters: map[string]interface{}{
+			"architecture":       string(PayloadBuildParameterArchitectureAmd64),
+			"initoptions":        string(PayloadBuildParameterInitOptionNone),
+			"connection_retries": 1,
+			"cryptolib":          string(PayloadBuildParameterCryptoLibrarySystem),
+			"working_hours":      "00:00-23:59",
+			"output":             string(PayloadBuildParameterOutputFormatExecutable),
+		},
+		C2Profiles: []agentstructs.PayloadBuildC2Profile{
+			{
+				Name:  "http",
+				IsP2P: false,
+				Parameters: map[string]interface{}{
+					"callback_port":            80,
+					"killdate":                 "2099-01-01",
+					"encrypted_exchange_check": true,
+					"callback_jitter":          23,
+					"headers": map[string]interface{}{
+						"User-Agent": "test",
+					},
+					"AESPSK": map[string]string{
+						"value": "none",
+					},
+					"callback_host":     "http://mythic",
+					"get_uri":           "index",
+					"post_uri":          "data",
+					"query_path_name":   "q",
+					"proxy_host":        "",
+					"proxy_user":        "",
+					"proxy_port":        "",
+					"proxy_pass":        "",
+					"callback_interval": 10,
+				},
+			},
+		},
+		Expect: TestCaseResult{
+			Success:      true,
+			BuildCommand: "cargo build -p thanatos_binary --target x86_64-unknown-linux-gnu --features crypto-system,http --release",
+		},
+	},
+	{
+		Name:       "linux_amd64_hostnames",
+		Filename:   "thanatos",
+		SelectedOS: agentstructs.SUPPORTED_OS_LINUX,
+		CommandList: []string{
+			"exit",
+			"sleep",
+		},
+		BuildParameters: map[string]interface{}{
+			"architecture":       string(PayloadBuildParameterArchitectureAmd64),
+			"initoptions":        string(PayloadBuildParameterInitOptionNone),
+			"connection_retries": 1,
+			"cryptolib":          string(PayloadBuildParameterCryptoLibraryInternal),
+			"working_hours":      "00:00-23:59",
+			"output":             string(PayloadBuildParameterOutputFormatExecutable),
+			"hostnames": []interface{}{
+				"myhost",
+			},
+		},
+		C2Profiles: []agentstructs.PayloadBuildC2Profile{
+			{
+				Name:  "http",
+				IsP2P: false,
+				Parameters: map[string]interface{}{
+					"callback_port":            80,
+					"killdate":                 "2099-01-01",
+					"encrypted_exchange_check": true,
+					"callback_jitter":          23,
+					"headers": map[string]interface{}{
+						"User-Agent": "test",
+					},
+					"AESPSK": map[string]string{
+						"value": "none",
+					},
+					"callback_host":     "http://mythic",
+					"get_uri":           "index",
+					"post_uri":          "data",
+					"query_path_name":   "q",
+					"proxy_host":        "",
+					"proxy_user":        "",
+					"proxy_port":        "",
+					"proxy_pass":        "",
+					"callback_interval": 10,
+				},
+			},
+		},
+		Expect: TestCaseResult{
+			Success:      true,
+			BuildCommand: "cargo build -p thanatos_binary --target x86_64-unknown-linux-gnu --features crypto-internal,hostnamecheck,http --release",
+		},
+	},
 }
 
 // Test function which mocks all of the payload building and tests the build responses
 func TestPayloadMockBuild(t *testing.T) {
-	handler := MockBuildPayloadHandler{}
-	setupTests(t, handler)
+	RunTestCases(t, testCases, MockBuildPayloadHandler{})
 }
 
 // Test function which will build the payload in the test
 func TestPayloadFullBuild(t *testing.T) {
-	handler := FullBuildPayloadHandler{}
-	setupTests(t, handler)
+	RunTestCases(t, testCases, FullBuildPayloadHandler{})
 }

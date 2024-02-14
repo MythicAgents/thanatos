@@ -1,5 +1,5 @@
 target
 build.ps1
 tags
-.config
+.config.json
 .config.bin

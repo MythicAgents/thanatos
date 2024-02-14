@@ -2,15 +2,12 @@
 package builder
 
 import (
-	"encoding/hex"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	thanatoserror "thanatos/errors"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
-	"github.com/google/uuid"
 )
 
 // Metadata defining the Mythic payload type
@@ -214,96 +211,15 @@ var payloadDefinition = agentstructs.PayloadType{
 	BuildSteps: []agentstructs.BuildStep{},
 }
 
-// Stores all of the parsed payload build parameters. This includes both the payload
-// parameters and the C2 profile parameters
-type ParsedPayloadParameters struct {
-	// UUID of the agent
-	Uuid uuid.UUID
-
-	// Selected OS
-	SelectedOS string
-
-	// The payload parameters
-	PayloadBuildParameters ParsedBuildParameters
-
-	// The configured C2 profile parameters
-	C2Profiles struct {
-
-		// The parameters for the HTTP C2 profile
-		HttpProfile *HttpC2ProfileParameters
-	}
-}
-
-func (p *ParsedPayloadParameters) String() string {
-	output := fmt.Sprintf("UUID=%s\n", p.Uuid.String())
-	output += p.PayloadBuildParameters.String()
-	if p.C2Profiles.HttpProfile != nil {
-		output += p.C2Profiles.HttpProfile.String()
-	}
-	return output
-}
-
-// Parses the user supplied build parameters
-func parsePayloadParameters(buildMessage agentstructs.PayloadBuildMessage) (ParsedPayloadParameters, error) {
-	payloadUuid, err := uuid.Parse(buildMessage.PayloadUUID)
-	if err != nil {
-		return ParsedPayloadParameters{}, thanatoserror.Errorf("failed to parse the payload UUID: %v", err)
-	}
-
-	payloadParameters := ParsedPayloadParameters{
-		Uuid:       payloadUuid,
-		SelectedOS: buildMessage.SelectedOS,
-	}
-
-	buildParameters, err := parsePayloadBuildParameters(buildMessage)
-	if err != nil {
-		return payloadParameters, errors.Join(thanatoserror.New("failed to parse to payload build parameters"), err)
-	}
-
-	payloadParameters.PayloadBuildParameters = buildParameters
-
-	payloadParameters.C2Profiles.HttpProfile = nil
-
-	for _, profileParameter := range buildMessage.C2Profiles {
-		if profileParameter.Name == "http" {
-			httpProfile, err := parseHttpProfileParameters(profileParameter)
-			if err != nil {
-				return payloadParameters, errors.Join(thanatoserror.New("failed to parse the profile parameters for the HTTP C2 profile"), err)
-			}
-
-			payloadParameters.C2Profiles.HttpProfile = httpProfile
-		}
-	}
-
-	return payloadParameters, nil
-}
-
-// Converts the selected os and architecture from the build parameters to a formatted Rust
-// target
-func getRustTriple(os string, arch PayloadBuildParameterArchitecture) string {
-	target := ""
-
-	switch arch {
-	case PayloadBuildParameterArchitectureAmd64:
-		target += "x86_64-"
-	case PayloadBuildParameterArchitectureX86:
-		target += "i686-"
-	}
-
-	switch os {
-	case agentstructs.SUPPORTED_OS_LINUX:
-		target += "unknown-linux-gnu"
-	case agentstructs.SUPPORTED_OS_WINDOWS:
-		target += "pc-windows-gnu"
-	}
-
-	return target
+var builtinCommands = []string{
+	"sleep",
+	"exit",
 }
 
 // Secondary entrypoint for the payload builder. This takes in the payload build message
 // and a handler which consists of a set of routines for doing long-running tasks and
 // Mythic RPC calls
-func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler BuildHandler) agentstructs.PayloadBuildResponse {
+func BuildPayload(handler BuildHandler, payloadBuildMsg agentstructs.PayloadBuildMessage) agentstructs.PayloadBuildResponse {
 	// Create the build response
 	payloadBuildResponse := agentstructs.PayloadBuildResponse{
 		PayloadUUID:        payloadBuildMsg.PayloadUUID,
@@ -312,28 +228,13 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler Buil
 	}
 
 	// Parse all of the payload parameters
-	payloadConfig, err := parsePayloadParameters(payloadBuildMsg)
+	parameters, err := parsePayloadParameters(payloadBuildMsg)
 	if err != nil {
 		payloadBuildResponse.BuildStdErr = errors.Join(thanatoserror.New("failed to parse the payload parameters"), err).Error()
 		return payloadBuildResponse
 	}
 
-	// Get the Rust target for the payload build
-	rustTarget := getRustTriple(payloadBuildMsg.SelectedOS, payloadConfig.PayloadBuildParameters.Architecture)
-
-	// Print out the payload config
-	payloadBuildResponse.BuildMessage = "Payload Configuration:\n"
-	payloadBuildResponse.BuildMessage += payloadConfig.String() + "\n"
-
-	// Serialize the payload config
-	serializedConfig, err := payloadConfig.Serialize()
-	if err != nil {
-		payloadBuildResponse.BuildStdErr = thanatoserror.Errorf("failed to serialize payload config: %s", err.Error()).Error()
-		return payloadBuildResponse
-	}
-
-	payloadBuildResponse.BuildMessage += "Serialized Payload Configuration:\n"
-	payloadBuildResponse.BuildMessage += hex.Dump(serializedConfig)
+	payloadConfig := createConfig(parameters)
 
 	configFile, err := os.CreateTemp("", "thanatos-config*")
 	if err != nil {
@@ -342,18 +243,33 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler Buil
 	}
 	defer os.Remove(configFile.Name())
 
-	if _, err := configFile.Write(serializedConfig); err != nil {
+	if _, err := configFile.Write([]byte(payloadConfig.String())); err != nil {
 		payloadBuildResponse.BuildStdErr = thanatoserror.Errorf("failed to write config to config file: %s", err.Error()).Error()
 		return payloadBuildResponse
 	}
 
-	buildCommand := FormulateBuildCommand(configFile.Name(), rustTarget, payloadConfig)
+	target := ""
+	switch parameters.BuildParameters.Architecture {
+	case PayloadBuildParameterArchitectureAmd64:
+		target = "x86_64-"
+	case PayloadBuildParameterArchitectureX86:
+		target = "i686-"
+	}
 
-	payloadBuildResponse.BuildStdOut += "Build Command:\n"
-	payloadBuildResponse.BuildStdOut += buildCommand
+	switch payloadBuildMsg.SelectedOS {
+	case agentstructs.SUPPORTED_OS_LINUX:
+		target += "unknown-linux-gnu"
+	case agentstructs.SUPPORTED_OS_WINDOWS:
+		target += "pc-windows-gnu"
+	}
+
+	buildCommand := FormulateBuildCommand(target, configFile.Name(), parameters)
+
+	payloadBuildResponse.BuildMessage += "Build Command:\n"
+	payloadBuildResponse.BuildMessage += buildCommand
 
 	// Build the payload
-	payload, err := handler.Build(rustTarget, payloadConfig, buildCommand)
+	payload, err := handler.Build(target, parameters, buildCommand)
 	if err != nil {
 		payloadBuildResponse.BuildStdErr = errors.Join(thanatoserror.New("failed to build the payload"), err).Error()
 		return payloadBuildResponse
@@ -367,8 +283,7 @@ func buildPayload(payloadBuildMsg agentstructs.PayloadBuildMessage, handler Buil
 
 // Main entrypoint when Mythic executes the payload builder
 func mythicBuildPayloadFunction(payloadBuildMsg agentstructs.PayloadBuildMessage) agentstructs.PayloadBuildResponse {
-	handler := MythicPayloadHandler{}
-	return buildPayload(payloadBuildMsg, &handler)
+	return BuildPayload(MythicPayloadHandler{}, payloadBuildMsg)
 }
 
 // Initializes the payload build routines in Mythic

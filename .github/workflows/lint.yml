@@ -46,10 +46,14 @@ jobs:
         run: sudo apt-get update -y && sudo apt-get install -y libdbus-1-dev
 
       - name: Lint agent code
-        run: cargo clippy --color always --all-features --all-targets -- -D warnings
+        run: |
+          cargo build -p genconfig
+          cargo clippy --color always --all-features --all-targets -- -D warnings
 
       - name: Check agent code formatting
-        run: cargo fmt --all -- --color always --check
+        run: |
+          cargo build -p genconfig
+          cargo fmt --all -- --color always --check
 
   mythic:
     name: Mythic Code

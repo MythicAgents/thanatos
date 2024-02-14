@@ -1,10 +1,15 @@
 {
     "folders": [
         {
+            "name": "mythic",
             "path": "mythic"
         },
         {
+            "name": "agent",
             "path": "agent"
+        },
+        {
+            "path": "../../.github"
         }
     ],
     "settings": {

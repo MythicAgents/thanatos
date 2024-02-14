@@ -1,13 +1,10 @@
 //! Module for handling uuids in string and binary form
 use std::str::FromStr;
 
-use serde::{Deserialize, Serialize};
-use serde_bytes::ByteArray;
-
 /// Holds a Uuid
 #[repr(transparent)]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Uuid(#[serde(with = "serde_bytes")] ByteArray<16>);
+#[derive(Debug)]
+pub struct Uuid([u8; 16]);
 
 /// Error types when parsing Uuids
 #[derive(Debug)]
@@ -21,7 +18,17 @@ pub enum UuidError {
 
 impl From<[u8; 16]> for Uuid {
     fn from(value: [u8; 16]) -> Self {
-        Self(ByteArray::new(value))
+        Self(value)
+    }
+}
+
+impl TryFrom<&[u8]> for Uuid {
+    type Error = UuidError;
+
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        Ok(Uuid::from(
+            <[u8; 16]>::try_from(value).map_err(|_| UuidError::InvalidLength)?,
+        ))
     }
 }
 
@@ -58,7 +65,7 @@ impl FromStr for Uuid {
             u[uidx] |= lsb;
         }
 
-        Ok(Self(ByteArray::new(u)))
+        Ok(Self(u))
     }
 }
 
@@ -133,7 +140,11 @@ impl AsRef<[u8; 16]> for Uuid {
 impl Uuid {
     /// Consumes the Uuid and returns the underlying data
     pub fn into_bytes(self) -> [u8; 16] {
-        self.0.into_array()
+        self.0
+    }
+
+    pub fn as_slice(&self) -> &[u8] {
+        self.0.as_slice()
     }
 }
 

@@ -1,11 +1,11 @@
 use std::marker::PhantomData;
 
-use generic_array::{sequence::GenericSequence, GenericArray};
+use generic_array::GenericArray;
 use windows::Win32::Security::Cryptography::{
     BCryptDestroyHash, BCryptFinishHash, BCryptHashData, BCRYPT_HASH_HANDLE,
 };
 
-use super::traits::HashAlgorithm;
+use super::{traits::HashAlgorithm, BCryptAlgHandle};
 
 #[repr(transparent)]
 pub struct BCryptHashHandle<T: HashAlgorithm> {
@@ -15,6 +15,11 @@ pub struct BCryptHashHandle<T: HashAlgorithm> {
 }
 
 impl<T: HashAlgorithm> BCryptHashHandle<T> {
+    pub fn new() -> BCryptHashHandle<T> {
+        let mut alg_handle = BCryptAlgHandle::<T>::new();
+        alg_handle.create_hash()
+    }
+
     pub fn hash_data(&mut self, data: &[u8]) {
         // Possible return/error values are documented here: https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcrypthashdata#return-value
         // Error assertions:
@@ -28,11 +33,11 @@ impl<T: HashAlgorithm> BCryptHashHandle<T> {
         //     where this is called with an invalid handle.
         //
         // SAFETY: Error assertions are defined above.
-        unsafe { BCryptHashData(self.handle, data, 0).ok().unwrap_unchecked() }
+        let _ = unsafe { BCryptHashData(self.handle, data, 0) };
     }
 
     pub fn finish_hash(self) -> GenericArray<u8, T::LEN> {
-        let mut output = GenericArray::<u8, T::LEN>::generate(|v| v as u8);
+        let mut output: GenericArray<u8, T::LEN> = Default::default();
 
         // Possible return/error values are documented here: https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptfinishhash
         // Error assertions:
@@ -46,13 +51,15 @@ impl<T: HashAlgorithm> BCryptHashHandle<T> {
         //     error code will never be returned.
         //
         // SAFETY: Error assertions are defined above.
-        unsafe {
-            BCryptFinishHash(self.handle, output.as_mut_slice(), 0)
-                .ok()
-                .unwrap_unchecked()
-        }
+        let _ = unsafe { BCryptFinishHash(self.handle, output.as_mut_slice(), 0) };
 
         output
+    }
+}
+
+impl<T: HashAlgorithm> Default for BCryptHashHandle<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -66,18 +73,28 @@ impl<T: HashAlgorithm> Drop for BCryptHashHandle<T> {
 mod tests {
     use crate::windows::bcrypt::{algorithms::Sha256, BCryptAlgHandle};
 
+    use super::BCryptHashHandle;
+
+    const WORD: &'static str = "hello";
+
+    const EXPECTED: [u8; 32] =
+        hex_literal::hex!("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
+
     #[test]
-    fn sha256_test() {
-        let w = "hello";
-
-        let expected =
-            hex_literal::hex!("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
-
+    fn sha256_alg_test() {
         let mut alg = BCryptAlgHandle::<Sha256>::new();
         let mut h = alg.create_hash();
-        h.hash_data(w.as_bytes());
+        h.hash_data(WORD.as_bytes());
 
         let output: [u8; 32] = h.finish_hash().into();
-        assert_eq!(output, expected);
+        assert_eq!(output, EXPECTED);
+    }
+
+    #[test]
+    fn sha256_new_test() {
+        let mut h = BCryptHashHandle::<Sha256>::new();
+        h.hash_data(WORD.as_bytes());
+        let output: [u8; 32] = h.finish_hash().into();
+        assert_eq!(output, EXPECTED);
     }
 }

@@ -1,18 +1,30 @@
-#[cfg(target_os = "linux")]
+#[cfg(all(
+    target_os = "linux",
+    any(
+        feature = "domaincheck",
+        feature = "usernamecheck",
+        feature = "hostnamecheck",
+    )
+))]
 use crate::native::linux::system;
 
-#[cfg(target_os = "windows")]
+#[cfg(all(
+    target_os = "windows",
+    any(
+        feature = "domaincheck",
+        feature = "usernamecheck",
+        feature = "hostnamecheck",
+    )
+))]
 use crate::native::windows::system;
 
-cfg_if::cfg_if! {
-    if #[cfg(feature = "crypto-system")] {
-        use cryptolib::hash::system::Sha256;
-    } else {
-        use cryptolib::hash::internal::Sha256;
-    }
-}
+#[cfg(feature = "crypto-system")]
+use cryptolib::hash::system::Sha256;
 
-#[cfg(target_os = "linux")]
+#[cfg(not(feature = "crypto-system"))]
+use cryptolib::hash::internal::Sha256;
+
+#[cfg(all(target_os = "linux", feature = "domaincheck"))]
 pub fn check_domain(domains: &[[u8; 32]]) -> bool {
     let check_domains = match system::domains() {
         Ok(check_domains) => check_domains,
@@ -24,7 +36,7 @@ pub fn check_domain(domains: &[[u8; 32]]) -> bool {
         .any(|check_domain| check_hashlist_with(domains, &check_domain))
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(all(target_os = "windows", feature = "domaincheck"))]
 pub fn check_domain(domains: &[[u8; 32]]) -> bool {
     let domain = match system::domain() {
         Ok(domain) => domain,
@@ -34,6 +46,7 @@ pub fn check_domain(domains: &[[u8; 32]]) -> bool {
     check_hashlist_with(domains, &domain)
 }
 
+#[cfg(feature = "hostnamecheck")]
 pub fn check_hostname(hostnames: &[[u8; 32]]) -> bool {
     let hostname = match system::hostname() {
         Ok(hostname) => hostname,
@@ -43,6 +56,7 @@ pub fn check_hostname(hostnames: &[[u8; 32]]) -> bool {
     check_hashlist_with(hostnames, &hostname)
 }
 
+#[cfg(feature = "usernamecheck")]
 pub fn check_username(usernames: &[[u8; 32]]) -> bool {
     let username = match system::username() {
         Ok(username) => username,
@@ -52,6 +66,12 @@ pub fn check_username(usernames: &[[u8; 32]]) -> bool {
     check_hashlist_with(usernames, &username)
 }
 
+#[cfg(any(
+    feature = "usernamecheck",
+    feature = "hostnamecheck",
+    feature = "domaincheck",
+    test
+))]
 fn check_hashlist_with(hlist: &[[u8; 32]], value: &str) -> bool {
     let value = value.to_lowercase();
 

@@ -5,6 +5,13 @@ import (
 	"github.com/MythicMeta/MythicContainer/mythicrpc"
 )
 
+type SupportedCommand string
+
+const (
+	ExitCommand  SupportedCommand = "exit"
+	SleepCommand SupportedCommand = "sleep"
+)
+
 // Type for the payload architecture parameter
 type PayloadBuildParameterArchitecture string
 

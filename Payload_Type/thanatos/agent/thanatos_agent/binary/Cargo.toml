@@ -1,5 +1,5 @@
 [package]
-name = "thanatos_http_binary"
+name = "thanatos_binary"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
@@ -7,4 +7,4 @@ license.workspace = true
 version.workspace = true
 
 [dependencies]
-thanatos_http = { path = ".." }
+thanatos = { path = ".." }

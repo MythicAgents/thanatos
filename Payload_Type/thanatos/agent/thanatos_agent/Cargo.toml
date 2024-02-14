@@ -1,5 +1,5 @@
 [package]
-name = "thanatos_core"
+name = "thanatos"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
@@ -8,22 +8,15 @@ version.workspace = true
 
 
 [dependencies]
-base64.workspace = true
 cfg-if.workspace = true
-rmp.workspace = true
-rmp-serde.workspace = true
-serde.workspace = true
-serde_json.workspace = true
-serde_repr.workspace = true
-sha2.workspace = true
 hex-literal.workspace = true
-
 
 [dependencies.config]
 path = "../config"
 
 [dependencies.cryptolib]
 path = "../cryptolib"
+optional = true
 
 [dependencies.errors]
 path = "../errors"
@@ -38,4 +31,14 @@ path = "../utils"
 dbus.workspace = true
 
 [features]
+default = ["crypto-internal"]
 crypto-system = ["cryptolib/system"]
+crypto-internal = ["cryptolib/internal"]
+domaincheck = []
+hostnamecheck = []
+usernamecheck = []
+init-fork = []
+init-thread = []
+tlsuntrusted = []
+http = []
+tcp = []

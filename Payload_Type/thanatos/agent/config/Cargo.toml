@@ -7,14 +7,19 @@ license.workspace = true
 version.workspace = true
 
 
-[features]
-
 [dependencies]
-rmp.workspace = true
-rmp-serde.workspace = true
-serde.workspace = true
-serde_repr.workspace = true
-serde_bytes.workspace = true
+quick-protobuf.workspace = true
+cfg-if.workspace = true
+
+[dependencies.errors]
+path = "../errors"
 
 [dependencies.utils]
 path = "../utils"
+
+[build-dependencies]
+pb-rs.workspace = true
+
+[features]
+default = ["full"]
+full = []

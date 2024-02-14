@@ -4,21 +4,18 @@ resolver = "2"
 members = [
   "config",
   "ffiwrappers",
-  "genconfig",
-  "thanatos_core",
-  "thanatos_http",
-  "thanatos_http/cdylib",
-  "thanatos_http/binary",
+  "thanatos_agent",
+  "thanatos_agent/cdylib",
+  "thanatos_agent/binary",
   "utils",
   "cryptolib",
   "errors",
+  "genconfig",
 ]
 
-default-members = ["thanatos_core"]
+default-members = ["thanatos_agent"]
 
-exclude = [
-  "shellcode-builder",
-]
+exclude = ["shellcode-builder"]
 
 [workspace.package]
 authors = ["@M_alphaaa"]
@@ -32,12 +29,10 @@ version = "0.2.0"
 [workspace.dependencies]
 base64 = "0.21.5"
 cfg-if = "1"
+chrono = "0.4.34"
 hex-literal = "0.4.1"
-rmp = "0.8.12"
-rmp-serde = "1.1.2"
+quick-protobuf = "0.8.1"
 serde_json = "1"
-serde_repr = "0.1"
-serde_bytes = "0.11"
 sha2 = "0.10.8"
 
 [workspace.dependencies.dbus]
@@ -46,6 +41,10 @@ default-features = false
 
 [workspace.dependencies.libc]
 version = "0.2"
+
+[workspace.dependencies.pb-rs]
+version = "0.10.0"
+default-features = false
 
 [workspace.dependencies.serde]
 version = "1"

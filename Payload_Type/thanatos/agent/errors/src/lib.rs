@@ -8,6 +8,8 @@ pub enum ThanatosError {
     FFIError(FFIError),
     NotDomainJoined,
 
+    ConfigParseError,
+
     #[cfg(target_os = "linux")]
     DbusError(dbus::Error),
 }

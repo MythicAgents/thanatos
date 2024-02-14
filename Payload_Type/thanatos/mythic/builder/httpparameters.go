@@ -13,105 +13,57 @@ import (
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 )
 
-/*
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ProxyInfo<'a> {
-    host: &'a str,
-    port: u16,
-    user: &'a str,
-    pass: &'a str,
-}
-*/
-
 // Data type with the HTTP proxy parameters
 type HttpC2ProfileProxyParameters struct {
-	Host string `msgpack:"host"`
-	Port uint16 `msgpack:"port"`
-	User string `msgpack:"user"`
-	Pass string `msgpack:"pass"`
+	Host string
+	Port uint16
+	User string
+	Pass string
 }
-
-/*
-{
-  "crypto_type": {
-    // TODO: Change type to an integer value rather than a string (serde_repr)
-    "type": "aes256_hmac",
-    "key": [1, 2, 3, 4, 5, ...]
-  }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(tag = "type")]
-pub enum CryptoInfo {
-    #[serde(rename = "aes256_hmac")]
-    Aes256Hmac {
-        key: [u8; 16],
-    }
-}
-*/
 
 // HTTP C2 profile crypto information
 type HttpC2ProfileCryptoInfo struct {
-	Type string   `msgpack:"type"`
-	Key  [16]byte `msgpack:"key"`
+	Type string
+	Key  [16]byte
 }
-
-/*
-/// HTTP profile configuration variables
-#[derive(Serialize, Deserialize, Debug)]
-pub struct HttpConfigVars<'a> {
-    callback_host: &'a str,
-    callback_interval: u32,
-    callback_jitter: u16,
-    callback_port: u16,
-    killdate: u64,
-    encrypted_exchange_check: bool,
-    crypto_info: Option<CryptoInfo>,
-    headers: HashMap<&'a str, &'a str>,
-    get_uri: &'a str,
-    post_uri: &'a str,
-    query_path_name: &'a str,
-    proxy_info: Option<ProxyInfo>,
-}
-*/
 
 // Contains the HTTP C2 profile parameters
 type HttpC2ProfileParameters struct {
 	// Host for making HTTP connections to
-	CallbackHost string `msgpack:"callback_host"`
+	CallbackHost string
 
 	// Interval for HTTP connections
-	CallbackInterval uint32 `msgpack:"callback_interval"`
+	CallbackInterval uint32
 
 	// Callback jitter for the payload
-	CallbackJitter uint16 `msgpack:"callback_jitter"`
+	CallbackJitter uint16
 
 	// Callback port for the payload to connect to
-	CallbackPort uint16 `msgpack:"callback_port"`
+	CallbackPort uint16
 
 	// Killdate of the payload
-	Killdate uint64 `msgpack:"killdate"`
+	Killdate uint64
 
 	// Whether the payload should do a key exchange
-	EncryptedExchangeCheck bool `msgpack:"encrypted_exchange_check"`
+	EncryptedExchangeCheck bool
 
 	// Information for encryption
-	CryptoInfo *HttpC2ProfileCryptoInfo `msgpack:"crypto_info,omitempty"`
+	CryptoInfo *HttpC2ProfileCryptoInfo
 
 	// HTTP headers for making HTTP requests
-	Headers map[string]string `msgpack:"headers"`
+	Headers map[string]string
 
 	// The GET uri for any GET requests
-	GetUri string `msgpack:"get_uri"`
+	GetUri string
 
 	// The POST uri for any POST requests
-	PostUri string `msgpack:"post_uri"`
+	PostUri string
 
 	// The query path for GET requests
-	QueryPathName string `msgpack:"query_path_name"`
+	QueryPathName string
 
 	// HTTP proxy information
-	ProxyInfo *HttpC2ProfileProxyParameters `msgpack:"proxy_info,omitempty"`
+	ProxyInfo *HttpC2ProfileProxyParameters
 }
 
 func (p *HttpC2ProfileParameters) String() string {

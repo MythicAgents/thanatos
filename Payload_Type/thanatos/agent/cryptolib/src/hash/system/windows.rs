@@ -1,11 +1,10 @@
-use ffiwrappers::windows::bcrypt::{algorithms, BCryptAlgHandle, BCryptHashHandle};
+use ffiwrappers::windows::bcrypt::{algorithms, BCryptHashHandle};
 
 pub struct Sha256(BCryptHashHandle<algorithms::Sha256>);
 
 impl Sha256 {
     pub fn new() -> Sha256 {
-        let mut alg_handle = BCryptAlgHandle::<algorithms::Sha256>::new();
-        Sha256(alg_handle.create_hash())
+        Sha256(BCryptHashHandle::<algorithms::Sha256>::new())
     }
 
     pub fn update(&mut self, input: &[u8]) {

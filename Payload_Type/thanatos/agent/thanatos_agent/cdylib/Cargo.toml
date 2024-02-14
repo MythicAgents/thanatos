@@ -1,5 +1,5 @@
 [package]
-name = "thanatos_http_cdylib"
+name = "thanatos_cdylib"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
@@ -10,4 +10,4 @@ version.workspace = true
 crate-type = ["cdylib"]
 
 [dependencies]
-thanatos_http = { path = ".." }
+thanatos = { path = ".." }

@@ -6,14 +6,17 @@ homepage.workspace = true
 license.workspace = true
 version.workspace = true
 
-
 [build-dependencies]
 base64.workspace = true
-rmp.workspace = true
-rmp-serde.workspace = true
+chrono.workspace = true
+quick-protobuf.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-serde_repr.workspace = true
-utils = { path = "../utils" }
 sha2.workspace = true
-lazy_static = "1.4"
+
+[build-dependencies.utils]
+path = "../utils"
+
+[build-dependencies.config]
+path = "../config"
+default-features = false

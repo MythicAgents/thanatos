@@ -4,8 +4,6 @@
     windows_subsystem = "windows"
 )]
 
-const CONFIG: &[u8] = include_bytes!(env!("CONFIG"));
-
 fn main() {
-    thanatos_http::entrypoint(CONFIG);
+    thanatos::entrypoint();
 }

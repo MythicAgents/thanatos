@@ -8,10 +8,10 @@ version.workspace = true
 
 
 [dependencies]
-generic-array = "0.14.7"
 windows.workspace = true
 libc.workspace = true
 hex-literal.workspace = true
+generic-array = "1"
 
 [dependencies.errors]
 path = "../errors"
