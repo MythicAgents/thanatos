@@ -50,9 +50,6 @@ pub fn entrypoint() {
     #[cfg(feature = "init-thread")]
     std::thread::spawn(|| run_agent(agent_config));
 
-    #[cfg(all(target_os = "linux", feature = "init-fork"))]
-    native::linux::fork(|| run_agent(agent_config));
-
     #[cfg(not(any(feature = "init-thread", feature = "init-fork")))]
     run_agent(agent_config);
 }
