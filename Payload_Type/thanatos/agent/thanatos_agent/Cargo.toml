@@ -27,9 +27,6 @@ path = "../ffiwrappers"
 [dependencies.utils]
 path = "../utils"
 
-[target.'cfg(target_os = "linux")'.dependencies]
-dbus.workspace = true
-
 [features]
 default = ["crypto-internal"]
 crypto-system = ["cryptolib/system"]

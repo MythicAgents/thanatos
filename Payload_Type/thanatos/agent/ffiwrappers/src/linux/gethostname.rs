@@ -1,9 +1,7 @@
-use errors::{FFIError, ThanatosError};
+use crate::errors::FfiError;
 
-use super::libc_errno;
-
-/// Gets the system's hostname
-pub fn hostname() -> Result<String, ThanatosError> {
+/// Gets the system's hostname. This is essentially like running `hostname`
+pub fn gethostname() -> Result<String, FfiError> {
     // Use `sysconf(3)` to get the max supported hostname length.
     //
     // SAFETY: `sysconf(3)` will return a -1 to signify an error. This is checked below.
@@ -11,7 +9,7 @@ pub fn hostname() -> Result<String, ThanatosError> {
 
     // Check for errors
     if hostname_max == -1 {
-        return Err(ThanatosError::OsError(libc_errno()));
+        return Err(FfiError::os_error());
     }
 
     // Cast `hostname_max` into a usize. This can be done safely here without `.try_into()`
@@ -29,7 +27,7 @@ pub fn hostname() -> Result<String, ThanatosError> {
     // The max hostname length was found above and a buffer was allocated using
     // that maximum length. `gethostname(2)` returns a value of -1 if an error occurs
     if unsafe { libc::gethostname(hostname_buffer.as_mut_ptr().cast(), hostname_max) } == -1 {
-        return Err(ThanatosError::OsError(libc_errno()));
+        return Err(FfiError::os_error());
     }
 
     // Find the index of the NULL terminator.
@@ -41,7 +39,7 @@ pub fn hostname() -> Result<String, ThanatosError> {
     let null_terminator = hostname_buffer
         .iter()
         .position(|&c| c == 0)
-        .ok_or(ThanatosError::FFIError(FFIError::NoNullTerminator))?;
+        .ok_or(FfiError::NoNullTerminator)?;
 
     // Convert the buffer of bytes to a string
     let s = String::from_utf8_lossy(&hostname_buffer[..null_terminator]);
@@ -53,8 +51,8 @@ pub fn hostname() -> Result<String, ThanatosError> {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn hostname_test() {
-        let u = super::hostname().unwrap();
+    fn gethostname_test() {
+        let u = super::gethostname().unwrap();
         dbg!(u);
     }
 }

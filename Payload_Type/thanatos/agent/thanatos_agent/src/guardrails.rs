@@ -24,19 +24,7 @@ use cryptolib::hash::system::Sha256;
 #[cfg(not(feature = "crypto-system"))]
 use cryptolib::hash::internal::Sha256;
 
-#[cfg(all(target_os = "linux", feature = "domaincheck"))]
-pub fn check_domain(domains: &[[u8; 32]]) -> bool {
-    let check_domains = match system::domains() {
-        Ok(check_domains) => check_domains,
-        Err(_) => return false,
-    };
-
-    check_domains
-        .into_iter()
-        .any(|check_domain| check_hashlist_with(domains, &check_domain))
-}
-
-#[cfg(all(target_os = "windows", feature = "domaincheck"))]
+#[cfg(feature = "domaincheck")]
 pub fn check_domain(domains: &[[u8; 32]]) -> bool {
     let domain = match system::domain() {
         Ok(domain) => domain,

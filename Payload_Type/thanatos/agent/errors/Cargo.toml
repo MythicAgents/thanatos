@@ -12,5 +12,5 @@ version.workspace = true
 [target.'cfg(target_os = "windows")'.dependencies]
 windows.workspace = true
 
-[target.'cfg(target_os = "linux")'.dependencies]
-dbus.workspace = true
+[dependencies.ffiwrappers]
+path = "../ffiwrappers"

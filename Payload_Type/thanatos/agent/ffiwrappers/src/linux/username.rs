@@ -1,10 +1,8 @@
 use std::ffi::CStr;
 
-use errors::ThanatosError;
+use crate::errors::FfiError;
 
-use super::libc_errno;
-
-pub fn username() -> Result<String, ThanatosError> {
+pub fn username() -> Result<String, FfiError> {
     // Get a pointer to a the `passwd` entry of the current user id
     //
     // SAFETY: This will return NULL on error
@@ -12,7 +10,7 @@ pub fn username() -> Result<String, ThanatosError> {
 
     // Check if the returned `passwd` pointer is NULL
     if passwd.is_null() {
-        return Err(ThanatosError::OsError(libc_errno()));
+        return Err(FfiError::os_error());
     }
 
     // Get a pointer to the username buffer from the passwd buffer.
@@ -23,7 +21,7 @@ pub fn username() -> Result<String, ThanatosError> {
 
     // Check if the username pointer is NULL
     if username_ptr.is_null() {
-        return Err(ThanatosError::OsError(libc_errno()));
+        return Err(FfiError::os_error());
     }
 
     // Convert the username pointer into a CStr.

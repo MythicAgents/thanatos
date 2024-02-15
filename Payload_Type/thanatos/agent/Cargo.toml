@@ -34,6 +34,7 @@ hex-literal = "0.4.1"
 quick-protobuf = "0.8.1"
 serde_json = "1"
 sha2 = "0.10.8"
+bitflags = "2.4.2"
 
 [workspace.dependencies.dbus]
 version = "0.9.7"

@@ -1,85 +1,102 @@
-use dbus::blocking::{stdintf::org_freedesktop_dbus::Properties, BlockingSender};
+use std::ffi::CString;
+
 use errors::ThanatosError;
-pub use ffiwrappers::linux::{hostname, username};
+use ffiwrappers::{
+    errors::FfiError,
+    linux::addrinfo::{AddrInfoList, AiFlags, Hints, SockType},
+};
 
-const DBUS_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
-
-/// Gets the system's joined domains
-pub fn domains() -> Result<Vec<String>, ThanatosError> {
-    let conn = dbus::blocking::Connection::new_system().map_err(ThanatosError::DbusError)?;
-
-    if !check_domain_joined(&conn)? {
-        return Err(ThanatosError::NotDomainJoined);
-    }
-
-    let realm_paths = get_realm_paths(&conn)?;
-
-    Ok(realm_paths
-        .into_iter()
-        .map_while(|realm_path| {
-            let proxy = dbus::blocking::Proxy::new(
-                "org.freedesktop.realmd",
-                realm_path,
-                DBUS_TIMEOUT,
-                &conn,
-            );
-
-            let configured: String = proxy
-                .get("org.freedesktop.realmd.Realm", "Configured")
-                .ok()?;
-
-            (!configured.is_empty())
-                .then(|| proxy.get("org.freedesktop.realmd.Realm", "Name").ok())
-                .flatten()
-        })
-        .collect::<Vec<String>>())
+pub fn hostname() -> Result<String, ThanatosError> {
+    let h = ffiwrappers::linux::gethostname().map_err(ThanatosError::FFIError)?;
+    Ok(h.split('.').next().unwrap_or(&h).to_string())
 }
 
-fn get_realm_paths(
-    conn: &dbus::blocking::Connection,
-) -> Result<Vec<dbus::strings::Path>, ThanatosError> {
-    let proxy = dbus::blocking::Proxy::new(
-        "org.freedesktop.realmd",
-        "/org/freedesktop/realmd",
-        DBUS_TIMEOUT,
-        conn,
-    );
+pub fn domain() -> Result<String, ThanatosError> {
+    let current_host = ffiwrappers::linux::gethostname().map_err(ThanatosError::FFIError)?;
+    let current_host =
+        CString::new(current_host).map_err(|_| ThanatosError::FFIError(FfiError::InteriorNull))?;
 
-    proxy
-        .get("org.freedesktop.realmd.Provider", "Realms")
-        .map_err(ThanatosError::DbusError)
-}
-
-fn check_domain_joined(conn: &dbus::blocking::Connection) -> Result<bool, ThanatosError> {
-    let msg = dbus::message::Message::new_method_call(
-        "org.freedesktop.DBus",
-        "/org/freedesktop/DBus",
-        "org.freedesktop.DBus",
-        "ListActivatableNames",
+    let addrlist = AddrInfoList::new(
+        Some(&current_host),
+        None,
+        Some(Hints {
+            socktype: SockType::SockDgram,
+            flags: AiFlags::CANONNAME,
+            family: Default::default(),
+        }),
     )
-    .unwrap();
+    .map_err(ThanatosError::FFIError)?;
 
-    let reply = conn
-        .send_with_reply_and_block(msg, DBUS_TIMEOUT)
-        .map_err(ThanatosError::DbusError)?;
+    let canonname = addrlist
+        .iter()
+        .next()
+        .and_then(|addrentry| {
+            addrentry
+                .canonname()
+                .map(|c| c.to_string_lossy().to_string())
+        })
+        .ok_or(ThanatosError::FFIError(FfiError::CanonNameNotFound))?;
 
-    let services: Vec<String> = reply.get1().unwrap();
+    let mut s = canonname.split('.');
+    s.next()
+        .ok_or(ThanatosError::FFIError(FfiError::CanonNameNotFound))?;
+    Ok(s.collect::<Vec<&str>>().join("."))
+}
 
-    Ok(services.iter().any(|svc| svc == "org.freedesktop.realmd"))
+pub fn username() -> Result<String, ThanatosError> {
+    ffiwrappers::linux::username().map_err(ThanatosError::FFIError)
 }
 
 #[cfg(test)]
 mod tests {
-    use errors::ThanatosError;
+    use std::ffi::CString;
+
+    use ffiwrappers::linux::addrinfo::{AddrInfoList, AiFlags, Hints, SockType};
+
+    #[test]
+    fn hostname_test() {
+        let hostname = super::hostname().unwrap();
+        assert!(!hostname.starts_with('.'));
+        assert!(!hostname.ends_with('.'));
+    }
 
     #[test]
     fn domain_test() {
-        let domains = super::domains();
+        let domain = super::domain().unwrap();
+        assert!(!domain.starts_with('.'));
+        assert!(!domain.ends_with('.'));
+    }
 
-        match domains {
-            Ok(_) => (),
-            Err(ThanatosError::NotDomainJoined) => (),
-            e => panic!("{:?}", e),
-        }
+    #[test]
+    fn fqdn_canonname_test() {
+        let host = super::hostname().unwrap();
+        let domain = super::domain().unwrap();
+
+        let fqdn = format!("{}.{}", host, domain);
+
+        let current_host = ffiwrappers::linux::gethostname().unwrap();
+        let current_host = CString::new(current_host).unwrap();
+
+        let addrlist = AddrInfoList::new(
+            Some(&current_host),
+            None,
+            Some(Hints {
+                socktype: SockType::SockDgram,
+                flags: AiFlags::CANONNAME,
+                family: Default::default(),
+            }),
+        )
+        .unwrap();
+
+        let canonname = addrlist
+            .iter()
+            .next()
+            .unwrap()
+            .canonname()
+            .unwrap()
+            .to_string_lossy()
+            .to_string();
+
+        assert_eq!(canonname, fqdn);
     }
 }

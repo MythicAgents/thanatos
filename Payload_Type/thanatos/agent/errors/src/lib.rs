@@ -1,17 +1,12 @@
-mod ffierrors;
-
-pub use ffierrors::FFIError;
+use ffiwrappers::errors::FfiError;
 
 #[derive(Debug)]
 pub enum ThanatosError {
     OsError(i32),
-    FFIError(FFIError),
+    FFIError(FfiError),
     NotDomainJoined,
 
     ConfigParseError,
-
-    #[cfg(target_os = "linux")]
-    DbusError(dbus::Error),
 }
 
 impl ThanatosError {
