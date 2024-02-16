@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "rust-lang.rust-analyzer",
+        "serayuzgur.crates",
+        "tamasfe.even-better-toml",
+        "swellaby.vscode-rust-test-adapter",
+        "ms-vscode.test-adapter-converter",
+        "hbenl.vscode-test-explorer"
+    ]
+}

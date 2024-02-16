@@ -9,8 +9,25 @@
             "path": "Payload_Type/thanatos/agent"
         },
         {
+            "name": "Base Dockerfile",
+            "path": "Payload_Type/thanatos/.docker"
+        },
+        {
             "name": "Github",
             "path": ".github"
+        },
+        {
+            "name": "Devcontainer",
+            "path": ".devcontainer"
+        },
+        {
+            "name": "Project Root",
+            "path": "."
         }
-    ]
+    ],
+    "extensions": {
+        "recommendations": [
+            "ms-azuretools.vscode-docker"
+        ]
+    }
 }

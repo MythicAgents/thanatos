@@ -6,6 +6,12 @@
 </p>
 
 # Thanatos
+
+[![GitHub License](https://img.shields.io/github/license/MythicAgents/thanatos)](https://github.com/MythicAgents/thanatos/blob/main/LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/MythicAgents/thanatos)](https://github.com/MythicAgents/thanatos/releases/latest)
+[![Development CI](https://github.com/MythicAgents/thanatos/workflows/Development%20CI/badge.svg)](https://github.com/MythicAgents/thanatos/actions/workflows/dev-ci.yml)
+[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/MythicAgents/thanatos)
+
 Thanatos is a Windows and Linux C2 agent written in rust.
 
 # Installation
