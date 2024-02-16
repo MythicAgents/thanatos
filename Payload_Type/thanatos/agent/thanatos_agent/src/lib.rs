@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 
+use agent::Agent;
 use config::ConfigVars;
 
 #[cfg(any(
@@ -10,8 +11,10 @@ use config::ConfigVars;
 ))]
 mod guardrails;
 
-pub mod logging;
-pub mod native;
+mod agent;
+mod logging;
+mod native;
+mod proto;
 
 pub fn entrypoint() {
     let agent_config = if let Ok(c) = ConfigVars::parse() {
@@ -50,8 +53,15 @@ pub fn entrypoint() {
     #[cfg(feature = "init-thread")]
     std::thread::spawn(|| run_agent(agent_config));
 
+    #[cfg(feature = "init-fork")]
+    todo!();
+
     #[cfg(not(any(feature = "init-thread", feature = "init-fork")))]
     run_agent(agent_config);
 }
 
-fn run_agent(_agent_config: ConfigVars) {}
+fn run_agent(agent_config: ConfigVars) {
+    if let Ok(agent_instance) = Agent::new(agent_config) {
+        agent_instance.run();
+    }
+}

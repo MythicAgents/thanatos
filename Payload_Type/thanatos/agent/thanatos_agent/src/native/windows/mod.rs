@@ -1,3 +1,10 @@
 pub mod system {
-    pub use ffiwrappers::windows::{domain, hostname, username};
+    #[cfg(feature = "domaincheck")]
+    pub use ffiwrappers::windows::domain;
+
+    #[cfg(feature = "hostnamecheck")]
+    pub use ffiwrappers::windows::hostname;
+
+    #[cfg(feature = "usernamecheck")]
+    pub use ffiwrappers::windows::username;
 }
