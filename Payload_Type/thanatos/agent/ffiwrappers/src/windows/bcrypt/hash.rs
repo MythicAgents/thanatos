@@ -11,7 +11,7 @@ use super::{BCryptAlgHandle, HashAlgorithm};
 pub struct BCryptHashHandle<T: HashAlgorithm> {
     pub(super) handle: BCRYPT_HASH_HANDLE,
     pub(super) _marker: PhantomData<BCRYPT_HASH_HANDLE>,
-    pub(super) _ty: PhantomData<T>,
+    pub(super) _algorithm: PhantomData<T>,
 }
 
 impl<T: HashAlgorithm> BCryptHashHandle<T> {

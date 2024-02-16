@@ -20,7 +20,7 @@ use super::{
 pub struct BCryptAlgHandle<T: Algorithm> {
     handle: BCRYPT_ALG_HANDLE,
     _marker: PhantomData<BCRYPT_ALG_HANDLE>,
-    _ty: PhantomData<T>,
+    _algorithm: PhantomData<T>,
 }
 
 impl<T: Algorithm> BCryptAlgHandle<T> {
@@ -69,7 +69,7 @@ impl<T: Algorithm> BCryptAlgHandle<T> {
         BCryptAlgHandle {
             handle,
             _marker: PhantomData,
-            _ty: PhantomData,
+            _algorithm: PhantomData,
         }
     }
 }
@@ -124,7 +124,7 @@ impl<T: HashAlgorithm> BCryptAlgHandle<T> {
         BCryptHashHandle {
             handle: hash_handle,
             _marker: PhantomData,
-            _ty: PhantomData,
+            _algorithm: PhantomData,
         }
     }
 }
