@@ -13,8 +13,7 @@ use windows::{
 };
 
 use super::{
-    traits::{Algorithm, HashAlgorithm},
-    BCryptHashHandle,
+    BCryptHashHandle, {Algorithm, HashAlgorithm},
 };
 
 #[repr(transparent)]

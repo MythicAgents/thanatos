@@ -1,3 +1,6 @@
+use generic_array::ArrayLength;
+use windows::core::PCWSTR;
+
 mod alghandle;
 pub use alghandle::BCryptAlgHandle;
 
@@ -6,15 +9,14 @@ pub use hash::BCryptHashHandle;
 
 pub mod algorithms;
 
-pub mod traits {
-    use generic_array::ArrayLength;
-    use windows::core::PCWSTR;
+mod internal {
+    pub trait Private {}
+}
 
-    pub trait Algorithm {
-        const ALGID: PCWSTR;
-    }
+pub trait Algorithm: internal::Private {
+    const ALGID: PCWSTR;
+}
 
-    pub trait HashAlgorithm: Algorithm {
-        type LEN: ArrayLength;
-    }
+pub trait HashAlgorithm: Algorithm + internal::Private {
+    type LEN: ArrayLength;
 }

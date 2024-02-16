@@ -5,7 +5,7 @@ use windows::Win32::Security::Cryptography::{
     BCryptDestroyHash, BCryptFinishHash, BCryptHashData, BCRYPT_HASH_HANDLE,
 };
 
-use super::{traits::HashAlgorithm, BCryptAlgHandle};
+use super::{BCryptAlgHandle, HashAlgorithm};
 
 #[repr(transparent)]
 pub struct BCryptHashHandle<T: HashAlgorithm> {
