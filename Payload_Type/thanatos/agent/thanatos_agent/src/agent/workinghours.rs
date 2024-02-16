@@ -44,11 +44,11 @@ mod tests {
         }
 
         fn start(&self) -> NaiveTime {
-            NaiveTime::parse_from_str(&self.start, "%H:%M").expect("Failed to parse start time")
+            NaiveTime::parse_from_str(self.start, "%H:%M").expect("Failed to parse start time")
         }
 
         fn end(&self) -> NaiveTime {
-            NaiveTime::parse_from_str(&self.end, "%H:%M").expect("Failed to parse end time")
+            NaiveTime::parse_from_str(self.end, "%H:%M").expect("Failed to parse end time")
         }
     }
 

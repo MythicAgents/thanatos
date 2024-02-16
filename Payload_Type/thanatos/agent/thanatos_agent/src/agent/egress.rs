@@ -7,7 +7,7 @@ use errors::ThanatosError;
 use super::workinghours;
 
 pub struct Agent {
-    uuid: String,
+    _uuid: String,
     working_hours: WorkingHours,
 }
 
@@ -19,7 +19,7 @@ pub(super) struct WorkingHours {
 impl Agent {
     pub fn new(config: ConfigVars) -> Result<Agent, ThanatosError> {
         Ok(Agent {
-            uuid: config.uuid()?.to_string(),
+            _uuid: config.uuid()?.to_string(),
             working_hours: WorkingHours {
                 start: NaiveTime::from_num_seconds_from_midnight_opt(
                     config
