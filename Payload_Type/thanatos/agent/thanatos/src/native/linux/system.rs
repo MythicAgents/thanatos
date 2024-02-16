@@ -6,11 +6,13 @@ use ffiwrappers::{
     linux::addrinfo::{AddrInfoList, AiFlags, Hints, SockType},
 };
 
+#[allow(unused)]
 pub fn hostname() -> Result<String, ThanatosError> {
     let h = ffiwrappers::linux::gethostname().map_err(ThanatosError::FFIError)?;
     Ok(h.split('.').next().unwrap_or(&h).to_string())
 }
 
+#[allow(unused)]
 pub fn domain() -> Result<String, ThanatosError> {
     let current_host = ffiwrappers::linux::gethostname().map_err(ThanatosError::FFIError)?;
     let current_host =
@@ -43,6 +45,7 @@ pub fn domain() -> Result<String, ThanatosError> {
     Ok(s.collect::<Vec<&str>>().join("."))
 }
 
+#[allow(unused)]
 pub fn username() -> Result<String, ThanatosError> {
     ffiwrappers::linux::username().map_err(ThanatosError::FFIError)
 }
