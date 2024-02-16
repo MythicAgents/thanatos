@@ -3,7 +3,7 @@
 #   `docker build -t ghcr.io/mythicagents/thanatos:{TAG} -f .docker/Dockerfile .`
 
 # Build the Mythic server side code
-FROM docker.io/library/golang:1.21-alpine as mythic-builder
+FROM docker.io/library/golang:1.22-alpine as mythic-builder
 
 RUN apk update \
     && apk add binutils \
@@ -25,14 +25,14 @@ FROM docker.io/library/debian:bookworm-slim
 # Install required system packages
 RUN dpkg --add-architecture i386 && \
     apt-get update -y && apt-get install -y \
-        make \
-        curl \
-        gcc \
-        libc6:i386 \
-        libc6-dev:i386 \
-        lib32gcc-12-dev \
-        mingw-w64 \
-        && apt-get clean
+    make \
+    curl \
+    gcc \
+    libc6:i386 \
+    libc6-dev:i386 \
+    lib32gcc-12-dev \
+    mingw-w64 \
+    && apt-get clean
 
 WORKDIR /tmp
 
@@ -51,12 +51,12 @@ ENV SCCACHE_DIR /Mythic/.cache/sccache
 # Install Rust with the required toolchains
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh \
     && sh rustup.sh -y \
-        --profile minimal \
-        --default-toolchain stable \
-        -t x86_64-unknown-linux-gnu \
-        -t x86_64-pc-windows-gnu \
-        -t i686-unknown-linux-gnu \
-        -t i686-pc-windows-gnu
+    --profile minimal \
+    --default-toolchain stable \
+    -t x86_64-unknown-linux-gnu \
+    -t x86_64-pc-windows-gnu \
+    -t i686-unknown-linux-gnu \
+    -t i686-pc-windows-gnu
 
 RUN rm -f rustup.sh
 

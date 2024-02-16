@@ -1,6 +1,6 @@
 module thanatos
 
-go 1.21
+go 1.22
 
 require (
 	github.com/MythicMeta/MythicContainer v1.3.6
