@@ -1,4 +1,4 @@
-use errors::ThanatosError;
+use crate::errors::FfiError;
 
 use windows::{
     core::{Error as WinError, PSTR},
@@ -8,7 +8,7 @@ use windows::{
     },
 };
 
-pub fn hostname() -> Result<String, ThanatosError> {
+pub fn hostname() -> Result<String, FfiError> {
     let mut hostname_length = 0u32;
 
     // Get the length of the computer's hostname.
@@ -27,7 +27,7 @@ pub fn hostname() -> Result<String, ThanatosError> {
         Err(e) if e.code() == WinError::from(ERROR_MORE_DATA).code() => (),
 
         // Check if any other error was returned
-        Err(e) => return Err(ThanatosError::from_windows(e)),
+        Err(e) => return Err(FfiError::from_windows_error(e)),
 
         // This function should never return successfully since the length is 0
         _ => unreachable!(),
@@ -52,7 +52,7 @@ pub fn hostname() -> Result<String, ThanatosError> {
             &mut hostname_length,
         )
     }
-    .map_err(ThanatosError::from_windows)?;
+    .map_err(FfiError::from_windows_error)?;
 
     // Cast the hostname length.
     // The hostname length value now contains the length of the system's hostname

@@ -1,4 +1,4 @@
-use errors::ThanatosError;
+use crate::errors::FfiError;
 
 use windows::{
     core::{Error as WinError, PSTR},
@@ -9,7 +9,7 @@ use windows::{
 };
 
 /// Get the domain name of the system
-pub fn domain() -> Result<String, ThanatosError> {
+pub fn domain() -> Result<String, FfiError> {
     let mut domainname_length = 0u32;
 
     // Get the length of the computer's domain name.
@@ -28,7 +28,7 @@ pub fn domain() -> Result<String, ThanatosError> {
         Err(e) if e.code() == WinError::from(ERROR_MORE_DATA).code() => (),
 
         // Check if any other error was returned
-        Err(e) => return Err(ThanatosError::from_windows(e)),
+        Err(e) => return Err(FfiError::from_windows_error(e)),
 
         // This function should never return successfully since the length is 0
         _ => unreachable!(),
@@ -53,7 +53,7 @@ pub fn domain() -> Result<String, ThanatosError> {
             &mut domainname_length,
         )
     }
-    .map_err(ThanatosError::from_windows)?;
+    .map_err(FfiError::from_windows_error)?;
 
     // Cast the domain name length.
     // The domain name length value now contains the length of the system's domain name

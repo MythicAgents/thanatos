@@ -1,11 +1,11 @@
-use errors::ThanatosError;
+use crate::errors::FfiError;
 
 use windows::{
     core::{Error as WinError, PSTR},
     Win32::{Foundation::ERROR_INSUFFICIENT_BUFFER, System::WindowsProgramming::GetUserNameA},
 };
 
-pub fn username() -> Result<String, ThanatosError> {
+pub fn username() -> Result<String, FfiError> {
     let mut username_length = 0u32;
 
     // Get the length of the current user's username
@@ -18,7 +18,7 @@ pub fn username() -> Result<String, ThanatosError> {
         Err(e) if e.code() == WinError::from(ERROR_INSUFFICIENT_BUFFER).code() => (),
 
         // Check if any other error was returned
-        Err(e) => return Err(ThanatosError::from_windows(e)),
+        Err(e) => return Err(FfiError::from_windows_error(e)),
 
         // This function should never return successfully since the length is 0
         _ => unreachable!(),
@@ -37,7 +37,7 @@ pub fn username() -> Result<String, ThanatosError> {
     // length of the username was found above. The username length must match the
     // length of the allocated buffer! An error needs to be checked in case the function fails
     unsafe { GetUserNameA(PSTR(username_buffer.as_mut_ptr()), &mut username_length) }
-        .map_err(ThanatosError::from_windows)?;
+        .map_err(FfiError::from_windows_error)?;
 
     // Cast the username length.
     // The username length value now contains the length of the current user's username
