@@ -100,12 +100,13 @@ impl<T: HashAlgorithm> BCryptAlgHandle<T> {
         //   - The only variable values are the algorithm handle an the pointer to the
         //     resulting hash handle. The rest of the parameters are hard coded.
         //     The flags variable is also set to define no flags. There is never
-        //     an instance where this receives an invalid parameter.
+        //     an instance where this returns an invalid parameter error.
         // - STATUS_NOT_SUPPORTED:
         //   - This error is returned if the algorithm ID for the algorithm handle does not support
         //     hashing. Only algorithms which implement the `HashAlgorithm` trait are able to
-        //     call this function. There is never an instance where this function is
-        //     called with an algorithm that does not implement the hash trait.
+        //     call this function. The `HashAlgorithm` trait is sealed so it can only be
+        //     implemented here. As long as only valid algorithm types are defined as hash
+        //     algorithms, this error should never be reached.
         //
         // Check for a `STATUS_BUFFER_TOO_SMALL` error just in case Windows runs
         // into an error managing memory. If this is the case, panic since it's unrecoverable.
