@@ -19,11 +19,11 @@ cfg_if::cfg_if! {
                 Uuid::try_from(self.0.uuid.as_ref()).map_err(|_| ThanatosError::ConfigParseError)
             }
 
-            pub fn working_hours_start(&self) -> i64 {
+            pub fn working_hours_start(&self) -> u32 {
                 self.0.working_hours_start
             }
 
-            pub fn working_hours_end(&self) -> i64 {
+            pub fn working_hours_end(&self) -> u32 {
                 self.0.working_hours_end
             }
 

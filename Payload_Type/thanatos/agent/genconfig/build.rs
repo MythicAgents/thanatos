@@ -122,7 +122,7 @@ enum BuildParameter {
     ConnectionRetries(String),
 
     #[serde(rename = "working_hours", with = "working_hours_format")]
-    WorkingHours((i64, i64)),
+    WorkingHours((u32, u32)),
     Domains(Vec<String>),
     Hostnames(Vec<String>),
 
@@ -189,7 +189,7 @@ mod working_hours_format {
     use chrono::NaiveTime;
     use serde::{Deserialize, Deserializer};
 
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<(i64, i64), D::Error>
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<(u32, u32), D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -215,7 +215,15 @@ mod working_hours_format {
             ));
         }
 
-        Ok((start.num_seconds(), end.num_seconds()))
+        Ok((
+            start
+                .num_seconds()
+                .try_into()
+                .expect("Working hours start overflows"),
+            end.num_seconds()
+                .try_into()
+                .expect("Working hours end overflows"),
+        ))
     }
 }
 

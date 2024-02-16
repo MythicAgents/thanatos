@@ -20,8 +20,8 @@ use super::*;
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct Config<'a> {
     pub uuid: Cow<'a, [u8]>,
-    pub working_hours_start: i64,
-    pub working_hours_end: i64,
+    pub working_hours_start: u32,
+    pub working_hours_end: u32,
     pub connection_retries: u32,
     pub domains: Cow<'a, [u8]>,
     pub hostnames: Cow<'a, [u8]>,
@@ -36,8 +36,8 @@ impl<'a> MessageRead<'a> for Config<'a> {
         while !r.is_eof() {
             match r.next_tag(bytes) {
                 Ok(10) => msg.uuid = r.read_bytes(bytes).map(Cow::Borrowed)?,
-                Ok(16) => msg.working_hours_start = r.read_int64(bytes)?,
-                Ok(24) => msg.working_hours_end = r.read_int64(bytes)?,
+                Ok(16) => msg.working_hours_start = r.read_uint32(bytes)?,
+                Ok(24) => msg.working_hours_end = r.read_uint32(bytes)?,
                 Ok(32) => msg.connection_retries = r.read_uint32(bytes)?,
                 Ok(42) => msg.domains = r.read_bytes(bytes).map(Cow::Borrowed)?,
                 Ok(50) => msg.hostnames = r.read_bytes(bytes).map(Cow::Borrowed)?,
@@ -56,8 +56,8 @@ impl<'a> MessageWrite for Config<'a> {
     fn get_size(&self) -> usize {
         0
         + if self.uuid == Cow::Borrowed(b"") { 0 } else { 1 + sizeof_len((&self.uuid).len()) }
-        + if self.working_hours_start == 0i64 { 0 } else { 1 + sizeof_varint(*(&self.working_hours_start) as u64) }
-        + if self.working_hours_end == 0i64 { 0 } else { 1 + sizeof_varint(*(&self.working_hours_end) as u64) }
+        + if self.working_hours_start == 0u32 { 0 } else { 1 + sizeof_varint(*(&self.working_hours_start) as u64) }
+        + if self.working_hours_end == 0u32 { 0 } else { 1 + sizeof_varint(*(&self.working_hours_end) as u64) }
         + if self.connection_retries == 0u32 { 0 } else { 1 + sizeof_varint(*(&self.connection_retries) as u64) }
         + if self.domains == Cow::Borrowed(b"") { 0 } else { 1 + sizeof_len((&self.domains).len()) }
         + if self.hostnames == Cow::Borrowed(b"") { 0 } else { 1 + sizeof_len((&self.hostnames).len()) }
@@ -68,8 +68,8 @@ impl<'a> MessageWrite for Config<'a> {
 
     fn write_message<W: WriterBackend>(&self, w: &mut Writer<W>) -> Result<()> {
         if self.uuid != Cow::Borrowed(b"") { w.write_with_tag(10, |w| w.write_bytes(&**&self.uuid))?; }
-        if self.working_hours_start != 0i64 { w.write_with_tag(16, |w| w.write_int64(*&self.working_hours_start))?; }
-        if self.working_hours_end != 0i64 { w.write_with_tag(24, |w| w.write_int64(*&self.working_hours_end))?; }
+        if self.working_hours_start != 0u32 { w.write_with_tag(16, |w| w.write_uint32(*&self.working_hours_start))?; }
+        if self.working_hours_end != 0u32 { w.write_with_tag(24, |w| w.write_uint32(*&self.working_hours_end))?; }
         if self.connection_retries != 0u32 { w.write_with_tag(32, |w| w.write_uint32(*&self.connection_retries))?; }
         if self.domains != Cow::Borrowed(b"") { w.write_with_tag(42, |w| w.write_bytes(&**&self.domains))?; }
         if self.hostnames != Cow::Borrowed(b"") { w.write_with_tag(50, |w| w.write_bytes(&**&self.hostnames))?; }

@@ -4,8 +4,8 @@ option go_package = "pb/config";
 
 message Config {
     bytes uuid = 1;
-    int64 working_hours_start = 2;
-    int64 working_hours_end = 3;
+    uint32 working_hours_start = 2;
+    uint32 working_hours_end = 3;
     uint32 connection_retries = 4;
     optional bytes domains = 5;
     optional bytes hostnames = 6;

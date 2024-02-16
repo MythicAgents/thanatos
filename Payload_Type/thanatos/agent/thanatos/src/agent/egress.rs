@@ -22,21 +22,12 @@ impl Agent {
             _uuid: config.uuid()?.to_string(),
             working_hours: WorkingHours {
                 start: NaiveTime::from_num_seconds_from_midnight_opt(
-                    config
-                        .working_hours_start()
-                        .try_into()
-                        .map_err(|_| ThanatosError::ConfigParseError)?,
+                    config.working_hours_start(),
                     0,
                 )
                 .ok_or(ThanatosError::ConfigParseError)?,
-                end: NaiveTime::from_num_seconds_from_midnight_opt(
-                    config
-                        .working_hours_end()
-                        .try_into()
-                        .map_err(|_| ThanatosError::ConfigParseError)?,
-                    0,
-                )
-                .ok_or(ThanatosError::ConfigParseError)?,
+                end: NaiveTime::from_num_seconds_from_midnight_opt(config.working_hours_end(), 0)
+                    .ok_or(ThanatosError::ConfigParseError)?,
             },
         })
     }
