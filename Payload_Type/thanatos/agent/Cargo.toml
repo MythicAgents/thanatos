@@ -4,16 +4,16 @@ resolver = "2"
 members = [
   "config",
   "ffiwrappers",
-  "thanatos_agent",
-  "thanatos_agent/cdylib",
-  "thanatos_agent/binary",
+  "thanatos",
+  "thanatos/cdylib",
+  "thanatos/binary",
   "utils",
   "cryptolib",
   "errors",
   "genconfig",
 ]
 
-default-members = ["thanatos_agent"]
+default-members = ["thanatos"]
 
 exclude = ["shellcode-builder"]
 
