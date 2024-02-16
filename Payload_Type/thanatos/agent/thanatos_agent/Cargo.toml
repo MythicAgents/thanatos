@@ -9,7 +9,9 @@ version.workspace = true
 
 [dependencies]
 cfg-if.workspace = true
+chrono.workspace = true
 hex-literal.workspace = true
+quick-protobuf.workspace = true
 
 [dependencies.config]
 path = "../config"
@@ -26,6 +28,9 @@ path = "../ffiwrappers"
 
 [dependencies.utils]
 path = "../utils"
+
+[build-dependencies]
+pb-rs.workspace = true
 
 [features]
 default = ["crypto-internal"]

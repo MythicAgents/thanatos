@@ -447,11 +447,14 @@ name = "thanatos"
 version = "0.2.0"
 dependencies = [
  "cfg-if",
+ "chrono",
  "config",
  "cryptolib",
  "errors",
  "ffiwrappers",
  "hex-literal",
+ "pb-rs",
+ "quick-protobuf",
  "utils",
 ]
 
