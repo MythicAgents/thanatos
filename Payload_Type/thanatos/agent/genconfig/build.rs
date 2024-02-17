@@ -8,7 +8,7 @@ use utils::uuid::Uuid;
 
 use config::proto::config::{Config, HttpConfig, ProxyInfo};
 
-const DEFAULT_CONFIG: &'static str = r#"{
+const DEFAULT_CONFIG: &str = r#"{
 	"uuid": "00000000-0000-0000-0000-000000000000",
 	"description": "",
 	"payload_type": "thanatos",
