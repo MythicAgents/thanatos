@@ -75,7 +75,11 @@ mod tests {
         let host = super::hostname().unwrap();
         let domain = super::domain().unwrap();
 
-        let fqdn = format!("{}.{}", host, domain);
+        let mut fqdn = format!("{}.{}", host, domain);
+
+        if !fqdn.ends_with('.') {
+            fqdn.push('.');
+        }
 
         let current_host = ffiwrappers::linux::gethostname().unwrap();
         let current_host = CString::new(current_host).unwrap();
@@ -91,7 +95,7 @@ mod tests {
         )
         .unwrap();
 
-        let canonname = addrlist
+        let mut canonname = addrlist
             .iter()
             .next()
             .unwrap()
@@ -99,6 +103,10 @@ mod tests {
             .unwrap()
             .to_string_lossy()
             .to_string();
+
+        if !canonname.ends_with('.') {
+            canonname.push('.');
+        }
 
         assert_eq!(canonname, fqdn);
     }
