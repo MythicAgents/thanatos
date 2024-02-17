@@ -28,6 +28,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     gnupg2 \
     mingw-w64 \
     pkg-config \
+    llvm \
     libssl-dev
 
 # Install Golang
