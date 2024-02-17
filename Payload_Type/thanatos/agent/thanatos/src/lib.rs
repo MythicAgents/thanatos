@@ -3,12 +3,6 @@
 use agent::Agent;
 use config::ConfigVars;
 
-#[cfg(any(
-    feature = "usernamecheck",
-    feature = "hostnamecheck",
-    feature = "domaincheck",
-    test
-))]
 mod guardrails;
 
 mod agent;
@@ -23,30 +17,7 @@ pub fn entrypoint() {
         return;
     };
 
-    #[cfg(feature = "usernamecheck")]
-    if let Ok(usernames) = agent_config.usernames() {
-        if !guardrails::check_username(&usernames) {
-            return;
-        }
-    } else {
-        return;
-    }
-
-    #[cfg(feature = "hostnamecheck")]
-    if let Ok(hostnames) = agent_config.hostnames() {
-        if !guardrails::check_hostname(&hostnames) {
-            return;
-        }
-    } else {
-        return;
-    }
-
-    #[cfg(feature = "domaincheck")]
-    if let Ok(domains) = agent_config.domains() {
-        if !guardrails::check_domain(&domains) {
-            return;
-        }
-    } else {
+    if !guardrails::run_guardrails(&agent_config) {
         return;
     }
 

@@ -1,21 +1,10 @@
-#[cfg(all(
-    target_os = "linux",
-    any(
-        feature = "domaincheck",
-        feature = "usernamecheck",
-        feature = "hostnamecheck",
-    )
-))]
+#![allow(unused)]
+
+#[cfg(target_os = "linux")]
 use crate::native::linux::system;
 
-#[cfg(all(
-    target_os = "windows",
-    any(
-        feature = "domaincheck",
-        feature = "usernamecheck",
-        feature = "hostnamecheck",
-    )
-))]
+use crate::native::linux::system::domain;
+#[cfg(target_os = "windows")]
 use crate::native::windows::system;
 
 #[cfg(feature = "crypto-system")]
@@ -24,42 +13,52 @@ use cryptolib::hash::system::Sha256;
 #[cfg(not(feature = "crypto-system"))]
 use cryptolib::hash::internal::Sha256;
 
-#[cfg(feature = "domaincheck")]
-pub fn check_domain(domains: &[[u8; 32]]) -> bool {
-    let domain = match system::domain() {
-        Ok(domain) => domain,
-        Err(_) => return false,
-    };
+use config::ConfigVars;
 
-    check_hashlist_with(domains, &domain)
+#[inline(always)]
+pub fn run_guardrails(agent_config: &ConfigVars) -> bool {
+    #[cfg(feature = "usernamecheck")]
+    if !agent_config
+        .usernames()
+        .ok()
+        .and_then(|usernames_list| {
+            let current_user = system::username().ok()?;
+            Some(check_hashlist_with(&usernames_list, &current_user))
+        })
+        .is_some_and(|r| r)
+    {
+        return false;
+    }
+
+    #[cfg(feature = "hostnamecheck")]
+    if !agent_config
+        .hostnames()
+        .ok()
+        .and_then(|hostnames_list| {
+            let current_hostname = system::hostname().ok()?;
+            Some(check_hashlist_with(&hostnames_list, &current_hostname))
+        })
+        .is_some_and(|r| r)
+    {
+        return false;
+    }
+
+    #[cfg(feature = "domaincheck")]
+    if !agent_config
+        .domains()
+        .ok()
+        .and_then(|domains_list| {
+            let current_domain = system::domain().ok()?;
+            Some(check_hashlist_with(&domains_list, &current_domain))
+        })
+        .is_some_and(|r| r)
+    {
+        return false;
+    }
+
+    true
 }
 
-#[cfg(feature = "hostnamecheck")]
-pub fn check_hostname(hostnames: &[[u8; 32]]) -> bool {
-    let hostname = match system::hostname() {
-        Ok(hostname) => hostname,
-        Err(_) => return false,
-    };
-
-    check_hashlist_with(hostnames, &hostname)
-}
-
-#[cfg(feature = "usernamecheck")]
-pub fn check_username(usernames: &[[u8; 32]]) -> bool {
-    let username = match system::username() {
-        Ok(username) => username,
-        Err(_) => return false,
-    };
-
-    check_hashlist_with(usernames, &username)
-}
-
-#[cfg(any(
-    feature = "usernamecheck",
-    feature = "hostnamecheck",
-    feature = "domaincheck",
-    test
-))]
 fn check_hashlist_with(hlist: &[[u8; 32]], value: &str) -> bool {
     let value = value.to_lowercase();
 
