@@ -1,38 +1,32 @@
-use pb_rs::{types::FileDescriptor, ConfigBuilder};
 use std::path::{Path, PathBuf};
 
 fn main() {
-    let config_proto = Path::new(&std::env::var("CARGO_MANIFEST_DIR").unwrap())
+    let proto_dir = Path::new(&std::env::var("CARGO_MANIFEST_DIR").unwrap())
         .parent()
         .unwrap()
         .parent()
         .unwrap()
         .join("mythic")
         .join("protos")
-        .join("config.proto");
+        .join("config");
 
-    let out_proto = Path::new(&std::env::var("CARGO_MANIFEST_DIR").unwrap())
-        .join("src")
-        .join("proto");
-
-    if !config_proto.exists() && !out_proto.exists() {
-        panic!("Failed to generate protos");
-    }
+    let config_proto = proto_dir.join("config.proto");
 
     if config_proto.exists() {
         println!("cargo:rerun-if-changed={}", config_proto.to_str().unwrap());
     }
 
-    if out_proto.exists() {
-        std::fs::remove_dir_all(&out_proto).unwrap();
+    let out_dir = Path::new("src/");
+    if out_dir.exists() {
+        let _ = std::fs::remove_dir(out_dir);
     }
 
-    std::fs::DirBuilder::new().create(&out_proto).unwrap();
+    let mut proto_build = prost_build::Config::new();
+    proto_build.out_dir(out_dir);
 
-    let builder = ConfigBuilder::new(&[config_proto], Some(&out_proto), None, &[])
-        .unwrap()
-        .single_module(true);
-    FileDescriptor::run(&builder.build()).unwrap();
+    proto_build
+        .compile_protos(&[config_proto], &[proto_dir])
+        .expect("Failed to compile config.proto");
 
     if std::env::var("CARGO_FEATURE_FULL").is_ok() {
         let config_bin = match std::env::var("CONFIG") {

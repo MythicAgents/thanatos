@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package msg.checkin;
+
+message CheckinInfo {
+    repeated string ips = 1;
+    string platform = 2;
+    optional string user = 3;
+    optional string host = 4;
+    optional uint32 pid = 5;
+    Architecture architecture = 6;
+    optional string domain = 7;
+    optional uint32 integrity_level = 8;
+    optional string process_name = 9;
+}
+
+enum Architecture {
+    X86 = 0;
+    AMD64 = 1;
+}

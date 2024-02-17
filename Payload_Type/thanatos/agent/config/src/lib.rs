@@ -2,17 +2,21 @@
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "full")] {
-        mod proto;
+        use prost::Message;
+
+        #[rustfmt::skip]
+        mod config_pb;
+
         use errors::ThanatosError;
         use utils::uuid::Uuid;
 
         const CONFIG: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/config.bin"));
 
-        pub struct ConfigVars<'a>(proto::config::Config<'a>);
+        pub struct ConfigVars(config_pb::Config);
 
-        impl<'a> ConfigVars<'a> {
-            pub fn parse() -> Result<ConfigVars<'a>, ThanatosError> {
-                Ok(ConfigVars(quick_protobuf::deserialize_from_slice(CONFIG).map_err(|_| ThanatosError::ConfigParseError)?))
+        impl ConfigVars {
+            pub fn parse() -> Result<ConfigVars, ThanatosError> {
+                Ok(ConfigVars(config_pb::Config::decode(CONFIG).map_err(|_| ThanatosError::ConfigParseError)?))
             }
 
             pub fn uuid(&self) -> Result<Uuid, ThanatosError> {
@@ -32,31 +36,37 @@ cfg_if::cfg_if! {
             }
 
             pub fn domains(&self) -> Result<Vec<[u8; 32]>, ThanatosError> {
-                if self.0.domains.len() % 32 != 0 {
+                let domain_buffer = self.0.domains.as_ref().ok_or(ThanatosError::ConfigParseError)?;
+
+                if domain_buffer.len() % 32 != 0 {
                     return Err(ThanatosError::ConfigParseError);
                 }
 
-                self.0.domains.chunks(32).map(|c| {
+                domain_buffer.chunks(32).map(|c| {
                     c[..32].try_into().map_err(|_| ThanatosError::ConfigParseError)
                 }).collect::<Result<Vec<[u8; 32]>, ThanatosError>>()
             }
 
             pub fn hostnames(&self) -> Result<Vec<[u8; 32]>, ThanatosError> {
-                if self.0.hostnames.len() % 32 != 0 {
+                let hostname_buffer = self.0.hostnames.as_ref().ok_or(ThanatosError::ConfigParseError)?;
+
+                if hostname_buffer.len() % 32 != 0 {
                     return Err(ThanatosError::ConfigParseError);
                 }
 
-                self.0.hostnames.chunks(32).map(|c| {
+                hostname_buffer.chunks(32).map(|c| {
                     c[..32].try_into().map_err(|_| ThanatosError::ConfigParseError)
                 }).collect::<Result<Vec<[u8; 32]>, ThanatosError>>()
             }
 
             pub fn usernames(&self) -> Result<Vec<[u8; 32]>, ThanatosError> {
-                if self.0.usernames.len() % 32 != 0 {
+                let username_buffer = self.0.usernames.as_ref().ok_or(ThanatosError::ConfigParseError)?;
+
+                if username_buffer.len() % 32 != 0 {
                     return Err(ThanatosError::ConfigParseError);
                 }
 
-                self.0.usernames.chunks(32).map(|c| {
+                username_buffer.chunks(32).map(|c| {
                     c[..32].try_into().map_err(|_| ThanatosError::ConfigParseError)
                 }).collect::<Result<Vec<[u8; 32]>, ThanatosError>>()
             }
@@ -65,11 +75,12 @@ cfg_if::cfg_if! {
                 self.0.spawn_to.as_ref()
             }
 
-            pub fn http(&self) -> Option<&proto::config::HttpConfig> {
+            pub fn http(&self) -> Option<&config_pb::HttpConfig> {
                 self.0.http.as_ref()
             }
         }
     } else {
-        pub mod proto;
+        #[rustfmt::skip]
+        pub mod config_pb;
     }
 }

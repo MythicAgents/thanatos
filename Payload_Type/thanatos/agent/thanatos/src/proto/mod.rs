@@ -1,2 +1,3 @@
-// Automatically generated mod.rs
-pub mod checkin;
+pub mod checkin {
+    include!(concat!(env!("OUT_DIR"), "/msg.checkin.rs"));
+}
