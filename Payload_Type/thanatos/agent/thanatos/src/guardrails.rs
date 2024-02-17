@@ -3,7 +3,6 @@
 #[cfg(target_os = "linux")]
 use crate::native::linux::system;
 
-use crate::native::linux::system::domain;
 #[cfg(target_os = "windows")]
 use crate::native::windows::system;
 
@@ -18,42 +17,51 @@ use config::ConfigVars;
 #[inline(always)]
 pub fn run_guardrails(agent_config: &ConfigVars) -> bool {
     #[cfg(feature = "usernamecheck")]
-    if !agent_config
-        .usernames()
-        .ok()
-        .and_then(|usernames_list| {
-            let current_user = system::username().ok()?;
-            Some(check_hashlist_with(&usernames_list, &current_user))
-        })
-        .is_some_and(|r| r)
     {
-        return false;
+        let username_valid = agent_config
+            .usernames()
+            .ok()
+            .and_then(|usernames_list| {
+                let current_user = system::username().ok()?;
+                Some(check_hashlist_with(&usernames_list, &current_user))
+            })
+            .unwrap_or(false);
+
+        if !username_valid {
+            return false;
+        }
     }
 
     #[cfg(feature = "hostnamecheck")]
-    if !agent_config
-        .hostnames()
-        .ok()
-        .and_then(|hostnames_list| {
-            let current_hostname = system::hostname().ok()?;
-            Some(check_hashlist_with(&hostnames_list, &current_hostname))
-        })
-        .is_some_and(|r| r)
     {
-        return false;
+        let hostname_valid = agent_config
+            .hostnames()
+            .ok()
+            .and_then(|hostname_list| {
+                let current_hostname = system::hostname().ok()?;
+                Some(check_hashlist_with(&hostname_list, &current_hostname))
+            })
+            .unwrap_or(false);
+
+        if !hostname_valid {
+            return false;
+        }
     }
 
     #[cfg(feature = "domaincheck")]
-    if !agent_config
-        .domains()
-        .ok()
-        .and_then(|domains_list| {
-            let current_domain = system::domain().ok()?;
-            Some(check_hashlist_with(&domains_list, &current_domain))
-        })
-        .is_some_and(|r| r)
     {
-        return false;
+        let domain_valid = agent_config
+            .domains()
+            .ok()
+            .and_then(|domains_list| {
+                let current_domain = system::domain().ok()?;
+                Some(check_hashlist_with(&domains_list, &current_domain))
+            })
+            .unwrap_or(false);
+
+        if !domain_valid {
+            return false;
+        }
     }
 
     true
