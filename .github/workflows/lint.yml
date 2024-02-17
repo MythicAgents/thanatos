@@ -7,7 +7,6 @@ env:
   AGENT_CODE: Payload_Type/thanatos/agent
   MYTHIC_CODE: Payload_Type/thanatos/mythic
 
-
 jobs:
   agent:
     name: Agent Code
@@ -38,6 +37,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
             ${{ runner.os }}-cargo-target
+
+      - name: Install protoc
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          mkdir -p /tmp/protoc
+          pushd /tmp/protoc
+          curl -L https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-linux-x86_64.zip -o protoc.zip
+          unzip protoc.zip
+          mv bin/protoc /usr/local/bin
+          popd
+          rm -rf /tmp/protoc
 
       - name: Install Clippy
         run: rustup component add clippy

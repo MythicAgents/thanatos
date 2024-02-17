@@ -7,7 +7,6 @@ env:
   AGENT_CODE: Payload_Type/thanatos/agent
   MYTHIC_CODE: Payload_Type/thanatos/mythic
 
-
 jobs:
   agent:
     name: Agent Tests
@@ -45,9 +44,24 @@ jobs:
             ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
             ${{ runner.os }}-cargo-target
 
-      - name: Install system libraries
+      - name: Install protoc (Linux)
         if: ${{ runner.os == 'Linux' }}
-        run: sudo apt-get update -y && sudo apt-get install -y libdbus-1-dev
+        run: |
+          mkdir -p /tmp/protoc
+          pushd /tmp/protoc
+          curl -L https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-linux-x86_64.zip -o protoc.zip
+          unzip protoc.zip
+          mv bin/protoc /usr/local/bin
+          popd
+          rm -rf /tmp/protoc
+
+      - name: Install protoc (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          Invoke-WebRequest -Uri https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-win64.zip -OutFile protoc.zip
+          Expand-Archive protoc.zip
+          Copy-Item -Path .\protoc\bin\protoc.exe -Destination $env:SYSTEMROOT\System32\protoc.exe
+          Remove-Item -Recurse .\protoc
 
       - name: Run tests
         run: |
