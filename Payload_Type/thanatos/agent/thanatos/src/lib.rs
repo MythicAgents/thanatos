@@ -3,9 +3,8 @@
 use agent::Agent;
 use config::ConfigVars;
 
-mod guardrails;
-
 mod agent;
+mod guardrails;
 mod logging;
 mod native;
 mod proto;

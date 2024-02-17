@@ -9,6 +9,10 @@
             "path": "Payload_Type/thanatos/agent"
         },
         {
+            "name": "Protobuf",
+            "path": "Payload_Type/thanatos/mythic/protos"
+        },
+        {
             "name": "Base Dockerfile",
             "path": "Payload_Type/thanatos/.docker"
         },

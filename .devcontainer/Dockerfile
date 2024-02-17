@@ -5,9 +5,10 @@ ARG userUid=1000
 ARG userGid=1000
 ARG upgradePackages=false
 ARG goversion=1.22.0
-ARG golangcilintversion=v1.56.2
+ARG golangcilintversion=1.56.2
 ARG shell=bash
 ARG extraPackages
+ARG protocversion=25.3
 
 # Update apt cache
 RUN apt-get update -y
@@ -29,6 +30,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     mingw-w64 \
     pkg-config \
     llvm \
+    unzip \
     libssl-dev
 
 # Install Golang
@@ -42,7 +44,7 @@ RUN rm -f go${goversion}.linux-amd64.tar.gz
 # Install golangci-lint
 USER ${username}
 RUN mkdir -p /home/${username}/go/bin
-RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /home/${username}/go/bin ${golangcilintversion}
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /home/${username}/go/bin v${golangcilintversion}
 
 # Install Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh \
@@ -61,6 +63,16 @@ RUN rm -f rustup.sh
 RUN $HOME/.cargo/bin/rustup component add rustfmt clippy
 
 USER 0
+
+# Install protoc
+RUN mkdir -p /tmp/protoc
+WORKDIR /tmp/protoc
+RUN curl -L https://github.com/protocolbuffers/protobuf/releases/download/v${protocversion}/protoc-${protocversion}-linux-x86_64.zip -o protoc.zip
+RUN unzip protoc.zip
+RUN mv bin/protoc /usr/local/bin
+RUN chmod 755 /usr/local/bin/protoc
+WORKDIR /tmp
+RUN rm -rf /tmp/protoc
 
 # Ensure zsh is installed if the shell is zsh
 RUN if [ "${shell}" = "zsh" ]; then apt-get install -y zsh; fi
