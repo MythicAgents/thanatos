@@ -7,7 +7,8 @@ use errors::ThanatosError;
 use ffiwrappers::{
     errors::FfiError,
     linux::{
-        addrinfo::{AddrInfoList, AiFlags, Hints, SockType},
+        addrinfo::{AddrInfoList, AiFlags, Hints},
+        socket::SockType,
         uname,
         user::UserInfo,
     },
@@ -27,12 +28,18 @@ pub fn hostname() -> Result<String, ThanatosError> {
     Ok(h.split('.').next().unwrap_or(&h).to_string())
 }
 
+pub fn username() -> Result<String, ThanatosError> {
+    UserInfo::current_user()
+        .map(|userinfo| userinfo.username().to_string())
+        .map_err(ThanatosError::FFIError)
+}
+
 pub fn domain() -> Result<String, ThanatosError> {
     let current_host = ffiwrappers::linux::gethostname().map_err(ThanatosError::FFIError)?;
     let current_host =
         CString::new(current_host).map_err(|_| ThanatosError::FFIError(FfiError::InteriorNull))?;
 
-    let mut addrlist = AddrInfoList::new(
+    let addrlist = AddrInfoList::new(
         Some(&current_host),
         None,
         Some(Hints {
@@ -55,21 +62,17 @@ pub fn domain() -> Result<String, ThanatosError> {
 // it as a separate field in the initial check in
 pub fn check_container_environment() -> Option<&'static str> {
     if let Ok(readdir) = std::fs::read_dir("/") {
-        for entry_result in readdir {
-            if let Ok(entry) = entry_result {
-                if entry.file_name() == ".dockerenv" {
-                    return Some("Docker");
-                }
+        for entry in readdir.flatten() {
+            if entry.file_name() == ".dockerenv" {
+                return Some("Docker");
             }
         }
     }
 
     if let Ok(readdir) = std::fs::read_dir("/run") {
-        for entry_result in readdir {
-            if let Ok(entry) = entry_result {
-                if entry.file_name() == ".containerenv" {
-                    return Some("Container");
-                }
+        for entry in readdir.flatten() {
+            if entry.file_name() == ".containerenv" {
+                return Some("Container");
             }
         }
     }
@@ -81,11 +84,9 @@ pub fn check_container_environment() -> Option<&'static str> {
 // Parse /proc/self/mountinfo for selinux detection instead of looking for /sys/fs/selinux
 pub fn check_selinux() -> bool {
     if let Ok(readdir) = std::fs::read_dir("/sys/fs") {
-        for entry_result in readdir {
-            if let Ok(entry) = entry_result {
-                if entry.file_name() == "selinux" {
-                    return true;
-                }
+        for entry in readdir.flatten() {
+            if entry.file_name() == "selinux" {
+                return true;
             }
         }
     }
@@ -98,34 +99,32 @@ pub fn os_release() -> Result<OsReleaseInfo, ThanatosError> {
     let reader = BufReader::new(f);
 
     let mut release_info = OsReleaseInfo::default();
-    for line_read in reader.lines() {
-        if let Ok(line) = line_read {
-            if line.starts_with("NAME=") {
-                let s = line.split('=');
-                if let Some(name_quoted) = s.last() {
-                    release_info.name = name_quoted[1..name_quoted.len() - 1].to_string();
-                }
-                continue;
+    for line in reader.lines().map_while(Result::ok) {
+        if line.starts_with("NAME=") {
+            let s = line.split('=');
+            if let Some(name_quoted) = s.last() {
+                release_info.name = name_quoted[1..name_quoted.len() - 1].to_string();
+            }
+            continue;
+        }
+
+        if line.starts_with("VERSION=") {
+            let s = line.split('=');
+            if let Some(version_quoted) = s.last() {
+                release_info.version = version_quoted[1..version_quoted.len() - 1].to_string();
             }
 
-            if line.starts_with("VERSION=") {
-                let s = line.split('=');
-                if let Some(version_quoted) = s.last() {
-                    release_info.version = version_quoted[1..version_quoted.len() - 1].to_string();
-                }
+            continue;
+        }
 
-                continue;
+        if line.starts_with("PRETTY_NAME=") {
+            let s = line.split('=');
+            if let Some(pretty_name_quoted) = s.last() {
+                release_info.pretty_name =
+                    Some(pretty_name_quoted[1..pretty_name_quoted.len() - 1].to_string());
             }
 
-            if line.starts_with("PRETTY_NAME=") {
-                let s = line.split('=');
-                if let Some(pretty_name_quoted) = s.last() {
-                    release_info.pretty_name =
-                        Some(pretty_name_quoted[1..pretty_name_quoted.len() - 1].to_string());
-                }
-
-                continue;
-            }
+            continue;
         }
     }
 
@@ -222,7 +221,10 @@ pub fn process_name() -> Result<String, ThanatosError> {
 mod tests {
     use std::ffi::CString;
 
-    use ffiwrappers::linux::addrinfo::{AddrInfoList, AiFlags, Hints, SockType};
+    use ffiwrappers::linux::{
+        addrinfo::{AddrInfoList, AiFlags, Hints},
+        socket::SockType,
+    };
 
     #[test]
     fn hostname_test() {
@@ -252,7 +254,7 @@ mod tests {
         let current_host = ffiwrappers::linux::gethostname().unwrap();
         let current_host = CString::new(current_host).unwrap();
 
-        let mut addrlist = AddrInfoList::new(
+        let addrlist = AddrInfoList::new(
             Some(&current_host),
             None,
             Some(Hints {

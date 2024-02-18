@@ -10,8 +10,8 @@ pub enum Family {
     Other(i32),
 }
 
-impl From<i32> for Family {
-    fn from(value: i32) -> Self {
+impl Family {
+    pub const fn from_value(value: i32) -> Family {
         match value {
             libc::AF_INET => Self::AfInet,
             libc::AF_INET6 => Self::AfInet6,
@@ -19,28 +19,14 @@ impl From<i32> for Family {
             _ => Self::Other(value),
         }
     }
-}
 
-impl From<Family> for i32 {
-    fn from(value: Family) -> Self {
-        match value {
-            Family::AfInet => libc::AF_INET,
-            Family::AfInet6 => libc::AF_INET6,
-            Family::Unspec => libc::AF_UNSPEC,
-            Family::Other(v) => v,
+    pub const fn as_i32(&self) -> i32 {
+        match self {
+            Self::AfInet => libc::AF_INET,
+            Self::AfInet6 => libc::AF_INET6,
+            Self::Unspec => libc::AF_UNSPEC,
+            Self::Other(v) => *v,
         }
-    }
-}
-
-impl From<u16> for Family {
-    fn from(value: u16) -> Self {
-        (value as i32).into()
-    }
-}
-
-impl From<Family> for u16 {
-    fn from(value: Family) -> Self {
-        value.into()
     }
 }
 
@@ -57,8 +43,8 @@ pub enum SockType {
     SockPacket = libc::SOCK_PACKET,
 }
 
-impl From<i32> for SockType {
-    fn from(value: i32) -> Self {
+impl SockType {
+    pub const fn from_value(value: i32) -> SockType {
         match value {
             libc::SOCK_STREAM => Self::SockStream,
             libc::SOCK_DGRAM => Self::SockDgram,
@@ -91,6 +77,34 @@ pub enum SockAddr<'a> {
     AfInet6(SockAddrIn<'a, AfInet6>),
 }
 
+impl<'a> SockAddr<'a> {
+    /// # Safety
+    ///
+    /// The pointer is not validated to ensure that it is of the correct type
+    pub unsafe fn from_ptr(ptr: *mut libc::sockaddr) -> Option<SockAddr<'a>> {
+        if ptr.is_null() {
+            return None;
+        }
+
+        match unsafe { (*ptr).sa_family } as i32 {
+            libc::AF_INET6 => {
+                let addr: NonNull<libc::sockaddr_in6> = NonNull::new(ptr.cast())?;
+                Some(SockAddr::AfInet6(unsafe {
+                    SockAddrIn::<AfInet6>::from_raw(addr)
+                }))
+            }
+            libc::AF_INET => {
+                let addr: NonNull<libc::sockaddr_in> = NonNull::new(ptr.cast())?;
+
+                Some(SockAddr::AfInet(unsafe {
+                    SockAddrIn::<AfInet>::from_raw(addr)
+                }))
+            }
+            _ => None,
+        }
+    }
+}
+
 #[repr(transparent)]
 pub struct SockAddrIn<'a, T: SockAddrFamily> {
     addr: NonNull<T::Inner>,
@@ -98,8 +112,18 @@ pub struct SockAddrIn<'a, T: SockAddrFamily> {
 }
 
 impl<'a> SockAddrIn<'a, AfInet> {
-    pub fn sin_family(&self) -> Family {
-        unsafe { self.addr.as_ref().sin_family }.into()
+    /// # Safety
+    ///
+    /// This pointer is not validated to ensure that it is of the correct type
+    pub unsafe fn from_raw(addr: NonNull<libc::sockaddr_in>) -> Self {
+        Self {
+            addr,
+            _marker: PhantomData,
+        }
+    }
+
+    pub const fn sin_family(&self) -> Family {
+        Family::from_value(unsafe { self.addr.as_ref().sin_family } as i32)
     }
 
     pub fn sin_port(&self) -> u16 {
@@ -108,5 +132,37 @@ impl<'a> SockAddrIn<'a, AfInet> {
 
     pub fn sin_addr(&self) -> &libc::in_addr {
         unsafe { &self.addr.as_ref().sin_addr }
+    }
+}
+
+impl<'a> SockAddrIn<'a, AfInet6> {
+    /// # Safety
+    ///
+    /// This pointer is not validated to ensure that it is of the correct type
+    pub const unsafe fn from_raw(addr: NonNull<libc::sockaddr_in6>) -> Self {
+        Self {
+            addr,
+            _marker: PhantomData,
+        }
+    }
+
+    pub fn sin6_family(&self) -> Family {
+        Family::from_value(unsafe { self.addr.as_ref().sin6_family } as i32)
+    }
+
+    pub fn sin6_port(&self) -> u16 {
+        unsafe { self.addr.as_ref().sin6_port }
+    }
+
+    pub fn sin6_flowinfo(&self) -> u32 {
+        unsafe { self.addr.as_ref().sin6_flowinfo }
+    }
+
+    pub fn sin6_addr(&self) -> &libc::in6_addr {
+        unsafe { &self.addr.as_ref().sin6_addr }
+    }
+
+    pub fn sin6_scope_id(&self) -> u32 {
+        unsafe { self.addr.as_ref().sin6_scope_id }
     }
 }

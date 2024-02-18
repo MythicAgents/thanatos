@@ -17,7 +17,7 @@ bitflags! {
 }
 
 impl AiFlags {
-    pub fn as_i32(&self) -> i32 {
+    pub const fn as_i32(&self) -> i32 {
         self.bits()
     }
 }
@@ -44,7 +44,7 @@ impl AddrInfoList {
 
         let mut hints_data: libc::addrinfo = unsafe { std::mem::zeroed() };
         let hints_ptr = if let Some(h) = hints {
-            hints_data.ai_family = h.family.into();
+            hints_data.ai_family = h.family.as_i32();
             hints_data.ai_socktype = h.socktype as i32;
             hints_data.ai_flags = h.flags.as_i32();
 
@@ -67,8 +67,11 @@ impl AddrInfoList {
         })
     }
 
-    pub fn first<'a>(&'a self) -> AddrInfo<'a> {
-        self.addrinfo.into()
+    pub const fn first(&self) -> AddrInfo {
+        AddrInfo {
+            addrinfo: self.addrinfo,
+            _marker: PhantomData,
+        }
     }
 }
 
@@ -85,19 +88,19 @@ pub struct AddrInfo<'a> {
 }
 
 impl<'a> AddrInfo<'a> {
-    pub fn ai_flags(&self) -> i32 {
+    pub const fn ai_flags(&self) -> i32 {
         unsafe { self.addrinfo.as_ref().ai_flags }
     }
 
-    pub fn ai_family(&self) -> Family {
-        unsafe { self.addrinfo.as_ref().ai_family }.into()
+    pub const fn ai_family(&self) -> Family {
+        Family::from_value(unsafe { self.addrinfo.as_ref().ai_family })
     }
 
-    pub fn ai_socktype(&self) -> SockType {
-        unsafe { self.addrinfo.as_ref().ai_socktype }.into()
+    pub const fn ai_socktype(&self) -> SockType {
+        SockType::from_value(unsafe { self.addrinfo.as_ref().ai_socktype })
     }
 
-    pub fn ai_protocol(&self) -> i32 {
+    pub const fn ai_protocol(&self) -> i32 {
         unsafe { self.addrinfo.as_ref().ai_protocol }
     }
 

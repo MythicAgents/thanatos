@@ -35,7 +35,7 @@ impl Agent {
     pub fn run(self) {
         self.handle_working_hours();
 
-        let checkin_msg = crate::native::checkininfo::get_checkininfo(self.uuid.clone());
+        let _checkin_msg = crate::native::checkininfo::get_checkininfo(self.uuid.clone());
     }
 
     fn handle_working_hours(&self) {

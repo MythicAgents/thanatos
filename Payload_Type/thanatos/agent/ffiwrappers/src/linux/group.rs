@@ -15,19 +15,15 @@ impl GroupInfo {
 
     pub fn lookup_username(username: &CStr) -> Result<GroupInfo, FfiError> {
         let grpasswd = unsafe { libc::getgrnam(username.as_ptr()) };
-        Ok(Self(
-            NonNull::new(grpasswd).ok_or_else(|| FfiError::os_error())?,
-        ))
+        Ok(Self(NonNull::new(grpasswd).ok_or_else(FfiError::os_error)?))
     }
 
     pub fn lookup_gid(gid: u32) -> Result<GroupInfo, FfiError> {
         let grpasswd = unsafe { libc::getgrgid(gid) };
-        Ok(Self(
-            NonNull::new(grpasswd).ok_or_else(|| FfiError::os_error())?,
-        ))
+        Ok(Self(NonNull::new(grpasswd).ok_or_else(FfiError::os_error)?))
     }
 
-    pub fn groupname<'a>(&'a self) -> &'a str {
+    pub fn groupname(&self) -> &str {
         unsafe {
             CStr::from_ptr(self.0.as_ref().gr_name)
                 .to_str()
@@ -35,7 +31,7 @@ impl GroupInfo {
         }
     }
 
-    pub fn passwd<'a>(&'a self) -> &'a str {
+    pub fn passwd(&self) -> &str {
         unsafe {
             CStr::from_ptr(self.0.as_ref().gr_passwd)
                 .to_str()

@@ -22,17 +22,13 @@ impl UserInfo {
     pub fn lookup_username(username: &CStr) -> Result<UserInfo, FfiError> {
         let passwd = unsafe { libc::getpwnam(username.as_ptr()) };
 
-        Ok(Self(
-            NonNull::new(passwd).ok_or_else(|| FfiError::os_error())?,
-        ))
+        Ok(Self(NonNull::new(passwd).ok_or_else(FfiError::os_error)?))
     }
 
     pub fn lookup_uid(uid: u32) -> Result<UserInfo, FfiError> {
         let passwd = unsafe { libc::getpwuid(uid) };
 
-        Ok(Self(
-            NonNull::new(passwd).ok_or_else(|| FfiError::os_error())?,
-        ))
+        Ok(Self(NonNull::new(passwd).ok_or_else(FfiError::os_error)?))
     }
 
     pub fn group_membership(&self) -> Result<GroupMembership, FfiError> {
@@ -66,7 +62,7 @@ impl UserInfo {
 
         let members = gid_list
             .into_iter()
-            .flat_map(|gid| GroupInfo::lookup_gid(gid))
+            .flat_map(GroupInfo::lookup_gid)
             .collect::<Vec<GroupInfo>>();
 
         let primary = GroupInfo::current_group().map_err(|_| FfiError::NoGroupMembership)?;
@@ -74,7 +70,7 @@ impl UserInfo {
         Ok(GroupMembership { primary, members })
     }
 
-    pub fn username<'a>(&'a self) -> &'a str {
+    pub fn username(&self) -> &str {
         unsafe {
             CStr::from_ptr(self.0.as_ref().pw_name)
                 .to_str()
@@ -82,7 +78,7 @@ impl UserInfo {
         }
     }
 
-    pub fn passwd<'a>(&'a self) -> &'a str {
+    pub fn passwd(&self) -> &str {
         unsafe {
             CStr::from_ptr(self.0.as_ref().pw_passwd)
                 .to_str()
@@ -98,7 +94,7 @@ impl UserInfo {
         unsafe { self.0.as_ref().pw_gid }
     }
 
-    pub fn gecos<'a>(&'a self) -> &'a str {
+    pub fn gecos(&self) -> &str {
         unsafe {
             CStr::from_ptr(self.0.as_ref().pw_gecos)
                 .to_str()
@@ -106,7 +102,7 @@ impl UserInfo {
         }
     }
 
-    pub fn home_dir<'a>(&'a self) -> &'a str {
+    pub fn home_dir(&self) -> &str {
         unsafe {
             CStr::from_ptr(self.0.as_ref().pw_dir)
                 .to_str()
@@ -114,7 +110,7 @@ impl UserInfo {
         }
     }
 
-    pub fn shell<'a>(&'a self) -> &'a str {
+    pub fn shell(&self) -> &str {
         unsafe {
             CStr::from_ptr(self.0.as_ref().pw_shell)
                 .to_str()

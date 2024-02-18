@@ -15,7 +15,7 @@ impl UtsName {
         Ok(Self(buf))
     }
 
-    pub fn sysname<'a>(&'a self) -> &'a str {
+    pub fn sysname(&self) -> &str {
         // SAFETY:
         // - This field will always contain a trailing nullbyte according to `uname(2)`
         //   so the call to `CStr::from_ptr` is safe in this context.
@@ -29,7 +29,7 @@ impl UtsName {
         }
     }
 
-    pub fn nodename<'a>(&'a self) -> &'a str {
+    pub fn nodename(&self) -> &str {
         // SAFETY:
         // - This field will always contain a trailing nullbyte.
         // - The node name contains valid ascii characters.
@@ -40,7 +40,7 @@ impl UtsName {
         }
     }
 
-    pub fn release<'a>(&'a self) -> &'a str {
+    pub fn release(&self) -> &str {
         // SAFETY:
         // - This field will always contain a trailing nullbyte.
         // - The release name will always contain valid ascii characters.
@@ -51,7 +51,7 @@ impl UtsName {
         }
     }
 
-    pub fn version<'a>(&'a self) -> &'a str {
+    pub fn version(&self) -> &str {
         // SAFETY:
         // - The version field will contain a trailing nullbyte.
         // - The version contains only valid utf8 data.
@@ -62,7 +62,7 @@ impl UtsName {
         }
     }
 
-    pub fn machine<'a>(&'a self) -> &'a str {
+    pub fn machine(&self) -> &str {
         // SAFETY:
         // - The machine name will contain a trailing nullbyte.
         // - The machine name contains only valid utf8 data.
