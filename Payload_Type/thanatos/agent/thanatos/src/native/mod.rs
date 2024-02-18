@@ -4,4 +4,4 @@ pub mod linux;
 #[cfg(target_os = "windows")]
 pub mod windows;
 
-mod checkininfo;
+pub mod checkininfo;

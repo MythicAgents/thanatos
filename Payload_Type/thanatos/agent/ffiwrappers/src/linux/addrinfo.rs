@@ -3,64 +3,7 @@ use std::{ffi::CStr, marker::PhantomData, ptr::NonNull};
 use crate::errors::{EaiError, FfiError};
 use bitflags::bitflags;
 
-#[repr(i32)]
-#[derive(Default)]
-pub enum Family {
-    AfInet = libc::AF_INET,
-    AfInet6 = libc::AF_INET6,
-    #[default]
-    Unspec = libc::AF_UNSPEC,
-    Other(i32),
-}
-
-impl From<i32> for Family {
-    fn from(value: i32) -> Self {
-        match value {
-            libc::AF_INET => Self::AfInet,
-            libc::AF_INET6 => Self::AfInet6,
-            libc::AF_UNSPEC => Self::Unspec,
-            _ => Self::Other(value),
-        }
-    }
-}
-
-impl From<Family> for i32 {
-    fn from(value: Family) -> Self {
-        match value {
-            Family::AfInet => libc::AF_INET,
-            Family::AfInet6 => libc::AF_INET6,
-            Family::Unspec => libc::AF_UNSPEC,
-            Family::Other(v) => v,
-        }
-    }
-}
-
-#[repr(i32)]
-#[derive(Default)]
-pub enum SockType {
-    #[default]
-    Any = 0,
-    SockStream = libc::SOCK_STREAM,
-    SockDgram = libc::SOCK_DGRAM,
-    SockSeqPacket = libc::SOCK_SEQPACKET,
-    SockRaw = libc::SOCK_RAW,
-    SockRdm = libc::SOCK_RDM,
-    SockPacket = libc::SOCK_PACKET,
-}
-
-impl From<i32> for SockType {
-    fn from(value: i32) -> Self {
-        match value {
-            libc::SOCK_STREAM => Self::SockStream,
-            libc::SOCK_DGRAM => Self::SockDgram,
-            libc::SOCK_SEQPACKET => Self::SockSeqPacket,
-            libc::SOCK_RAW => Self::SockRaw,
-            libc::SOCK_RDM => Self::SockRdm,
-            libc::SOCK_PACKET => Self::SockPacket,
-            _ => Self::Any,
-        }
-    }
-}
+use super::socket::{Family, SockType};
 
 bitflags! {
     pub struct AiFlags: i32 {
@@ -85,7 +28,6 @@ pub struct Hints {
     pub flags: AiFlags,
 }
 
-#[repr(transparent)]
 pub struct AddrInfoList {
     addrinfo: NonNull<libc::addrinfo>,
     _marker: PhantomData<libc::addrinfo>,
@@ -125,37 +67,14 @@ impl AddrInfoList {
         })
     }
 
-    pub fn iter(&self) -> AddrInfoListIterator<'_> {
-        AddrInfoListIterator {
-            addrinfo: self.addrinfo.as_ptr(),
-            _marker: PhantomData,
-        }
+    pub fn first<'a>(&'a self) -> AddrInfo<'a> {
+        self.addrinfo.into()
     }
 }
 
 impl Drop for AddrInfoList {
     fn drop(&mut self) {
         unsafe { libc::freeaddrinfo(self.addrinfo.as_ptr()) };
-    }
-}
-
-#[repr(transparent)]
-pub struct AddrInfoListIterator<'a> {
-    addrinfo: *mut libc::addrinfo,
-    _marker: PhantomData<&'a libc::addrinfo>,
-}
-
-impl<'a> Iterator for AddrInfoListIterator<'a> {
-    type Item = AddrInfo<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let curr = AddrInfo {
-            addrinfo: NonNull::new(self.addrinfo)?,
-            _marker: PhantomData,
-        };
-
-        self.addrinfo = unsafe { *self.addrinfo }.ai_next;
-        Some(curr)
     }
 }
 
@@ -167,26 +86,44 @@ pub struct AddrInfo<'a> {
 
 impl<'a> AddrInfo<'a> {
     pub fn ai_flags(&self) -> i32 {
-        unsafe { self.addrinfo.as_ref() }.ai_flags
+        unsafe { self.addrinfo.as_ref().ai_flags }
     }
 
     pub fn ai_family(&self) -> Family {
-        unsafe { self.addrinfo.as_ref() }.ai_family.into()
+        unsafe { self.addrinfo.as_ref().ai_family }.into()
     }
 
     pub fn ai_socktype(&self) -> SockType {
-        unsafe { self.addrinfo.as_ref() }.ai_socktype.into()
+        unsafe { self.addrinfo.as_ref().ai_socktype }.into()
     }
 
     pub fn ai_protocol(&self) -> i32 {
-        unsafe { self.addrinfo.as_ref() }.ai_protocol
+        unsafe { self.addrinfo.as_ref().ai_protocol }
     }
 
-    pub fn canonname(&self) -> Option<&CStr> {
-        if unsafe { self.addrinfo.as_ref().ai_canonname }.is_null() {
-            return None;
+    pub fn canonname(&self) -> &str {
+        unsafe {
+            CStr::from_ptr(self.addrinfo.as_ref().ai_canonname)
+                .to_str()
+                .unwrap_unchecked()
         }
+    }
+}
 
-        Some(unsafe { CStr::from_ptr(self.addrinfo.as_ref().ai_canonname) })
+impl<'a> From<NonNull<libc::addrinfo>> for AddrInfo<'a> {
+    fn from(value: NonNull<libc::addrinfo>) -> Self {
+        AddrInfo {
+            addrinfo: value,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<'a> Iterator for AddrInfo<'a> {
+    type Item = AddrInfo<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.addrinfo = NonNull::new(unsafe { self.addrinfo.as_ref().ai_next })?;
+        Some(self.addrinfo.into())
     }
 }

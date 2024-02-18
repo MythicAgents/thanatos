@@ -8,6 +8,9 @@ pub enum FfiError {
     GaiError(EaiError),
     NonNullPointer,
     CanonNameNotFound,
+
+    #[cfg(target_os = "linux")]
+    NoGroupMembership,
 }
 
 impl FfiError {

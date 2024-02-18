@@ -11,16 +11,16 @@ fn main() {
 
     let checkin_proto = proto_dir.join("msg").join("checkin.proto");
 
-    if checkin_proto.exists() {
-        println!(
-            "cargo:rerun-if-changed={}",
-            checkin_proto
-                .canonicalize()
-                .expect("Failed to find checkin.proto")
-                .to_str()
-                .unwrap()
-        );
-    }
+    let output_path = Path::new(&std::env::var("OUT_DIR").unwrap()).join("msg.checkin.rs");
+    let _ = std::fs::remove_file(output_path);
 
-    prost_build::compile_protos(&[checkin_proto], &[proto_dir]).expect("Failed to compile protos");
+    prost_build::compile_protos(&[&checkin_proto], &[proto_dir]).expect("Failed to compile protos");
+    println!(
+        "cargo:rerun-if-changed={}",
+        checkin_proto
+            .canonicalize()
+            .expect("Failed to find checkin.proto")
+            .to_str()
+            .unwrap()
+    );
 }

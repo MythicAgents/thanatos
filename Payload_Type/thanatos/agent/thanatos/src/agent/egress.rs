@@ -7,7 +7,7 @@ use errors::ThanatosError;
 use super::workinghours;
 
 pub struct Agent {
-    _uuid: String,
+    uuid: String,
     working_hours: WorkingHours,
 }
 
@@ -19,7 +19,7 @@ pub(super) struct WorkingHours {
 impl Agent {
     pub fn new(config: ConfigVars) -> Result<Agent, ThanatosError> {
         Ok(Agent {
-            _uuid: config.uuid()?.to_string(),
+            uuid: config.uuid()?.to_string(),
             working_hours: WorkingHours {
                 start: NaiveTime::from_num_seconds_from_midnight_opt(
                     config.working_hours_start(),
@@ -34,6 +34,8 @@ impl Agent {
 
     pub fn run(self) {
         self.handle_working_hours();
+
+        let checkin_msg = crate::native::checkininfo::get_checkininfo(self.uuid.clone());
     }
 
     fn handle_working_hours(&self) {

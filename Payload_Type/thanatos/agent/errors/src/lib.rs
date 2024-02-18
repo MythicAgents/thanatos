@@ -6,6 +6,8 @@ pub enum ThanatosError {
     FFIError(FfiError),
     NotDomainJoined,
 
+    IoError(std::io::Error),
+
     ConfigParseError,
 }
 

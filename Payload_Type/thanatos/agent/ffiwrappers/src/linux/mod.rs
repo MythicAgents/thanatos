@@ -1,7 +1,10 @@
 mod gethostname;
-mod username;
 
 pub mod addrinfo;
+pub mod group;
+pub mod ifaddrs;
+pub mod socket;
+pub mod uname;
+pub mod user;
 
 pub use gethostname::gethostname;
-pub use username::username;
