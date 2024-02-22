@@ -58,7 +58,7 @@ jobs:
       - name: Lint agent code
         run: |
           cargo build -p genconfig
-          cargo clippy --color always --all-features --all-targets -- -D warnings
+          cargo clippy --workspace --color always --all-features --all-targets -- -D warnings
 
       - name: Check agent code formatting
         run: |

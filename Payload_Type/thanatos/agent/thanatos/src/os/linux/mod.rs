@@ -14,14 +14,10 @@ use ffiwrappers::{
     },
 };
 
-use crate::proto::checkin::Architecture;
+mod platform;
+pub use platform::platform;
 
-#[derive(Default, Debug)]
-pub struct OsReleaseInfo {
-    name: String,
-    version: String,
-    pretty_name: Option<String>,
-}
+use crate::proto::checkin::Architecture;
 
 pub fn hostname() -> Result<String, ThanatosError> {
     let h = ffiwrappers::linux::gethostname().map_err(ThanatosError::FFIError)?;
@@ -56,42 +52,6 @@ pub fn domain() -> Result<String, ThanatosError> {
     s.next()
         .ok_or(ThanatosError::FFIError(FfiError::CanonNameNotFound))?;
     Ok(s.collect::<Vec<&str>>().join("."))
-}
-
-// TODO: Make this return an enum value for the container environment and return
-// it as a separate field in the initial check in
-pub fn check_container_environment() -> Option<&'static str> {
-    if let Ok(readdir) = std::fs::read_dir("/") {
-        for entry in readdir.flatten() {
-            if entry.file_name() == ".dockerenv" {
-                return Some("Docker");
-            }
-        }
-    }
-
-    if let Ok(readdir) = std::fs::read_dir("/run") {
-        for entry in readdir.flatten() {
-            if entry.file_name() == ".containerenv" {
-                return Some("Container");
-            }
-        }
-    }
-
-    None
-}
-
-// TODO: Return this into a separate initial check in field.
-// Parse /proc/self/mountinfo for selinux detection instead of looking for /sys/fs/selinux
-pub fn check_selinux() -> bool {
-    if let Ok(readdir) = std::fs::read_dir("/sys/fs") {
-        for entry in readdir.flatten() {
-            if entry.file_name() == "selinux" {
-                return true;
-            }
-        }
-    }
-
-    false
 }
 
 pub fn os_release() -> Result<OsReleaseInfo, ThanatosError> {
@@ -131,58 +91,12 @@ pub fn os_release() -> Result<OsReleaseInfo, ThanatosError> {
     Ok(release_info)
 }
 
-// TODO: Split up platform values into separate check in fields and create the platform
-// string server side. Also grab the architecture from the initial check in instead
-// of embedding it into this string
-pub fn platform() -> String {
-    let distro = os_release()
-        .map(|os_info| {
-            os_info
-                .pretty_name
-                .unwrap_or_else(|| format!("{} {}", os_info.name, os_info.version))
-        })
-        .unwrap_or_else(|_| "Linux".to_string());
-
-    let utsname = uname::UtsName::new();
-
-    let mut platform_name = match utsname {
-        Ok(utsname) => format!(
-            "{} kernel {} {}",
-            distro,
-            utsname.release(),
-            utsname.machine()
-        )
-        .to_string(),
-        Err(_) => distro,
-    };
-
-    if check_selinux() {
-        platform_name.push_str(" (SELinux)");
+pub fn architecture() -> Option<Architecture> {
+    match uname::UtsName::new().ok()?.machine() {
+        "x86_64" => Some(Architecture::X8664),
+        "x86" => Some(Architecture::X86),
+        _ => None,
     }
-
-    if let Some(runtime) = check_container_environment() {
-        platform_name.push_str(&format!(" ({runtime})"));
-    }
-
-    platform_name
-}
-
-pub fn architecture() -> Architecture {
-    #[cfg(target_arch = "x86_64")]
-    let mut arch = Architecture::X8664;
-
-    #[cfg(target_arch = "x86")]
-    let mut arch = Architecture::X86;
-
-    if let Ok(utsname) = uname::UtsName::new() {
-        match utsname.machine() {
-            "x86_64" => arch = Architecture::X8664,
-            "x86" => arch = Architecture::X86,
-            _ => (),
-        }
-    }
-
-    arch
 }
 
 pub fn integrity_level() -> Result<u32, ThanatosError> {

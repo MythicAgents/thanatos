@@ -8,15 +8,15 @@ use windows::Win32::Security::Cryptography::{
 use super::{BCryptAlgHandle, HashAlgorithm};
 
 #[repr(transparent)]
-pub struct BCryptHashHandle<T: HashAlgorithm> {
+pub struct BCryptHashHandle<A: HashAlgorithm> {
     pub(super) handle: BCRYPT_HASH_HANDLE,
     pub(super) _marker: PhantomData<BCRYPT_HASH_HANDLE>,
-    pub(super) _algorithm: PhantomData<T>,
+    pub(super) _algorithm: PhantomData<A>,
 }
 
-impl<T: HashAlgorithm> BCryptHashHandle<T> {
-    pub fn new() -> BCryptHashHandle<T> {
-        let mut alg_handle = BCryptAlgHandle::<T>::new();
+impl<A: HashAlgorithm> BCryptHashHandle<A> {
+    pub fn new() -> BCryptHashHandle<A> {
+        let mut alg_handle = BCryptAlgHandle::<A>::new();
         alg_handle.create_hash()
     }
 
@@ -36,8 +36,8 @@ impl<T: HashAlgorithm> BCryptHashHandle<T> {
         let _ = unsafe { BCryptHashData(self.handle, data, 0) };
     }
 
-    pub fn finish_hash(self) -> GenericArray<u8, T::LEN> {
-        let mut output: GenericArray<u8, T::LEN> = Default::default();
+    pub fn finish_hash(self) -> GenericArray<u8, A::LEN> {
+        let mut output: GenericArray<u8, A::LEN> = Default::default();
 
         // Possible return/error values are documented here: https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptfinishhash
         // Error assertions:
@@ -57,13 +57,13 @@ impl<T: HashAlgorithm> BCryptHashHandle<T> {
     }
 }
 
-impl<T: HashAlgorithm> Default for BCryptHashHandle<T> {
+impl<A: HashAlgorithm> Default for BCryptHashHandle<A> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T: HashAlgorithm> Drop for BCryptHashHandle<T> {
+impl<A: HashAlgorithm> Drop for BCryptHashHandle<A> {
     fn drop(&mut self) {
         let _ = unsafe { BCryptDestroyHash(self.handle) };
     }
@@ -75,7 +75,7 @@ mod tests {
 
     use super::BCryptHashHandle;
 
-    const WORD: &'static str = "hello";
+    const WORD: &str = "hello";
 
     const EXPECTED: [u8; 32] =
         hex_literal::hex!("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");

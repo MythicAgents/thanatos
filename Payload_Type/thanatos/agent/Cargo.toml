@@ -53,6 +53,13 @@ features = [
   "Win32_System_SystemInformation",
   "Win32_Security_Cryptography",
   "Win32_System_WindowsProgramming",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Threading",
+  "Win32_System_SystemServices",
+  "Wdk",
+  "Wdk_System",
+  "Wdk_System_SystemServices",
+  "Wdk_System_SystemInformation",
 ]
 
 ##### WORKSPACE SETTINGS #####

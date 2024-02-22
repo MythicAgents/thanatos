@@ -78,7 +78,7 @@ lint_check() {
 
     echo "[*] Agent code"
     pushd $AGENT_CODE &> /dev/null
-    local _cmd="cargo build -p genconfig && cargo clippy --color always --all-features --all-targets -- -D warnings"
+    local _cmd="cargo build -p genconfig && cargo clippy --workspace --color always --all-features --all-targets -- -D warnings"
     echo "current directory: $PWD"
     echo "command: $_cmd"
     eval $_cmd

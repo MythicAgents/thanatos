@@ -8,6 +8,7 @@ pub enum FfiError {
     GaiError(EaiError),
     NonNullPointer,
     CanonNameNotFound,
+    StringParseError,
 
     #[cfg(target_os = "linux")]
     NoGroupMembership,
@@ -22,6 +23,17 @@ impl FfiError {
     #[cfg(target_os = "windows")]
     pub fn from_windows_error(e: windows::core::Error) -> Self {
         Self::OsError(e.code().0)
+    }
+
+    #[cfg(target_os = "windows")]
+    pub fn os_error() -> Self {
+        use windows::Win32::Foundation::GetLastError;
+
+        if let Err(e) = unsafe { GetLastError() } {
+            Self::from_windows_error(e)
+        } else {
+            Self::OsError(0)
+        }
     }
 }
 

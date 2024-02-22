@@ -17,14 +17,14 @@ use super::{
 };
 
 #[repr(transparent)]
-pub struct BCryptAlgHandle<T: Algorithm> {
+pub struct BCryptAlgHandle<A: Algorithm> {
     handle: BCRYPT_ALG_HANDLE,
     _marker: PhantomData<BCRYPT_ALG_HANDLE>,
-    _algorithm: PhantomData<T>,
+    _algorithm: PhantomData<A>,
 }
 
-impl<T: Algorithm> BCryptAlgHandle<T> {
-    pub fn new() -> BCryptAlgHandle<T> {
+impl<A: Algorithm> BCryptAlgHandle<A> {
+    pub fn new() -> BCryptAlgHandle<A> {
         let mut handle = BCRYPT_ALG_HANDLE::default();
 
         // Possible return/error values are documented here: https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptopenalgorithmprovider#return-value
@@ -52,7 +52,7 @@ impl<T: Algorithm> BCryptAlgHandle<T> {
         match unsafe {
             BCryptOpenAlgorithmProvider(
                 &mut handle,
-                T::ALGID,
+                A::ALG,
                 MS_PRIMITIVE_PROVIDER,
                 BCRYPT_OPEN_ALGORITHM_PROVIDER_FLAGS(0),
             )
@@ -74,14 +74,14 @@ impl<T: Algorithm> BCryptAlgHandle<T> {
     }
 }
 
-impl<T: Algorithm> Default for BCryptAlgHandle<T> {
+impl<A: Algorithm> Default for BCryptAlgHandle<A> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T: HashAlgorithm> BCryptAlgHandle<T> {
-    pub fn create_hash(&mut self) -> BCryptHashHandle<T> {
+impl<A: HashAlgorithm> BCryptAlgHandle<A> {
+    pub fn create_hash(&mut self) -> BCryptHashHandle<A> {
         let mut hash_handle = BCRYPT_HASH_HANDLE::default();
 
         // Possible return/error values are documented here: https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptcreatehash#return-value
@@ -130,7 +130,7 @@ impl<T: HashAlgorithm> BCryptAlgHandle<T> {
     }
 }
 
-impl<T: Algorithm> Drop for BCryptAlgHandle<T> {
+impl<A: Algorithm> Drop for BCryptAlgHandle<A> {
     fn drop(&mut self) {
         let _ = unsafe { BCryptCloseAlgorithmProvider(self.handle, 0) };
     }

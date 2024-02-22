@@ -4,12 +4,12 @@ use windows::{core::PCWSTR, Win32::Security::Cryptography::BCRYPT_SHA256_ALGORIT
 
 pub struct Sha256;
 
-impl super::internal::Private for Sha256 {}
+impl crate::internal::SealedTrait for Sha256 {}
 
 impl HashAlgorithm for Sha256 {
     type LEN = U32;
 }
 
 impl Algorithm for Sha256 {
-    const ALGID: PCWSTR = BCRYPT_SHA256_ALGORITHM;
+    const ALG: PCWSTR = BCRYPT_SHA256_ALGORITHM;
 }

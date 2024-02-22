@@ -7,6 +7,7 @@ mod agent;
 mod guardrails;
 mod logging;
 mod native;
+mod os;
 mod proto;
 
 pub fn entrypoint() {
