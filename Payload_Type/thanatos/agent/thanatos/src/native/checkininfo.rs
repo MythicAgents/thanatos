@@ -37,7 +37,7 @@ pub fn get_checkininfo(uuid: String) -> CheckinInfo {
         platform_info: Some(PlatformInfo::Linux(LinuxInfo {
             distro: linux::distro(),
             kernel: linux::kernel(),
-            selinux: linux::selinux_enabled(),
+            selinux: linux::selinux_enabled().unwrap_or(false),
             container: linux::container_environment().into(),
         })),
         ips: Vec::new(),

