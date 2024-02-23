@@ -169,7 +169,7 @@ mod tests {
 
     #[test]
     fn user_shell() {
-        let shell_env = std::env::var("SHELL").expect("Failed to get 'SHELL' environment variable");
+        let shell_env = std::env::var("SHELL").unwrap_or_default();
         let userinfo = super::UserInfo::current_user().expect("Failed to get user info");
         assert_eq!(shell_env, userinfo.shell());
     }
