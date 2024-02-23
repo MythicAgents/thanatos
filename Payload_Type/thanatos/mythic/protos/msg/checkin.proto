@@ -24,8 +24,8 @@ enum Architecture {
 }
 
 message LinuxInfo {
-    string distro = 1;
-    string kernel = 2;
+    optional string distro = 1;
+    optional string kernel = 2;
     bool selinux = 3;
     ContainerEnv container = 4;
 }

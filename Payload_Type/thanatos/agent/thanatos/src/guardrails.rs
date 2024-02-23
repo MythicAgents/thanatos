@@ -1,6 +1,10 @@
 #![allow(unused)]
 
-use crate::native::system;
+#[cfg(target_os = "linux")]
+use crate::os::linux as system;
+
+#[cfg(target_os = "windows")]
+use crate::os::windows as system;
 
 #[cfg(feature = "crypto-system")]
 use cryptolib::hash::system::Sha256;

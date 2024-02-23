@@ -9,15 +9,92 @@ use ffiwrappers::{
     linux::{
         addrinfo::{AddrInfoList, AiFlags, Hints},
         socket::SockType,
-        uname,
+        uname::{self, UtsName},
         user::UserInfo,
     },
 };
 
-mod platform;
-pub use platform::platform;
+use crate::proto::checkin::{Architecture, ContainerEnv};
 
-use crate::proto::checkin::Architecture;
+pub fn container_environment() -> ContainerEnv {
+    if let Ok(readdir) = std::fs::read_dir("/") {
+        for entry in readdir.flatten() {
+            if entry.file_name() == ".dockerenv" {
+                return ContainerEnv::Docker;
+            }
+        }
+    }
+
+    if let Ok(readdir) = std::fs::read_dir("/run") {
+        for entry in readdir.flatten() {
+            if entry.file_name() == ".containerenv" {
+                return ContainerEnv::Container;
+            }
+        }
+    }
+
+    ContainerEnv::None
+}
+
+// TODO: Return this into a separate initial check in field.
+// Parse /proc/self/mountinfo for selinux detection instead of looking for /sys/fs/selinux
+pub fn selinux_enabled() -> bool {
+    if let Ok(readdir) = std::fs::read_dir("/sys/fs") {
+        for entry in readdir.flatten() {
+            if entry.file_name() == "selinux" {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
+pub fn kernel() -> Option<String> {
+    UtsName::new().ok().map(|u| u.release().to_owned())
+}
+
+pub fn distro() -> Option<String> {
+    let f = std::fs::File::open("/etc/os-release").ok()?;
+    let reader = BufReader::new(f);
+
+    let mut name = String::new();
+    let mut version = String::new();
+
+    for line in reader.lines().map_while(Result::ok) {
+        if line.starts_with("NAME=") {
+            let s = line.split('=');
+            if let Some(name_quoted) = s.last() {
+                name = name_quoted[1..name_quoted.len() - 1].to_string();
+            }
+            continue;
+        }
+
+        if line.starts_with("VERSION=") {
+            let s = line.split('=');
+            if let Some(version_quoted) = s.last() {
+                version = version_quoted[1..version_quoted.len() - 1].to_string();
+            }
+
+            continue;
+        }
+
+        if line.starts_with("PRETTY_NAME=") {
+            let s = line.split('=');
+            if let Some(pretty_name_quoted) = s.last() {
+                return Some(pretty_name_quoted[1..pretty_name_quoted.len() - 1].to_string());
+            }
+
+            continue;
+        }
+    }
+
+    if name.is_empty() && version.is_empty() {
+        None
+    } else {
+        Some(format!("{} {}", name, version))
+    }
+}
 
 pub fn hostname() -> Result<String, ThanatosError> {
     let h = ffiwrappers::linux::gethostname().map_err(ThanatosError::FFIError)?;
@@ -52,43 +129,6 @@ pub fn domain() -> Result<String, ThanatosError> {
     s.next()
         .ok_or(ThanatosError::FFIError(FfiError::CanonNameNotFound))?;
     Ok(s.collect::<Vec<&str>>().join("."))
-}
-
-pub fn os_release() -> Result<OsReleaseInfo, ThanatosError> {
-    let f = std::fs::File::open("/etc/os-release").map_err(ThanatosError::IoError)?;
-    let reader = BufReader::new(f);
-
-    let mut release_info = OsReleaseInfo::default();
-    for line in reader.lines().map_while(Result::ok) {
-        if line.starts_with("NAME=") {
-            let s = line.split('=');
-            if let Some(name_quoted) = s.last() {
-                release_info.name = name_quoted[1..name_quoted.len() - 1].to_string();
-            }
-            continue;
-        }
-
-        if line.starts_with("VERSION=") {
-            let s = line.split('=');
-            if let Some(version_quoted) = s.last() {
-                release_info.version = version_quoted[1..version_quoted.len() - 1].to_string();
-            }
-
-            continue;
-        }
-
-        if line.starts_with("PRETTY_NAME=") {
-            let s = line.split('=');
-            if let Some(pretty_name_quoted) = s.last() {
-                release_info.pretty_name =
-                    Some(pretty_name_quoted[1..pretty_name_quoted.len() - 1].to_string());
-            }
-
-            continue;
-        }
-    }
-
-    Ok(release_info)
 }
 
 pub fn architecture() -> Option<Architecture> {
@@ -186,17 +226,5 @@ mod tests {
         }
 
         assert_eq!(canonname, fqdn);
-    }
-
-    #[test]
-    fn platform_test() {
-        let platform = super::platform();
-        dbg!(platform);
-    }
-
-    #[test]
-    fn os_release_test() {
-        let distro = super::os_release().unwrap();
-        dbg!(distro);
     }
 }
