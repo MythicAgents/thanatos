@@ -51,15 +51,16 @@ impl UserInfo {
 
         let mut gid_list = vec![0u32; ngroups as usize];
 
-        if unsafe {
+        let ret = unsafe {
             libc::getgrouplist(
                 self.0.as_ref().pw_name,
                 self.gid(),
                 gid_list.as_mut_ptr(),
                 &mut ngroups,
             )
-        } != ngroups
-        {
+        };
+
+        if ret != ngroups {
             return Err(FfiError::os_error());
         }
 
