@@ -33,13 +33,16 @@ impl UserInfo {
 
     pub fn group_membership(&self) -> Result<GroupMembership, FfiError> {
         let mut ngroups = 0i32;
-        unsafe {
+        if unsafe {
             libc::getgrouplist(
                 self.0.as_ref().pw_name,
                 self.0.as_ref().pw_gid,
                 std::ptr::null_mut(),
                 &mut ngroups,
             )
+        } != -1
+        {
+            return Err(FfiError::os_error());
         };
 
         if ngroups <= 0 {
@@ -55,7 +58,7 @@ impl UserInfo {
                 gid_list.as_mut_ptr(),
                 &mut ngroups,
             )
-        } != 0
+        } != ngroups
         {
             return Err(FfiError::os_error());
         }
@@ -121,16 +124,53 @@ impl UserInfo {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    pub fn info() {
-        let current_user = super::UserInfo::current_user().unwrap();
+    use std::{ffi::CString, process::Command};
 
-        dbg!(current_user.username());
-        dbg!(current_user.passwd());
-        dbg!(current_user.uid());
-        dbg!(current_user.gid());
-        dbg!(current_user.gecos());
-        dbg!(current_user.home_dir());
-        dbg!(current_user.shell());
+    #[test]
+    /// Compares the current username with the output of /usr/bin/whoami
+    fn whoami_test() {
+        let current_user = super::UserInfo::current_user().expect("Failed to get current user");
+
+        let c = Command::new("whoami")
+            .output()
+            .expect("Failed to run 'whoami'");
+
+        let whoami_output = std::str::from_utf8(&c.stdout)
+            .expect("Failed to parse 'whomai' output")
+            .trim_end_matches('\n');
+
+        assert_eq!(current_user.username(), whoami_output);
+    }
+
+    #[test]
+    /// Checks if the group membership info returns successfully
+    fn group_success() {
+        let current_user = super::UserInfo::current_user().expect("Failed to get current user");
+        let res = current_user.group_membership();
+
+        if let Err(e) = res {
+            panic!("Group membership failed: {:?}", e);
+        }
+    }
+
+    #[test]
+    fn username_lookup() {
+        let root_user = CString::new("root").unwrap();
+        let userinfo =
+            super::UserInfo::lookup_username(&root_user).expect("Failed to get the root user info");
+        assert_eq!(userinfo.uid(), 0);
+    }
+
+    #[test]
+    fn uid_lookup() {
+        let userinfo = super::UserInfo::lookup_uid(0).expect("Failed to get uid 0");
+        assert_eq!(userinfo.username(), "root");
+    }
+
+    #[test]
+    fn user_shell() {
+        let shell_env = std::env::var("SHELL").expect("Failed to get 'SHELL' environment variable");
+        let userinfo = super::UserInfo::current_user().expect("Failed to get user info");
+        assert_eq!(shell_env, userinfo.shell());
     }
 }
