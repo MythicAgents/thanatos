@@ -124,19 +124,23 @@ impl UserInfo {
 
 #[cfg(test)]
 mod tests {
-    use std::{ffi::CString, process::Command};
+    use std::{
+        ffi::CString,
+        io::{BufRead, BufReader},
+        process::Command,
+    };
 
     #[test]
-    /// Compares the current username with the output of /usr/bin/whoami
+    /// Compares the effective username with the output of /usr/bin/whoami
     fn whoami_test() {
-        let current_user = super::UserInfo::current_user().expect("Failed to get current user");
+        let current_user = super::UserInfo::effective_user().expect("Failed to get current user");
 
         let c = Command::new("whoami")
             .output()
             .expect("Failed to run 'whoami'");
 
         let whoami_output = std::str::from_utf8(&c.stdout)
-            .expect("Failed to parse 'whomai' output")
+            .expect("Failed to parse 'whoami' output")
             .trim_end_matches('\n');
 
         assert_eq!(current_user.username(), whoami_output);
@@ -168,9 +172,20 @@ mod tests {
     }
 
     #[test]
-    fn user_shell() {
-        let shell_env = std::env::var("SHELL").unwrap_or_default();
+    fn shell_passwd() {
+        let f = std::fs::File::open("/etc/passwd").expect("Failed to open '/etc/passwd'");
+        let reader = BufReader::new(f);
         let userinfo = super::UserInfo::current_user().expect("Failed to get user info");
-        assert_eq!(shell_env, userinfo.shell());
+
+        let username = userinfo.username();
+
+        for line in reader.lines().map_while(Result::ok) {
+            if line.starts_with(username) {
+                assert!(line.ends_with(userinfo.shell()));
+                return;
+            }
+        }
+
+        panic!("Failed to find '/etc/passwd' entry for user '{username}'");
     }
 }
