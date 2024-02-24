@@ -5,6 +5,7 @@
         "tamasfe.even-better-toml",
         "swellaby.vscode-rust-test-adapter",
         "ms-vscode.test-adapter-converter",
-        "hbenl.vscode-test-explorer"
+        "hbenl.vscode-test-explorer",
+        "markis.code-coverage"
     ]
 }

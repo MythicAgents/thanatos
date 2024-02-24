@@ -134,7 +134,7 @@ mod tests {
     #[test]
     /// Compares the effective username with the output of /usr/bin/whoami
     fn whoami_test() {
-        let current_user = super::UserInfo::effective_user().expect("Failed to get current user");
+        let current_user = super::UserInfo::current_user().expect("Failed to get current user");
 
         let c = Command::new("whoami")
             .output()

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-THANATOS_PATH=""
-MYTHIC_CODE="mythic"
-AGENT_CODE="agent"
+REPO_PATH=""
+MYTHIC_CODE="Payload_Type/thanatos/mythic"
+AGENT_CODE="Payload_Type/thanatos/agent"
 
-# Populates the 'THANATOS_PATH' variable with the path to the thanatos payload base directory
+# Populates the 'REPO_PATH' to the base of the repo
 populate_thanatos_path() {
     # Get the path to the directory containing this script
     local _script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
@@ -19,7 +19,7 @@ populate_thanatos_path() {
     fi
 
     # Set the THANATOS_PATH variable to the base of the payload
-    THANATOS_PATH="$(realpath ${_repo_base}/Payload_Type/thanatos)"
+    REPO_PATH="$(realpath ${_repo_base})"
 }
 
 # Check that python3, python3-pylint, python3-black, cargo, cargo-fmt, and cargo-clippy exist
@@ -110,12 +110,68 @@ tests() {
     popd &> /dev/null
 }
 
+# Generate coverage
+coverage() {
+    rm -rf coverage/html
+    mkdir -p coverage/html/{agent,mythic}
+
+    echo "[*] Generating Mythic code coverage"
+
+    pushd $MYTHIC_CODE &> /dev/null
+    go test -coverprofile ../../../coverage/mythic.builder.gocov -run "Mock" ./builder/...
+    sed -i '/^thanatos\/builder\/testing.*\.go:.*$/d' ../../../coverage/mythic.builder.gocov
+    sed -i '/^thanatos\/builder\/handlers\.go:.*$/d' ../../../coverage/mythic.builder.gocov
+
+    go test -coverprofile ../../../coverage/mythic.commands.gocov ./commands/...
+    sed -i '/^thanatos\/commands\/testing\/.*$/d' ../../../coverage/mythic.commands.gocov
+    sed -i '/^thanatos\/commands\/commands\.go:.*$/d' ../../../coverage/mythic.commands.gocov
+    sed -i '/^thanatos\/commands\/utils\/mythicrpc\.go:.*$/d' ../../../coverage/mythic.commands.gocov
+
+    cat ../../../coverage/mythic.builder.gocov > ../../../coverage/mythic.gocov
+    grep "^thanatos" ../../../coverage/mythic.commands.gocov >> ../../../coverage/mythic.gocov
+
+    rm ../../../coverage/mythic.commands.gocov
+    rm ../../../coverage/mythic.builder.gocov
+
+    go tool cover -html ../../../coverage/mythic.gocov -o ../../../coverage/html/mythic/index.html
+    popd &> /dev/null
+
+    echo "[*] Generating Agent code coverage"
+    pushd $AGENT_CODE &> /dev/null
+    export RUSTFLAGS="-Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Cinstrument-coverage"
+    cargo test --workspace --all-features --exclude config --exclude genconfig
+
+    popd &> /dev/null
+
+    grcov Payload_Type/thanatos/agent/ \
+        -s . \
+        --binary-path Payload_Type/thanatos/agent/target/debug/ \
+        -t lcov \
+        --branch \
+        --ignore-not-existing \
+        --ignore "$HOME/.cargo/registry/*" \
+        --ignore "*/target/*" \
+        --ignore "**/build.rs" \
+        --ignore "*/config/*" \
+        -o coverage/agent.lcov
+
+    genhtml -o coverage/html/agent \
+        --show-details \
+        --highlight \
+        --ignore-errors source \
+        --legend \
+        coverage/agent.lcov
+
+    find Payload_Type/thanatos/agent -name "default*.profraw" -exec rm {} \;
+}
+
 set -e
 
 populate_thanatos_path
-check_requirements
 
-pushd $THANATOS_PATH &> /dev/null
+pushd $REPO_PATH &> /dev/null
+
+check_requirements
 
 format_check
 echo ""
@@ -124,5 +180,9 @@ lint_check
 echo ""
 
 tests
+echo ""
+
+coverage
+echo ""
 
 popd &> /dev/null

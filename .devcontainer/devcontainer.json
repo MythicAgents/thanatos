@@ -19,7 +19,8 @@
                 "swellaby.vscode-rust-test-adapter",
                 "premparihar.gotestexplorer",
                 "ms-vscode.makefile-tools",
-                "me-dutour-mathieu.vscode-github-actions"
+                "me-dutour-mathieu.vscode-github-actions",
+                "markis.code-coverage"
             ]
         }
     }

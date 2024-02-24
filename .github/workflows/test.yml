@@ -18,10 +18,6 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
-    defaults:
-      run:
-        working-directory: ${{ env.AGENT_CODE }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -63,18 +59,47 @@ jobs:
           Copy-Item -Path .\protoc\bin\protoc.exe -Destination $env:SYSTEMROOT\System32\protoc.exe
           Remove-Item -Recurse .\protoc
 
+      - name: Install code coverage tools (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          rustup component add llvm-tools-preview
+          cargo install grcov rustfilt
+
       - name: Run tests
+        working-directory: ${{ env.AGENT_CODE }}
         run: |
           cargo build -p genconfig
-          cargo test --color always --workspace --exclude genconfig --all-features
+          cargo test --color always --workspace --exclude genconfig --exclude config --all-features
+        env:
+          RUSTFLAGS: -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Cinstrument-coverage
+
+      - name: Generate code coverage artifacts (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          grcov ${AGENT_CODE} \
+            -s . \
+            --binary-path \
+            ${AGENT_CODE}/target/debug \
+            -t lcov \
+            --branch \
+            --ignore-not-existing \
+            --ignore \
+            "$HOME/.cargo/registry/*" \
+            --ignore "*/target/*" \
+            --ignore "**/build.rs" \
+            --ignore "*/config/*" \
+            -o coverage/agent-linux.lcov
+
+      - name: Upload coverage artifacts (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Coverage Agent Linux
+          path: coverage/agent-linux.lcov
 
   mythic:
     name: Mythic Tests
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: ${{ env.MYTHIC_CODE }}
 
     steps:
       - name: Checkout code
@@ -86,11 +111,97 @@ jobs:
           go-version-file: ${{ env.MYTHIC_CODE }}/go.mod
           cache-dependency-path: ${{ env.MYTHIC_CODE }}/go.sum
 
+      - name: Install Go cover
+        run: go install golang.org/x/tools/cmd/cover@latest
+
       - name: Install Golang modules
+        working-directory: ${{ env.MYTHIC_CODE }}
         run: go mod download
 
       - name: Command tests
-        run: go test ./commands/...
+        working-directory: ${{ env.MYTHIC_CODE }}
+        run: |
+          mkdir -p ../../../coverage
+          go test -coverprofile ../../../coverage/mythic.commands.gocov ./commands/...
 
       - name: Mockbuild tests
-        run: go test -run "^TestPayloadMockBuild/" ./builder
+        working-directory: ${{ env.MYTHIC_CODE }}
+        run: go test -coverprofile ../../../coverage/mythic.builder.gocov -run "^TestPayloadMockBuild/" ./builder
+
+      - name: Filter unneeded test coverage results
+        working-directory: coverage
+        run: |
+          sed -i '/^thanatos\/commands\/testing\/.*$/d' ../../../coverage/mythic.commands.gocov
+          sed -i '/^thanatos\/commands\/commands\.go:.*$/d' ../../../coverage/mythic.commands.gocov
+          sed -i '/^thanatos\/commands\/utils\/mythicrpc\.go:.*$/d' ../../../coverage/mythic.commands.gocov
+          sed -i '/^thanatos\/builder\/testing.*\.go:.*$/d' ../../../coverage/mythic.builder.gocov
+          sed -i '/^thanatos\/builder\/handlers\.go:.*$/d' ../../../coverage/mythic.builder.gocov
+
+      - name: Combine test coverage results
+        working-directory: coverage
+        run: |
+          cat mythic.builder.gocov > mythic.gocov
+          grep "^thanatos" mythic.commands.gocov >> mythic.gocov
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Coverage Mythic
+          path: coverage/mythic.gocov
+
+  coverage:
+    name: Merge coverage artifacts
+    needs: [agent, mythic]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Golang
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ env.MYTHIC_CODE }}/go.mod
+          cache-dependency-path: ${{ env.MYTHIC_CODE }}/go.sum
+
+      - name: Install Go cover
+        run: go install golang.org/x/tools/cmd/cover@latest
+
+      - name: Install lcov
+        run: apt-get install -y lcov
+
+      - name: Create coverage directory
+        run: mkdir -p coverage/html/{mythic,agent}
+
+      - name: Download Agent coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Coverage Agent Linux
+
+      - name: Download Mythic coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Coverage Mythic
+
+      - name: Generate Mythic coverage html
+        working-directory: ${{ env.MYTHIC_CODE }}
+        run: go tool cover -html ../../../coverage/mythic.gocov -o ../../../coverage/html/mythic/index.tml
+
+      - name: Generate Agent coverage html
+        run: |
+          genhtml \
+            -o coverage/html/agent \
+            --show-details \
+            --highlight \
+            --ignore-errors source \
+            --legend \
+            coverage/agent-linux.lcov
+
+      - name: Create coverage artifact
+        run: zip -r coverage.zip coverage/
+
+      - name: Upload combined coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: Coverage Artifacts
+          path: coverage.zip

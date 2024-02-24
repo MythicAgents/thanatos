@@ -31,6 +31,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     pkg-config \
     llvm \
     unzip \
+    lcov \
     libssl-dev
 
 # Install Golang
@@ -51,6 +52,10 @@ RUN mkdir -p /home/${username}/go/bin
 RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
     | sh -s -- -b /home/${username}/go/bin v${golangcilintversion}
 
+# Install go cover
+RUN /usr/local/go/bin/go install golang.org/x/tools/cmd/cover@latest
+RUN /usr/local/go/bin/go install github.com/jandelgado/gcov2lcov@latest
+
 RUN grep -qxF 'export PATH=$PATH:/home/${username}/go/bin' /home/${username}/.profile \
     || echo 'export PATH=$PATH:/home/${username}/go/bin' >> /home/${username}/.profile
 
@@ -69,8 +74,14 @@ RUN grep -qxF '. "$HOME/.cargo/env"' /home/${username}/.profile \
 
 RUN rm -f rustup.sh
 
-# Install rustfmt and clippy
-RUN $HOME/.cargo/bin/rustup component add rustfmt clippy
+# Install nightly
+RUN $HOME/.cargo/bin/rustup install nightly
+
+# Install rustfmt, clippy and llvm tools
+RUN $HOME/.cargo/bin/rustup component add rustfmt clippy llvm-tools-preview
+
+# Install rustfilt and grcov
+RUN $HOME/.cargo/bin/cargo install grcov rustfilt
 
 USER 0
 

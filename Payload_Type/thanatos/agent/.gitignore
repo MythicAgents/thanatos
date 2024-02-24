@@ -3,3 +3,4 @@ build.ps1
 tags
 .config.json
 .config.bin
+default*.profraw
