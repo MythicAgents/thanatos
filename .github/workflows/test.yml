@@ -153,10 +153,9 @@ jobs:
           sed -i '/^thanatos\/builder\/handlers\.go:.*$/d' mythic.builder.gocov
 
       - name: Combine test coverage results
-        working-directory: coverage
         run: |
-          cat mythic.builder.gocov > mythic.gocov
-          grep "^thanatos" mythic.commands.gocov >> ../mythic.gocov
+          cat coverage/mythic.builder.gocov > mythic.gocov
+          grep "^thanatos" coverage/mythic.commands.gocov >> mythic.gocov
 
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
