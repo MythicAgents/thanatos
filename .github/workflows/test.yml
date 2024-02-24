@@ -131,11 +131,11 @@ jobs:
       - name: Filter unneeded test coverage results
         working-directory: coverage
         run: |
-          sed -i '/^thanatos\/commands\/testing\/.*$/d' ../../../coverage/mythic.commands.gocov
-          sed -i '/^thanatos\/commands\/commands\.go:.*$/d' ../../../coverage/mythic.commands.gocov
-          sed -i '/^thanatos\/commands\/utils\/mythicrpc\.go:.*$/d' ../../../coverage/mythic.commands.gocov
-          sed -i '/^thanatos\/builder\/testing.*\.go:.*$/d' ../../../coverage/mythic.builder.gocov
-          sed -i '/^thanatos\/builder\/handlers\.go:.*$/d' ../../../coverage/mythic.builder.gocov
+          sed -i '/^thanatos\/commands\/testing\/.*$/d' mythic.commands.gocov
+          sed -i '/^thanatos\/commands\/commands\.go:.*$/d' mythic.commands.gocov
+          sed -i '/^thanatos\/commands\/utils\/mythicrpc\.go:.*$/d' mythic.commands.gocov
+          sed -i '/^thanatos\/builder\/testing.*\.go:.*$/d' mythic.builder.gocov
+          sed -i '/^thanatos\/builder\/handlers\.go:.*$/d' mythic.builder.gocov
 
       - name: Combine test coverage results
         working-directory: coverage
