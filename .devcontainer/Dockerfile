@@ -1,5 +1,6 @@
 FROM ubuntu:latest
 
+ARG locale=en_US.UTF-8
 ARG username=user
 ARG userUid=1000
 ARG userGid=1000
@@ -9,6 +10,8 @@ ARG golangcilintversion=1.56.2
 ARG shell=fish
 ARG extraPackages
 ARG protocversion=25.3
+ARG lcovcommithash=49608c474b8fe7369ad96dff5935b4746a406c09
+ARG grcovversion=0.8.19
 
 # Update apt cache
 RUN apt-get update -y
@@ -26,12 +29,16 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     sudo \
     git \
     gcc \
+    locales \
+    libgd-dev \
+    libgd-perl \
+    libdatetime-perl \
+    make \
     gnupg2 \
     mingw-w64 \
     pkg-config \
     llvm \
     unzip \
-    lcov \
     libssl-dev
 
 # Install Golang
@@ -80,9 +87,6 @@ RUN $HOME/.cargo/bin/rustup install nightly
 # Install rustfmt, clippy and llvm tools
 RUN $HOME/.cargo/bin/rustup component add rustfmt clippy llvm-tools-preview
 
-# Install rustfilt and grcov
-RUN $HOME/.cargo/bin/cargo install grcov rustfilt
-
 USER 0
 
 # Install protoc
@@ -95,6 +99,26 @@ RUN mv bin/protoc /usr/local/bin
 RUN chmod 755 /usr/local/bin/protoc
 WORKDIR /tmp
 RUN rm -rf /tmp/protoc
+
+# Build lcov/genhtml
+RUN yes yes | cpan install Date::Parse Capture::Tiny GD
+RUN git clone https://github.com/linux-test-project/lcov.git /tmp/lcov
+WORKDIR /tmp/lcov
+RUN git reset --hard ${lcovcommithash}
+RUN make install
+WORKDIR /
+RUN rm -rf /tmp/lcov
+
+# Install grcov
+RUN curl -L https://github.com/mozilla/grcov/releases/download/v${grcovversion}/grcov-x86_64-unknown-linux-gnu.tar.bz2 -o /tmp/grcov.tar.bz2
+RUN tar xvf /tmp/grcov.tar.bz2
+RUN mv grcov /usr/local/bin
+RUN rm /tmp/grcov.tar.bz2
+
+# Set locale
+RUN sed -i "/${locale}/s/^# //g" /etc/locale.gen
+RUN locale-gen
+RUN update-locale
 
 # Ensure zsh is installed if the shell is zsh
 RUN if [ "${shell}" = "zsh" ]; then apt-get install -y zsh; fi
