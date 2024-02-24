@@ -18,7 +18,7 @@ populate_thanatos_path() {
         exit 1
     fi
 
-    # Set the THANATOS_PATH variable to the base of the payload
+    # Set the REPO_PATH variable to the base of the payload
     REPO_PATH="$(realpath ${_repo_base})"
 }
 
@@ -156,7 +156,9 @@ coverage() {
         -o coverage/agent.lcov
 
     genhtml -o coverage/html/agent \
+        -f \
         --show-details \
+        --show-navigation \
         --highlight \
         --ignore-errors source \
         --legend \
