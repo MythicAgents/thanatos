@@ -192,13 +192,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: Agent Code Coverage
-          path: coverage/agent-linux.lcov
+          path: coverage
 
       - name: Download Mythic coverage artifacts
         uses: actions/download-artifact@v4
         with:
           name: Mythic Code Coverage
-          path: coverage/mythic.gocov
+          path: coverage
 
       - name: Generate Mythic coverage html
         working-directory: ${{ env.MYTHIC_CODE }}
