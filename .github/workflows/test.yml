@@ -71,13 +71,21 @@ jobs:
           mv grcov /usr/local/bin
           rm -rf grcov.tar.bz2
 
-      - name: Run tests
+      - name: Run coverage tests
+        if: ${{ runner.os == 'Linux' }}
         working-directory: ${{ env.AGENT_CODE }}
         run: |
           cargo build -p genconfig
           cargo test --color always --workspace --exclude genconfig --exclude config --all-features
         env:
           RUSTFLAGS: -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Cinstrument-coverage
+
+      - name: Run tests
+        if: ${{ runner.os == 'Windows' }}
+        working-directory: ${{ env.AGENT_CODE }}
+        run: |
+          cargo build -p genconfig
+          cargo test --color always --workspace --exclude genconfig --exclude config --all-features
 
       - name: Generate code coverage artifacts (Linux)
         if: ${{ runner.os == 'Linux' }}
