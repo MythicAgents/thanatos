@@ -83,9 +83,6 @@ jobs:
           go-version-file: ${{ env.MYTHIC_CODE }}/go.mod
           cache-dependency-path: ${{ env.MYTHIC_CODE }}/go.sum
 
-      - name: Install Golang modules
-        run: go mod download
-
       - name: Lint Mythic code
         uses: golangci/golangci-lint-action@v3
         with:
