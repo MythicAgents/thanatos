@@ -245,9 +245,9 @@ jobs:
         run: |
           lcov --add-tracefile coverage/agent-linux.lcov -a coverage/agent-windows.lcov -o coverage/agent.lcov
           genhtml -o coverage/html/agent \
-            -f
+            -f \
             --show-details \
-            --show-navigation
+            --show-navigation \
             --highlight \
             --ignore-errors source \
             --legend \
