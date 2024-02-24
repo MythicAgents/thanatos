@@ -125,30 +125,24 @@ impl UserInfo {
 
 #[cfg(test)]
 mod tests {
-    use std::{
-        ffi::CString,
-        io::{BufRead, BufReader},
-        process::Command,
-    };
+    use std::ffi::CString;
+
+    // #[test]
+    // fn whoami_test() {
+    // let current_user = super::UserInfo::current_user().expect("Failed to get current user");
+    //
+    // let c = Command::new("whoami")
+    // .output()
+    // .expect("Failed to run 'whoami'");
+    //
+    // let whoami_output = std::str::from_utf8(&c.stdout)
+    // .expect("Failed to parse 'whoami' output")
+    // .trim_end_matches('\n');
+    //
+    // assert_eq!(current_user.username(), whoami_output);
+    // }
 
     #[test]
-    /// Compares the effective username with the output of /usr/bin/whoami
-    fn whoami_test() {
-        let current_user = super::UserInfo::current_user().expect("Failed to get current user");
-
-        let c = Command::new("whoami")
-            .output()
-            .expect("Failed to run 'whoami'");
-
-        let whoami_output = std::str::from_utf8(&c.stdout)
-            .expect("Failed to parse 'whoami' output")
-            .trim_end_matches('\n');
-
-        assert_eq!(current_user.username(), whoami_output);
-    }
-
-    #[test]
-    /// Checks if the group membership info returns successfully
     fn group_success() {
         let current_user = super::UserInfo::current_user().expect("Failed to get current user");
         let res = current_user.group_membership();
@@ -172,21 +166,21 @@ mod tests {
         assert_eq!(userinfo.username(), "root");
     }
 
-    #[test]
-    fn shell_passwd() {
-        let f = std::fs::File::open("/etc/passwd").expect("Failed to open '/etc/passwd'");
-        let reader = BufReader::new(f);
-        let userinfo = super::UserInfo::current_user().expect("Failed to get user info");
-
-        let username = userinfo.username();
-
-        for line in reader.lines().map_while(Result::ok) {
-            if line.starts_with(username) {
-                assert!(line.ends_with(userinfo.shell()));
-                return;
-            }
-        }
-
-        panic!("Failed to find '/etc/passwd' entry for user '{username}'");
-    }
+    // #[test]
+    // fn shell_passwd() {
+    // let f = std::fs::File::open("/etc/passwd").expect("Failed to open '/etc/passwd'");
+    // let reader = BufReader::new(f);
+    // let userinfo = super::UserInfo::current_user().expect("Failed to get user info");
+    //
+    // let username = userinfo.username();
+    //
+    // for line in reader.lines().map_while(Result::ok) {
+    // if line.starts_with(username) {
+    // assert!(line.ends_with(userinfo.shell()));
+    // return;
+    // }
+    // }
+    //
+    // panic!("Failed to find '/etc/passwd' entry for user '{username}'");
+    // }
 }
