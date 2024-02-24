@@ -103,14 +103,14 @@ jobs:
             --ignore "*/target/*" \
             --ignore "**/build.rs" \
             --ignore "*/config/*" \
-            -o coverage/agent-linux.lcov
+            -o agent-linux.lcov
 
       - name: Upload coverage artifacts (Linux)
         if: ${{ runner.os == 'Linux' }}
         uses: actions/upload-artifact@v4
         with:
           name: Agent Code Coverage
-          path: coverage/agent-linux.lcov
+          path: agent-linux.lcov
 
   mythic:
     name: Mythic Tests
@@ -156,13 +156,13 @@ jobs:
         working-directory: coverage
         run: |
           cat mythic.builder.gocov > mythic.gocov
-          grep "^thanatos" mythic.commands.gocov >> mythic.gocov
+          grep "^thanatos" mythic.commands.gocov >> ../mythic.gocov
 
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Mythic Code Coverage
-          path: coverage/mythic.gocov
+          path: mythic.gocov
 
   coverage:
     name: Merge coverage artifacts
@@ -192,15 +192,17 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: Agent Code Coverage
+          path: coverage/agent-linux.lcov
 
       - name: Download Mythic coverage artifacts
         uses: actions/download-artifact@v4
         with:
           name: Mythic Code Coverage
+          path: coverage/mythic.gocov
 
       - name: Generate Mythic coverage html
         working-directory: ${{ env.MYTHIC_CODE }}
-        run: go tool cover -html ../../../coverage/mythic.gocov -o ../../../coverage/html/mythic/index.tml
+        run: go tool cover -html ../../../coverage/mythic.gocov -o ../../../coverage/html/mythic/index.html
 
       - name: Generate Agent coverage html
         run: |
