@@ -59,11 +59,17 @@ jobs:
           Copy-Item -Path .\protoc\bin\protoc.exe -Destination $env:SYSTEMROOT\System32\protoc.exe
           Remove-Item -Recurse .\protoc
 
-      - name: Install code coverage tools (Linux)
+      - name: Add Rust LLVM tools (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        run: rustup component add llvm-tools-preview
+
+      - name: Install grcov (Linux)
         if: ${{ runner.os == 'Linux' }}
         run: |
-          rustup component add llvm-tools-preview
-          cargo install grcov rustfilt
+          curl -L https://github.com/mozilla/grcov/releases/download/v0.8.19/grcov-x86_64-unknown-linux-gnu.tar.bz2 -o grcov.tar.bz2
+          tar xvf grcov.tar.bz2
+          mv grcov /usr/local/bin
+          rm -rf grcov.tar.bz2
 
       - name: Run tests
         working-directory: ${{ env.AGENT_CODE }}
@@ -76,6 +82,7 @@ jobs:
       - name: Generate code coverage artifacts (Linux)
         if: ${{ runner.os == 'Linux' }}
         run: |
+          mkdir coverage
           grcov ${AGENT_CODE} \
             -s . \
             --binary-path \
@@ -94,7 +101,7 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         uses: actions/upload-artifact@v4
         with:
-          name: Coverage Agent Linux
+          name: Agent Code Coverage
           path: coverage/agent-linux.lcov
 
   mythic:
@@ -146,7 +153,7 @@ jobs:
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Coverage Mythic
+          name: Mythic Code Coverage
           path: coverage/mythic.gocov
 
   coverage:
@@ -176,12 +183,12 @@ jobs:
       - name: Download Agent coverage artifacts
         uses: actions/download-artifact@v4
         with:
-          name: Coverage Agent Linux
+          name: Agent Code Coverage
 
       - name: Download Mythic coverage artifacts
         uses: actions/download-artifact@v4
         with:
-          name: Coverage Mythic
+          name: Mythic Code Coverage
 
       - name: Generate Mythic coverage html
         working-directory: ${{ env.MYTHIC_CODE }}
@@ -203,5 +210,5 @@ jobs:
       - name: Upload combined coverage
         uses: actions/upload-artifact@v4
         with:
-          name: Coverage Artifacts
+          name: Code Coverage Artifacts
           path: coverage.zip
