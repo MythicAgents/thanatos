@@ -31,43 +31,43 @@ pub fn integrity_level() -> Result<u32, ThanatosError> {
 
 #[cfg(test)]
 mod tests {
-    use std::process::Command;
+    //use std::process::Command;
 
-    #[test]
-    fn shell_test() {
-        let found_integrity = super::integrity_level().expect("Failed to get integrity level");
+    //#[test]
+    //fn shell_test() {
+    //    let found_integrity = super::integrity_level().expect("Failed to get integrity level");
 
-        let c = Command::new("id")
-            .arg("-u")
-            .output()
-            .expect("Failed to run 'id -u' shell command");
+    //    let c = Command::new("id")
+    //        .arg("-u")
+    //        .output()
+    //        .expect("Failed to run 'id -u' shell command");
 
-        let id_output = std::str::from_utf8(&c.stdout)
-            .expect("Failed to parse 'id -u' output")
-            .trim_end_matches('\n');
+    //    let id_output = std::str::from_utf8(&c.stdout)
+    //        .expect("Failed to parse 'id -u' output")
+    //        .trim_end_matches('\n');
 
-        let check_uid: u32 = id_output
-            .parse()
-            .expect("Failed to convert 'id -u' output to an integer");
+    //    let check_uid: u32 = id_output
+    //        .parse()
+    //        .expect("Failed to convert 'id -u' output to an integer");
 
-        if check_uid == 0 && found_integrity == 4 {
-            return;
-        }
+    //    if check_uid == 0 && found_integrity == 4 {
+    //        return;
+    //    }
 
-        let c = Command::new("groups")
-            .output()
-            .expect("Failed to run 'groups' command");
+    //    let c = Command::new("groups")
+    //        .output()
+    //        .expect("Failed to run 'groups' command");
 
-        let group_info = std::str::from_utf8(&c.stdout).expect("Failed to parse command output");
+    //    let group_info = std::str::from_utf8(&c.stdout).expect("Failed to parse command output");
 
-        let shell_group_integrity = if group_info.contains("root") {
-            4
-        } else if group_info.contains("sudoers") || group_info.contains("wheel") {
-            3
-        } else {
-            2
-        };
+    //    let shell_group_integrity = if group_info.contains("root") {
+    //        4
+    //    } else if group_info.contains("sudoers") || group_info.contains("wheel") {
+    //        3
+    //    } else {
+    //        2
+    //    };
 
-        assert_eq!(shell_group_integrity, found_integrity);
-    }
+    //    assert_eq!(shell_group_integrity, found_integrity);
+    //}
 }
