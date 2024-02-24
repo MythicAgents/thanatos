@@ -203,11 +203,12 @@ jobs:
       - name: Install Go cover
         run: go install golang.org/x/tools/cmd/cover@latest
 
-      - name: Install lcov for dependencies
-        run: sudo apt-get install -y lcov
+      - name: Install lcov dependencies
+        run: sudo apt-get install -y libgd-dev libgd-perl libdatetime-perl
 
-      - name: Build lcov/genhtml
+      - name: Build lcov
         run: |
+          yes yes | sudo cpan install Date::Parse Capture::Tiny GD
           git clone https://github.com/linux-test-project/lcov.git /tmp/lcov
           pushd /tmp/lcov
           git reset --hard 49608c474b8fe7369ad96dff5935b4746a406c09
