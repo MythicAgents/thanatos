@@ -98,7 +98,7 @@ jobs:
             -t lcov \
             --branch \
             --ignore-not-existing \
-            --ignore "$HOME/.cargo/registry/*" \
+            --ignore "**/.cargo/registry/**" \
             --ignore "*/target/*" \
             --ignore "**/build.rs" \
             --ignore "*/config/*" \
@@ -114,7 +114,7 @@ jobs:
             -t lcov `
             --branch `
             --ignore-not-existing `
-            --ignore "$env:HOME/.cargo/registry/*" `
+            --ignore "**/.cargo/registry/**" `
             --ignore "*/target/*" `
             --ignore "**/build.rs" `
             --ignore "*/config/*" `
