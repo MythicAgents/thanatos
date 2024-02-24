@@ -58,9 +58,9 @@ jobs:
           Expand-Archive protoc.zip
           Copy-Item -Path .\protoc\bin\protoc.exe -Destination $env:SYSTEMROOT\System32\protoc.exe
           Remove-Item -Recurse .\protoc
+          Remove-Item .\protoc.zip
 
-      - name: Add Rust LLVM tools (Linux)
-        if: ${{ runner.os == 'Linux' }}
+      - name: Add Rust LLVM tools
         run: rustup component add llvm-tools-preview
 
       - name: Install grcov (Linux)
@@ -71,21 +71,22 @@ jobs:
           mv grcov /usr/local/bin
           rm -rf grcov.tar.bz2
 
+      - name: Install grcov (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          Invoke-WebRequest -Uri https://github.com/mozilla/grcov/releases/download/v0.8.19/grcov-x86_64-pc-windows-msvc.zip -OutFile grcov.zip
+          Expand-Archive grcov.zip
+          Copy-Item -Path .\grcov\grcov.exe -Destination $env:SYSTEMROOT\System32\grcov.exe
+          Remove-Item -Recurse .\grcov
+          Remove-Item .\grcov.zip
+
       - name: Run coverage tests
-        if: ${{ runner.os == 'Linux' }}
         working-directory: ${{ env.AGENT_CODE }}
         run: |
           cargo build -p genconfig
           cargo test --color always --workspace --exclude genconfig --exclude config --all-features
         env:
-          RUSTFLAGS: -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Cinstrument-coverage
-
-      - name: Run tests
-        if: ${{ runner.os == 'Windows' }}
-        working-directory: ${{ env.AGENT_CODE }}
-        run: |
-          cargo build -p genconfig
-          cargo test --color always --workspace --exclude genconfig --exclude config --all-features
+          RUSTFLAGS: -Ccodegen-units=1 -Copt-level=0 -Cinstrument-coverage
 
       - name: Generate code coverage artifacts (Linux)
         if: ${{ runner.os == 'Linux' }}
@@ -93,24 +94,45 @@ jobs:
           mkdir coverage
           grcov ${AGENT_CODE} \
             -s . \
-            --binary-path \
-            ${AGENT_CODE}/target/debug \
+            --binary-path ${AGENT_CODE}/target/debug \
             -t lcov \
             --branch \
             --ignore-not-existing \
-            --ignore \
-            "$HOME/.cargo/registry/*" \
+            --ignore "$HOME/.cargo/registry/*" \
             --ignore "*/target/*" \
             --ignore "**/build.rs" \
             --ignore "*/config/*" \
             -o agent-linux.lcov
 
+      - name: Generate code coverage artifacts (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          mkdir coverage
+          grcov.exe $env:AGENT_CODE \
+            -s . \
+            --binary-path $env:AGENT_CODE/target/debug \
+            -t lcov \
+            --branch \
+            --ignore-not-existing \
+            --ignore "$env:HOME/.cargo/registry/*" \
+            --ignore "*/target/*" \
+            --ignore "**/build.rs" \
+            --ignore "*/config/*" \
+            -o agent-windows.lcov
+
       - name: Upload coverage artifacts (Linux)
         if: ${{ runner.os == 'Linux' }}
         uses: actions/upload-artifact@v4
         with:
-          name: Agent Code Coverage
+          name: Agent Code Coverage (Linux)
           path: agent-linux.lcov
+
+      - name: Upload coverage artifacts (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Agent Code Coverage (Windows)
+          path: agent-windows.lcov
 
   mythic:
     name: Mythic Tests
@@ -181,16 +203,31 @@ jobs:
       - name: Install Go cover
         run: go install golang.org/x/tools/cmd/cover@latest
 
-      - name: Install lcov
+      - name: Install lcov for dependencies
         run: sudo apt-get install -y lcov
+
+      - name: Build lcov/genhtml
+        run: |
+          git clone https://github.com/linux-test-project/lcov.git /tmp/lcov
+          pushd /tmp/lcov
+          git reset --hard 49608c474b8fe7369ad96dff5935b4746a406c09
+          sudo make install
+          popd
+          sudo rm -rf /tmp/lcov
 
       - name: Create coverage directory
         run: mkdir -p coverage/html/{mythic,agent}
 
-      - name: Download Agent coverage artifacts
+      - name: Download Linux Agent coverage artifacts
         uses: actions/download-artifact@v4
         with:
-          name: Agent Code Coverage
+          name: Agent Code Coverage (Linux)
+          path: coverage
+
+      - name: Download Windows Agent coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Agent Code Coverage (Windows)
           path: coverage
 
       - name: Download Mythic coverage artifacts
@@ -205,19 +242,18 @@ jobs:
 
       - name: Generate Agent coverage html
         run: |
-          genhtml \
-            -o coverage/html/agent \
+          lcov --add-tracefile coverage/agent-linux.lcov -a coverage/agent-windows.lcov -o coverage/agent.lcov
+          genhtml -o coverage/html/agent \
+            -f
             --show-details \
+            --show-navigation
             --highlight \
             --ignore-errors source \
             --legend \
             coverage/agent-linux.lcov
 
-      - name: Create coverage artifact
-        run: zip -r coverage.zip coverage/
-
-      - name: Upload combined coverage
+      - name: Upload combined coverage artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Code Coverage Artifacts
-          path: coverage.zip
+          name: Combined Code Coverage Report
+          path: coverage
