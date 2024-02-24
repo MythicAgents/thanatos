@@ -108,16 +108,16 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         run: |
           mkdir coverage
-          grcov.exe $env:AGENT_CODE \
-            -s . \
-            --binary-path $env:AGENT_CODE/target/debug \
-            -t lcov \
-            --branch \
-            --ignore-not-existing \
-            --ignore "$env:HOME/.cargo/registry/*" \
-            --ignore "*/target/*" \
-            --ignore "**/build.rs" \
-            --ignore "*/config/*" \
+          grcov.exe $env:AGENT_CODE `
+            -s . `
+            --binary-path $env:AGENT_CODE/target/debug `
+            -t lcov `
+            --branch `
+            --ignore-not-existing `
+            --ignore "$env:HOME/.cargo/registry/*" `
+            --ignore "*/target/*" `
+            --ignore "**/build.rs" `
+            --ignore "*/config/*" `
             -o agent-windows.lcov
 
       - name: Upload coverage artifacts (Linux)
@@ -250,7 +250,7 @@ jobs:
             --highlight \
             --ignore-errors source \
             --legend \
-            coverage/agent-linux.lcov
+            coverage/agent.lcov
 
       - name: Upload combined coverage artifacts
         uses: actions/upload-artifact@v4
