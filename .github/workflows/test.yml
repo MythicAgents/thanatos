@@ -267,6 +267,9 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         working-directory: ${{ env.AGENT_CODE }}
         run: |
+          $vspath = (Get-VSSetupInstance | Select-VSSetupInstance -Require Microsoft.VisualStudio.Component.VC.ASAN).InstallationPath
+          Import-Module $vspath/Common7/Tools/Microsoft.VisualStudio.DevShell.dll
+          Enter-VsDevShell -VsInstallPath $vspath -SkipAutomaticLocation
           $env:PATH="$env:PATH;$env:VCToolsInstallDir/bin/Hostx64/x64"
           cargo +nightly test --color always -p ffiwrappers --all-features --target $env:TARGET
         env:
