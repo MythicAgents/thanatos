@@ -2,7 +2,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Thanatos: Check project code formatting",
+            "label": "Thanatos: Check formatting",
             "type": "shell",
             "command": "./.github/scripts/checkformat.sh",
             "group": "test",
@@ -12,15 +12,16 @@
             "type": "shell",
             "command": "./.github/scripts/coverage.sh",
             "group": "none",
+            "problemMatcher": [],
         },
         {
-            "label": "Thanatos: Lint project code",
+            "label": "Thanatos: Lint",
             "type": "shell",
             "command": "./.github/scripts/lint.sh",
             "group": "test",
         },
         {
-            "label": "Thanatos: Run tests",
+            "label": "Thanatos: Tests",
             "type": "shell",
             "command": "./.github/scripts/test.sh",
             "group": {
@@ -32,6 +33,15 @@
             "label": "Thanatos: Sanitizer tests",
             "type": "shell",
             "command": "./.github/scripts/sanitizers.sh",
+            "group": {
+                "isDefault": false,
+                "kind": "test"
+            }
+        },
+        {
+            "label": "Thanatos: CI scripts",
+            "type": "shell",
+            "command": "./.github/scripts/ci.sh",
             "group": {
                 "isDefault": false,
                 "kind": "test"

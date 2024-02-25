@@ -84,7 +84,7 @@ jobs:
         working-directory: ${{ env.AGENT_CODE }}
         run: |
           cargo build -p genconfig
-          cargo test --color always --workspace --exclude genconfig --exclude config --all-features
+          cargo test --color always --workspace --all-features --exclude config --exclude genconfig --exclude thanatos_cdylib --exclude thanatos_binary
         env:
           RUSTFLAGS: -Ccodegen-units=1 -Copt-level=0 -Cinstrument-coverage
 
@@ -338,6 +338,7 @@ jobs:
           lcov --add-tracefile coverage/agent-linux.lcov -a coverage/agent-windows.lcov -o coverage/agent.lcov
           genhtml -o coverage/html/agent \
             -f \
+            --dark-mode \
             --show-details \
             --show-navigation \
             --highlight \

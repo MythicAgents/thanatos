@@ -22,8 +22,18 @@ repo_base() {
     REPO_BASE="$(realpath ${_repo_base_dir})"
 }
 
+coverage_requirements() {
+    cargo -V &> /dev/null
+    go version &> /dev/null
+    grcov -V &> /dev/null
+    genhtml --version &> /dev/null
+}
+
 # Generate coverage
 coverage() {
+    find Payload_Type/thanatos/agent -name "default*.profraw" -exec rm {} \;
+    rm -f coverage/agent.lcov
+
     rm -rf coverage/html
     mkdir -p coverage/html/{agent,mythic}
 
@@ -50,14 +60,20 @@ coverage() {
 
     echo "[*] Generating Agent code coverage"
     pushd $AGENT_CODE &> /dev/null
-    export RUSTFLAGS="-Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Cinstrument-coverage"
-    cargo test --workspace --all-features --exclude config --exclude genconfig
+    export RUSTFLAGS="-Ccodegen-units=1 -Copt-level=0 -Cinstrument-coverage"
+    cargo test --workspace \
+        --all-features \
+        --exclude config \
+        --exclude genconfig \
+        --exclude thanatos_cdylib \
+        --exclude thanatos_binary \
+        --target x86_64-unknown-linux-gnu
 
     popd &> /dev/null
 
     grcov Payload_Type/thanatos/agent/ \
         -s . \
-        --binary-path Payload_Type/thanatos/agent/target/debug/ \
+        --binary-path Payload_Type/thanatos/agent/target/x86_64-unknown-linux-gnu/debug/ \
         -t lcov \
         --branch \
         --ignore-not-existing \
@@ -69,6 +85,7 @@ coverage() {
 
     genhtml -o coverage/html/agent \
         -f \
+        --dark-mode \
         --show-details \
         --show-navigation \
         --highlight \
@@ -81,6 +98,7 @@ coverage() {
 
 set -e
 repo_base
+coverage_requirements
 pushd $REPO_BASE &> /dev/null
 coverage
 popd &> /dev/null

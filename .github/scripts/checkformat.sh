@@ -22,6 +22,11 @@ repo_base() {
     REPO_BASE="$(realpath ${_repo_base_dir})"
 }
 
+checkformat_requirements() {
+    gofmt --help &> /dev/null
+    cargo fmt --version &> /dev/null
+}
+
 # Run code format checking
 checkformat() {
     echo "[*] Running code format checks"
@@ -45,6 +50,7 @@ checkformat() {
 
 set -e
 repo_base
+checkformat_requirements
 pushd $REPO_BASE &> /dev/null
 checkformat
 popd &> /dev/null

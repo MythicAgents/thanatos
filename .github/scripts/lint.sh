@@ -22,6 +22,11 @@ repo_base() {
     REPO_BASE="$(realpath ${_repo_base_dir})"
 }
 
+lint_requirements() {
+    golangci-lint --version &> /dev/null
+    cargo clippy --version &> /dev/null
+}
+
 # Run lint checks
 lint() {
     echo "[*] Running lint checks"
