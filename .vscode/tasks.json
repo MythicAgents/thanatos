@@ -27,6 +27,15 @@
                 "isDefault": true,
                 "kind": "test"
             }
+        },
+        {
+            "label": "Thanatos: Sanitizer tests",
+            "type": "shell",
+            "command": "./.github/scripts/sanitizers.sh",
+            "group": {
+                "isDefault": false,
+                "kind": "test"
+            }
         }
     ]
 }

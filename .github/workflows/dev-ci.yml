@@ -11,7 +11,6 @@ on:
       - Payload_Type/thanatos/mythic/**
       - .github/**
 
-
 env:
   AGENT_CODE: Payload_Type/thanatos/agent
   MYTHIC_CODE: Payload_Type/thanatos/mythic
@@ -24,3 +23,7 @@ jobs:
   test-workflow:
     name: Test
     uses: ./.github/workflows/test.yml
+
+  sanitizer-workflow:
+    name: Sanitizers
+    uses: ./.github/workflows/sanitizers.yml

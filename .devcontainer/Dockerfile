@@ -82,7 +82,7 @@ RUN grep -qxF '. "$HOME/.cargo/env"' /home/${username}/.profile \
 RUN rm -f rustup.sh
 
 # Install nightly
-RUN $HOME/.cargo/bin/rustup install nightly
+RUN $HOME/.cargo/bin/rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
 
 # Install rustfmt, clippy and llvm tools
 RUN $HOME/.cargo/bin/rustup component add rustfmt clippy llvm-tools-preview

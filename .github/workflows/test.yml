@@ -185,6 +185,87 @@ jobs:
           name: Mythic Code Coverage
           path: mythic.gocov
 
+  sanitizers:
+    name: Sanitizer Tests
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - platform: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+        sanitizer: [address]
+        include:
+          - os:
+              platform: ubuntu-latest
+            sanitizer: [memory, leak]
+
+    runs-on: ${{ matrix.os.platform }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup cargo cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo
+          key: ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
+            ${{ runner.os }}-cargo
+
+      - name: Setup cargo target cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.AGENT_CODE }}/target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
+            ${{ runner.os }}-cargo-target
+
+      - name: Install protoc (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          mkdir -p /tmp/protoc
+          pushd /tmp/protoc
+          curl -L https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-linux-x86_64.zip -o protoc.zip
+          unzip protoc.zip
+          mv bin/protoc /usr/local/bin
+          popd
+          rm -rf /tmp/protoc
+
+      - name: Install protoc (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          Invoke-WebRequest -Uri https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-win64.zip -OutFile protoc.zip
+          Expand-Archive protoc.zip
+          Copy-Item -Path .\protoc\bin\protoc.exe -Destination $env:SYSTEMROOT\System32\protoc.exe
+          Remove-Item -Recurse .\protoc
+          Remove-Item .\protoc.zip
+
+      - name: Install Rust nightly
+        run: rustup component add rust-src --toolchain nightly-${TARGET}
+        env:
+          TARGET: ${{ matrix.os.target }}
+
+      - name: Run sanitizer tests for Linux
+        if: ${{ runner.os == 'Linux' }}
+        working-directory: ${{ env.AGENT_CODE }}
+        run: cargo +nightly test -Zbuild-std --color always -p ffiwrappers --all-features --target ${TARGET}
+        env:
+          RUSTFLAGS: -Zsanitizer=${{ matrix.sanitizer }}
+          TARGET: ${{ matrix.os.target }}
+
+      - name: Run sanitizer tests for Windows
+        if: ${{ runner.os == 'Windows' }}
+        working-directory: ${{ env.AGENT_CODE }}
+        run: cargo +nightly test --color always -p ffiwrappers --all-features --target $env:TARGET
+        env:
+          TARGET: ${{ matrix.os.target }}
+          RUSTFLAGS: -Zsanitizer=${{ matrix.sanitizer }}
+          CARGO_INCREMENTAL: 0
+
   coverage:
     name: Merge coverage artifacts
     needs: [agent, mythic]
