@@ -100,3 +100,26 @@ pub fn architecture() -> Option<Architecture> {
 pub fn process_name() -> Result<String, ThanatosError> {
     std::fs::read_to_string("/proc/self/comm").map_err(ThanatosError::IoError)
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn kernel_ok() {
+        super::kernel().expect("kernel() returned a None value");
+    }
+
+    #[test]
+    fn distro_ok() {
+        super::distro().expect("distro() returned a None value");
+    }
+
+    #[test]
+    fn username_ok() {
+        super::username().unwrap();
+    }
+
+    #[test]
+    fn process_name_ok() {
+        super::process_name().unwrap();
+    }
+}

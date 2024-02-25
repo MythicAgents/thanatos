@@ -19,7 +19,7 @@ pub fn domain() -> Result<String, ThanatosError> {
     let current_host =
         CString::new(current_host).map_err(|_| ThanatosError::FFIError(FfiError::InteriorNull))?;
 
-    let addrlist = AddrInfoList::new(
+    let addrlist = AddrInfoList::with_opts(
         Some(&current_host),
         None,
         Some(Hints {
@@ -30,7 +30,11 @@ pub fn domain() -> Result<String, ThanatosError> {
     )
     .map_err(ThanatosError::FFIError)?;
 
-    let canonname = addrlist.first().canonname().to_string();
+    let canonname = addrlist
+        .first()
+        .canonname()
+        .map_err(ThanatosError::FFIError)?
+        .to_string();
 
     let mut s = canonname.split('.');
     s.next()
@@ -75,7 +79,7 @@ mod tests {
         let current_host = ffiwrappers::linux::gethostname().unwrap();
         let current_host = CString::new(current_host).unwrap();
 
-        let addrlist = AddrInfoList::new(
+        let addrlist = AddrInfoList::with_opts(
             Some(&current_host),
             None,
             Some(Hints {
@@ -86,7 +90,7 @@ mod tests {
         )
         .unwrap();
 
-        let mut canonname = addrlist.first().canonname().to_string();
+        let mut canonname = addrlist.first().canonname().unwrap().to_string();
 
         if !canonname.ends_with('.') {
             canonname.push('.');

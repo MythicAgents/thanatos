@@ -17,3 +17,14 @@ impl ThanatosError {
         Self::OsError(e.code().0)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::ThanatosError;
+
+    #[test]
+    fn debug_coverage() {
+        let e = ThanatosError::OsError(0);
+        dbg!(e);
+    }
+}

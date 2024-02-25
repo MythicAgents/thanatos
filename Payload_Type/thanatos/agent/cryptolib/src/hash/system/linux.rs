@@ -1,3 +1,5 @@
+#![allow(clippy::new_without_default)]
+
 #[repr(transparent)]
 pub struct Sha256(openssl::sha::Sha256);
 
@@ -12,12 +14,6 @@ impl Sha256 {
 
     pub fn finalize(self) -> [u8; 32] {
         self.0.finish()
-    }
-}
-
-impl Default for Sha256 {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

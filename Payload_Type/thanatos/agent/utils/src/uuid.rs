@@ -178,4 +178,36 @@ mod tests {
         let result_uuid = parsed_uuid.to_string();
         assert_eq!(result_uuid, expected_uuid);
     }
+
+    #[test]
+    fn debug_coverage() {
+        let uuid_val: [u8; 16] = [
+            137, 88, 246, 26, 79, 248, 73, 16, 154, 144, 40, 181, 36, 20, 209, 76,
+        ];
+
+        let uuid = Uuid::from(uuid_val);
+        dbg!(uuid);
+    }
+
+    #[test]
+    fn try_from_valid() {
+        let uuid_val: [u8; 16] = [0u8; 16];
+        <Uuid as TryFrom<&[u8]>>::try_from(uuid_val.as_slice()).unwrap();
+    }
+
+    #[test]
+    fn try_from_invalid() {
+        let uuid_val: [u8; 3] = [0u8; 3];
+        assert!(<Uuid as TryFrom<&[u8]>>::try_from(uuid_val.as_slice()).is_err());
+    }
+
+    #[test]
+    fn uuid_as_ref() {
+        let uuid_val: [u8; 16] = [
+            137, 88, 246, 26, 79, 248, 73, 16, 154, 144, 40, 181, 36, 20, 209, 76,
+        ];
+
+        let uuid = Uuid::from(uuid_val);
+        assert_eq!(uuid_val.as_ref(), uuid.as_ref());
+    }
 }

@@ -4,8 +4,11 @@ use crate::errors::FfiError;
 
 use super::socket::SockAddr;
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct IffFlags(i32);
+
 bitflags::bitflags! {
-    pub struct IffFlags: i32 {
+    impl IffFlags: i32 {
         const UP = libc::IFF_UP;
         const BROADCAST = libc::IFF_BROADCAST;
         const DEBUG = libc::IFF_DEBUG;
@@ -55,9 +58,16 @@ impl IfAddrsList {
         })
     }
 
-    pub const fn first(&self) -> IfAddr {
-        IfAddr {
+    pub const fn first(&self) -> IfAddrEntry {
+        IfAddrEntry {
             ifaddr: self.ifaddrs,
+            _marker: PhantomData,
+        }
+    }
+
+    pub const fn iter(&self) -> IfAddrsListIterator {
+        IfAddrsListIterator {
+            ifaddr: self.ifaddrs.as_ptr(),
             _marker: PhantomData,
         }
     }
@@ -75,12 +85,12 @@ pub enum IfuAddr<'a> {
 }
 
 #[repr(transparent)]
-pub struct IfAddr<'a> {
+pub struct IfAddrEntry<'a> {
     ifaddr: NonNull<libc::ifaddrs>,
     _marker: PhantomData<&'a libc::ifaddrs>,
 }
 
-impl<'a> IfAddr<'a> {
+impl<'a> IfAddrEntry<'a> {
     pub fn name(&self) -> &str {
         unsafe {
             CStr::from_ptr(self.ifaddr.as_ref().ifa_name)
@@ -116,20 +126,37 @@ impl<'a> IfAddr<'a> {
     }
 }
 
-impl<'a> From<NonNull<libc::ifaddrs>> for IfAddr<'a> {
-    fn from(value: NonNull<libc::ifaddrs>) -> Self {
-        IfAddr {
-            ifaddr: value,
+#[repr(transparent)]
+pub struct IfAddrsListIterator<'a> {
+    ifaddr: *mut libc::ifaddrs,
+    _marker: PhantomData<&'a libc::ifaddrs>,
+}
+
+impl<'a> Iterator for IfAddrsListIterator<'a> {
+    type Item = IfAddrEntry<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let ifaddr = NonNull::new(self.ifaddr)?;
+        self.ifaddr = unsafe { ifaddr.as_ref().ifa_next };
+        Some(IfAddrEntry {
+            ifaddr,
             _marker: PhantomData,
-        }
+        })
     }
 }
 
-impl<'a> Iterator for IfAddr<'a> {
-    type Item = IfAddr<'a>;
+#[cfg(test)]
+mod tests {
+    use super::IfAddrsList;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.ifaddr = NonNull::new(unsafe { self.ifaddr.as_ref().ifa_next })?;
-        Some(self.ifaddr.into())
+    #[test]
+    fn iter_test() {
+        let ifaddrs = IfAddrsList::new().unwrap();
+
+        let first_ifaddr = ifaddrs.first();
+        let first_iter_ifaddr = ifaddrs.iter().next().unwrap();
+
+        assert_eq!(first_ifaddr.ifa_flags(), first_iter_ifaddr.ifa_flags());
+        assert_eq!(first_ifaddr.name(), first_iter_ifaddr.name());
     }
 }

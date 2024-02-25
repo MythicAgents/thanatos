@@ -76,33 +76,26 @@ impl UtsName {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn sysname() {
-        let u = super::UtsName::new().unwrap();
-        dbg!(u.sysname());
-    }
+    use std::process::Command;
+
+    use super::UtsName;
 
     #[test]
-    fn nodename() {
-        let u = super::UtsName::new().unwrap();
-        dbg!(u.nodename());
-    }
+    fn shell_test() {
+        let utsname = UtsName::new().unwrap();
 
-    #[test]
-    fn release() {
-        let u = super::UtsName::new().unwrap();
-        dbg!(u.release());
-    }
+        let c = Command::new("uname")
+            .arg("-a")
+            .output()
+            .expect("Failed to run 'uname -a' shell command");
 
-    #[test]
-    fn version() {
-        let u = super::UtsName::new().unwrap();
-        dbg!(u.version());
-    }
+        let uname_output = std::str::from_utf8(&c.stdout)
+            .expect("Failed to parse 'uname -a' shell command output");
 
-    #[test]
-    fn machine() {
-        let u = super::UtsName::new().unwrap();
-        dbg!(u.machine());
+        assert!(uname_output.contains(utsname.sysname()));
+        assert!(uname_output.contains(utsname.nodename()));
+        assert!(uname_output.contains(utsname.release()));
+        assert!(uname_output.contains(utsname.version()));
+        assert!(uname_output.contains(utsname.machine()));
     }
 }

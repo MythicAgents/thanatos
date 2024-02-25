@@ -1,3 +1,4 @@
+#![allow(clippy::new_without_default)]
 use sha2::Digest;
 
 #[repr(transparent)]
@@ -14,12 +15,6 @@ impl Sha256 {
 
     pub fn finalize(self) -> [u8; 32] {
         self.0.finalize().into()
-    }
-}
-
-impl Default for Sha256 {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

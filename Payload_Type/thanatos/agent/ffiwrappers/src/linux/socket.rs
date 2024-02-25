@@ -1,7 +1,7 @@
 use std::{marker::PhantomData, ptr::NonNull};
 
 #[repr(i32)]
-#[derive(Default)]
+#[derive(Default, Debug, PartialEq, Eq)]
 pub enum Family {
     AfInet = libc::AF_INET,
     AfInet6 = libc::AF_INET6,
@@ -31,7 +31,7 @@ impl Family {
 }
 
 #[repr(i32)]
-#[derive(Default)]
+#[derive(Default, Debug, PartialEq, Eq)]
 pub enum SockType {
     #[default]
     Any = 0,
@@ -164,5 +164,105 @@ impl<'a> SockAddrIn<'a, AfInet6> {
 
     pub fn sin6_scope_id(&self) -> u32 {
         unsafe { self.addr.as_ref().sin6_scope_id }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::linux::ifaddrs::{IfAddrsList, IfuAddr};
+
+    use super::{Family, SockAddr, SockType};
+
+    #[test]
+    fn family() {
+        let mappings = [
+            (libc::AF_INET, Family::AfInet),
+            (libc::AF_INET6, Family::AfInet6),
+            (libc::AF_UNSPEC, Family::Unspec),
+            (1, Family::Other(1)),
+        ];
+
+        for (afval, fam) in mappings {
+            assert_eq!(fam, Family::from_value(afval));
+            assert_eq!(afval, fam.as_i32());
+        }
+    }
+
+    #[test]
+    fn socktype() {
+        let mappings = [
+            (libc::SOCK_STREAM, SockType::SockStream),
+            (libc::SOCK_DGRAM, SockType::SockDgram),
+            (libc::SOCK_SEQPACKET, SockType::SockSeqPacket),
+            (libc::SOCK_RAW, SockType::SockRaw),
+            (libc::SOCK_RDM, SockType::SockRdm),
+            (libc::SOCK_PACKET, SockType::SockPacket),
+            (0, SockType::Any),
+        ];
+
+        for (sockval, socktype) in mappings {
+            assert_eq!(socktype, SockType::from_value(sockval));
+        }
+    }
+
+    // This test doesn't really do anything on its own. Its main purpose is for using
+    // sanitizers to check for out of bounds memory accesses, uninitialized reads and
+    // memory leaks.
+    #[test]
+    fn accessor_checks() {
+        let interfaces = IfAddrsList::new().unwrap();
+
+        for iface in interfaces.iter() {
+            if let Some(ifaaddr) = iface.ifa_addr() {
+                match ifaaddr {
+                    SockAddr::AfInet(inet) => {
+                        let _ = inet.sin_addr().s_addr;
+                        let _ = inet.sin_family();
+                        let _ = inet.sin_port();
+                    }
+                    SockAddr::AfInet6(inet6) => {
+                        let _ = inet6.sin6_addr().s6_addr;
+                        let _ = inet6.sin6_family();
+                        let _ = inet6.sin6_flowinfo();
+                        let _ = inet6.sin6_port();
+                        let _ = inet6.sin6_scope_id();
+                    }
+                }
+            }
+
+            if let Some(ifaifu) = iface.ifa_ifu() {
+                match ifaifu {
+                    IfuAddr::Broadcast(broadcast) => match broadcast {
+                        SockAddr::AfInet(inet) => {
+                            let _ = inet.sin_addr().s_addr;
+                            let _ = inet.sin_family();
+                            let _ = inet.sin_port();
+                        }
+                        SockAddr::AfInet6(inet6) => {
+                            let _ = inet6.sin6_addr().s6_addr;
+                            let _ = inet6.sin6_family();
+                            let _ = inet6.sin6_flowinfo();
+                            let _ = inet6.sin6_port();
+                            let _ = inet6.sin6_scope_id();
+                        }
+                    },
+
+                    IfuAddr::PointToPointDst(dest) => match dest {
+                        SockAddr::AfInet(inet) => {
+                            let _ = inet.sin_addr().s_addr;
+                            let _ = inet.sin_family();
+                            let _ = inet.sin_port();
+                        }
+                        SockAddr::AfInet6(inet6) => {
+                            let _ = inet6.sin6_addr().s6_addr;
+                            let _ = inet6.sin6_family();
+                            let _ = inet6.sin6_flowinfo();
+                            let _ = inet6.sin6_port();
+                            let _ = inet6.sin6_scope_id();
+                        }
+                    },
+                }
+            }
+        }
     }
 }

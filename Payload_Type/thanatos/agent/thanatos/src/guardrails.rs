@@ -13,58 +13,40 @@ use cryptolib::hash::system::Sha256;
 use cryptolib::hash::internal::Sha256;
 
 use config::ConfigVars;
+use errors::ThanatosError;
 
 #[inline(always)]
 pub fn run_guardrails(agent_config: &ConfigVars) -> bool {
     #[cfg(feature = "usernamecheck")]
-    {
-        let username_valid = agent_config
-            .usernames()
-            .ok()
-            .and_then(|usernames_list| {
-                let current_user = system::username().ok()?;
-                Some(check_hashlist_with(&usernames_list, &current_user))
-            })
-            .unwrap_or(false);
-
-        if !username_valid {
-            return false;
-        }
+    if !run_check(agent_config.usernames(), system::username) {
+        return false;
     }
 
     #[cfg(feature = "hostnamecheck")]
-    {
-        let hostname_valid = agent_config
-            .hostnames()
-            .ok()
-            .and_then(|hostname_list| {
-                let current_hostname = system::hostname().ok()?;
-                Some(check_hashlist_with(&hostname_list, &current_hostname))
-            })
-            .unwrap_or(false);
-
-        if !hostname_valid {
-            return false;
-        }
+    if !run_check(agent_config.hostnames(), system::hostname) {
+        return false;
     }
 
     #[cfg(feature = "domaincheck")]
-    {
-        let domain_valid = agent_config
-            .domains()
-            .ok()
-            .and_then(|domains_list| {
-                let current_domain = system::domain().ok()?;
-                Some(check_hashlist_with(&domains_list, &current_domain))
-            })
-            .unwrap_or(false);
-
-        if !domain_valid {
-            return false;
-        }
+    if !run_check(agent_config.domains(), system::domain) {
+        return false;
     }
 
     true
+}
+
+fn run_check<F>(list: Result<Vec<[u8; 32]>, ThanatosError>, f: F) -> bool
+where
+    F: Fn() -> Result<String, ThanatosError>,
+{
+    let list = if let Ok(ref l) = list {
+        l.as_slice()
+    } else {
+        return false;
+    };
+
+    let val = if let Ok(v) = f() { v } else { return false };
+    check_hashlist_with(list, &val)
 }
 
 fn check_hashlist_with(hlist: &[[u8; 32]], value: &str) -> bool {
@@ -78,7 +60,10 @@ fn check_hashlist_with(hlist: &[[u8; 32]], value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::check_hashlist_with;
+    use super::{check_hashlist_with, run_check};
+    use config::ConfigVars;
+    use cryptolib::hash::internal::Sha256;
+    use errors::ThanatosError;
 
     #[test]
     fn matched_check() {
@@ -125,5 +110,38 @@ mod tests {
     #[test]
     fn empty_domain_list() {
         assert!(!check_hashlist_with(&Vec::new(), "foo"));
+    }
+
+    #[test]
+    fn system_hostname_test() {
+        let host = super::system::hostname().expect("Failed to get hostname");
+        let mut h = Sha256::new();
+        h.update(host.as_bytes());
+        let hash_val = h.finalize();
+
+        let hash_list: Result<Vec<[u8; 32]>, ThanatosError> = Ok(vec![hash_val]);
+        assert!(run_check(hash_list, super::system::hostname));
+    }
+
+    #[test]
+    fn system_domain_test() {
+        let domain = super::system::domain().expect("Failed to get domain");
+        let mut h = Sha256::new();
+        h.update(domain.as_bytes());
+        let hash_val = h.finalize();
+
+        let hash_list: Result<Vec<[u8; 32]>, ThanatosError> = Ok(vec![hash_val]);
+        assert!(run_check(hash_list, super::system::domain));
+    }
+
+    #[test]
+    fn system_username_test() {
+        let username = super::system::username().expect("Failed to get username");
+        let mut h = Sha256::new();
+        h.update(username.as_bytes());
+        let hash_val = h.finalize();
+
+        let hash_list: Result<Vec<[u8; 32]>, ThanatosError> = Ok(vec![hash_val]);
+        assert!(run_check(hash_list, super::system::username));
     }
 }

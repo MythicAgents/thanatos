@@ -21,3 +21,21 @@ pub fn architecture() -> Architecture {
 
     arch
 }
+
+#[cfg(test)]
+mod tests {
+    use std::ffi::c_void;
+
+    use crate::proto::checkin::Architecture;
+
+    #[test]
+    fn detect_architecture() {
+        let pointer_arch = match std::mem::size_of::<*const c_void>() {
+            8 => Architecture::X8664,
+            4 => Architecture::X86,
+            _ => unreachable!(),
+        };
+
+        assert_eq!(pointer_arch, super::architecture());
+    }
+}

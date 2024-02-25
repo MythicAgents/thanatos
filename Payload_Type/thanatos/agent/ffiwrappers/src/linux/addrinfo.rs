@@ -1,4 +1,8 @@
-use std::{ffi::CStr, marker::PhantomData, ptr::NonNull};
+use std::{
+    ffi::{CStr, CString},
+    marker::PhantomData,
+    ptr::NonNull,
+};
 
 use crate::errors::{EaiError, FfiError};
 use bitflags::bitflags;
@@ -34,7 +38,38 @@ pub struct AddrInfoList {
 }
 
 impl AddrInfoList {
-    pub fn new(
+    pub fn new() -> Result<AddrInfoList, FfiError> {
+        let addr = CString::new("0.0.0.0").map_err(|_| FfiError::InteriorNull)?;
+        Self::with_opts(
+            Some(&addr),
+            None,
+            Some(Hints {
+                socktype: SockType::Any,
+                flags: AiFlags::ALL | AiFlags::V4MAPPED,
+                family: Family::Unspec,
+            }),
+        )
+    }
+
+    pub fn with_nodename(node: &str) -> Result<AddrInfoList, FfiError> {
+        let nodename = CString::new(node).map_err(|_| FfiError::InteriorNull)?;
+        Self::with_opts(
+            Some(&nodename),
+            None,
+            Some(Hints {
+                socktype: SockType::Any,
+                flags: AiFlags::ALL | AiFlags::V4MAPPED,
+                family: Family::Unspec,
+            }),
+        )
+    }
+
+    pub fn with_hints(hints: Hints) -> Result<AddrInfoList, FfiError> {
+        let addr = CString::new("0.0.0.0").map_err(|_| FfiError::InteriorNull)?;
+        Self::with_opts(Some(&addr), None, Some(hints))
+    }
+
+    pub fn with_opts(
         node: Option<&CStr>,
         service: Option<&CStr>,
         hints: Option<Hints>,
@@ -67,9 +102,16 @@ impl AddrInfoList {
         })
     }
 
-    pub const fn first(&self) -> AddrInfo {
-        AddrInfo {
+    pub const fn first(&self) -> AddrInfoEntry {
+        AddrInfoEntry {
             addrinfo: self.addrinfo,
+            _marker: PhantomData,
+        }
+    }
+
+    pub const fn iter(&self) -> AddrInfoListIterator {
+        AddrInfoListIterator {
+            addrinfo: self.addrinfo.as_ptr(),
             _marker: PhantomData,
         }
     }
@@ -82,12 +124,32 @@ impl Drop for AddrInfoList {
 }
 
 #[repr(transparent)]
-pub struct AddrInfo<'a> {
+pub struct AddrInfoListIterator<'a> {
+    addrinfo: *mut libc::addrinfo,
+    _marker: PhantomData<&'a libc::addrinfo>,
+}
+
+impl<'a> Iterator for AddrInfoListIterator<'a> {
+    type Item = AddrInfoEntry<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let addrinfo = NonNull::new(self.addrinfo)?;
+        self.addrinfo = unsafe { addrinfo.as_ref().ai_next };
+
+        Some(AddrInfoEntry {
+            addrinfo,
+            _marker: PhantomData,
+        })
+    }
+}
+
+#[repr(transparent)]
+pub struct AddrInfoEntry<'a> {
     addrinfo: NonNull<libc::addrinfo>,
     _marker: PhantomData<&'a libc::addrinfo>,
 }
 
-impl<'a> AddrInfo<'a> {
+impl<'a> AddrInfoEntry<'a> {
     pub const fn ai_flags(&self) -> i32 {
         unsafe { self.addrinfo.as_ref().ai_flags }
     }
@@ -104,29 +166,42 @@ impl<'a> AddrInfo<'a> {
         unsafe { self.addrinfo.as_ref().ai_protocol }
     }
 
-    pub fn canonname(&self) -> &str {
-        unsafe {
-            CStr::from_ptr(self.addrinfo.as_ref().ai_canonname)
-                .to_str()
-                .unwrap_unchecked()
+    pub fn canonname(&self) -> Result<&str, FfiError> {
+        let name = unsafe { self.addrinfo.as_ref().ai_canonname };
+        if name.is_null() {
+            Err(FfiError::CanonNameNotFound)
+        } else {
+            unsafe { CStr::from_ptr(name).to_str() }.map_err(|_| FfiError::CanonNameNotFound)
         }
     }
 }
 
-impl<'a> From<NonNull<libc::addrinfo>> for AddrInfo<'a> {
-    fn from(value: NonNull<libc::addrinfo>) -> Self {
-        AddrInfo {
-            addrinfo: value,
-            _marker: PhantomData,
-        }
-    }
-}
+#[cfg(test)]
+mod tests {
+    use super::AddrInfoList;
 
-impl<'a> Iterator for AddrInfo<'a> {
-    type Item = AddrInfo<'a>;
+    #[test]
+    fn iter_test() {
+        let interfaces = AddrInfoList::new().unwrap();
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.addrinfo = NonNull::new(unsafe { self.addrinfo.as_ref().ai_next })?;
-        Some(self.addrinfo.into())
+        let first_interface = interfaces.first();
+        let first_iter_interface = interfaces.iter().next().unwrap();
+
+        assert_eq!(first_interface.ai_flags(), first_iter_interface.ai_flags());
+
+        assert_eq!(
+            first_interface.ai_family(),
+            first_iter_interface.ai_family()
+        );
+
+        assert_eq!(
+            first_interface.ai_socktype(),
+            first_iter_interface.ai_socktype()
+        );
+
+        assert_eq!(
+            first_interface.ai_protocol(),
+            first_iter_interface.ai_protocol()
+        );
     }
 }
