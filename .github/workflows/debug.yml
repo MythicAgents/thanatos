@@ -10,5 +10,5 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Print env
-        run: "ls env:"
+      - name: Get VS Install path
+        run: Write-Host (Get-VSSetupInstance | Select-VSSetupInstance -Require Microsoft.VisualStudio.Component.VC.ASAN).InstallationPath
