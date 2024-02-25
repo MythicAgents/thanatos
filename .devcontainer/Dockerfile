@@ -39,6 +39,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     pkg-config \
     llvm \
     unzip \
+    iproute2 \
     libssl-dev
 
 # Install Golang
