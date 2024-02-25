@@ -13,5 +13,6 @@ jobs:
       - name: Enter VS shell print env
         run: |
           $vspath = (Get-VSSetupInstance | Select-VSSetupInstance -Require Microsoft.VisualStudio.Component.VC.ASAN).InstallationPath
-          Import-Module $vspath/Common7/Tools/Microsoft.VisualStudio.DevShell.dll; Enter-VsDevShell $vspath -SkipAutomaticLocation
+          Import-Module $vspath/Common7/Tools/Microsoft.VisualStudio.DevShell.dll
+          Enter-VsDevShell -VsInstallPath $vspath -SkipAutomaticLocation
           ls env:
