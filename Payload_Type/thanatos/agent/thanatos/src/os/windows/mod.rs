@@ -1,11 +1,22 @@
 use errors::ThanatosError;
-use ffiwrappers::windows::processthreadsapi::token::CurrentToken;
-pub use ffiwrappers::windows::{domain, hostname, sysinfoapi, username};
+use ffiwrappers::windows::{processthreadsapi::token::CurrentToken, sysinfoapi};
 
 mod platform;
 pub use platform::{build_number, product};
 
 use crate::proto::checkin::Architecture;
+
+pub fn username() -> Result<String, ThanatosError> {
+    ffiwrappers::windows::username().map_err(ThanatosError::FFIError)
+}
+
+pub fn hostname() -> Result<String, ThanatosError> {
+    ffiwrappers::windows::hostname().map_err(ThanatosError::FFIError)
+}
+
+pub fn domain() -> Result<String, ThanatosError> {
+    ffiwrappers::windows::domain().map_err(ThanatosError::FFIError)
+}
 
 pub fn process_name() -> Result<String, ThanatosError> {
     ffiwrappers::windows::process_name().map_err(ThanatosError::FFIError)
