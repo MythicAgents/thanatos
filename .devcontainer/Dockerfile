@@ -101,7 +101,7 @@ WORKDIR /tmp
 RUN rm -rf /tmp/protoc
 
 # Build lcov/genhtml
-RUN yes yes | cpan install Date::Parse Capture::Tiny GD
+RUN yes yes | cpan -T install Date::Parse Capture::Tiny GD
 RUN git clone https://github.com/linux-test-project/lcov.git /tmp/lcov
 WORKDIR /tmp/lcov
 RUN git reset --hard ${lcovcommithash}

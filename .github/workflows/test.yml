@@ -300,7 +300,7 @@ jobs:
 
       - name: Build lcov
         run: |
-          yes yes | sudo cpan install Date::Parse Capture::Tiny GD
+          yes yes | sudo cpan -T install Date::Parse Capture::Tiny GD
           git clone https://github.com/linux-test-project/lcov.git /tmp/lcov
           pushd /tmp/lcov
           git reset --hard 49608c474b8fe7369ad96dff5935b4746a406c09
