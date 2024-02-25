@@ -1,0 +1,14 @@
+name: Debug Workflow
+
+on:
+  push:
+    branches:
+      - rewrite
+
+jobs:
+  debug:
+    runs-on: windows-latest
+
+    steps:
+      - name: Print env
+        run: "ls env:"
