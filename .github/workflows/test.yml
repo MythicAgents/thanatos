@@ -266,7 +266,9 @@ jobs:
       - name: Run sanitizer tests for Windows
         if: ${{ runner.os == 'Windows' }}
         working-directory: ${{ env.AGENT_CODE }}
-        run: cargo +nightly test --color always -p ffiwrappers --all-features --target $env:TARGET
+        run: |
+          $env:PATH="$env:PATH;$env:VCToolsInstallDir/bin/Hostx64/x64"
+          cargo +nightly test --color always -p ffiwrappers --all-features --target $env:TARGET
         env:
           TARGET: ${{ matrix.os.target }}
           RUSTFLAGS: -Zsanitizer=${{ matrix.sanitizer }}
