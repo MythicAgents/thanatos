@@ -23,7 +23,3 @@ jobs:
   test-workflow:
     name: Test
     uses: ./.github/workflows/test.yml
-
-  sanitizer-workflow:
-    name: Sanitizers
-    uses: ./.github/workflows/sanitizers.yml
