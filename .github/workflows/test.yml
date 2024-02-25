@@ -14,9 +14,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu, windows]
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}-latest
 
     steps:
       - name: Checkout code
@@ -186,22 +186,28 @@ jobs:
           path: mythic.gocov
 
   sanitizers:
-    name: Sanitizer Tests
+    name: Sanitizer Test
     strategy:
       fail-fast: false
       matrix:
         os:
-          - platform: ubuntu-latest
+          - platform: ubuntu
             target: x86_64-unknown-linux-gnu
-          - platform: windows-latest
+          - platform: windows
             target: x86_64-pc-windows-msvc
         sanitizer: [address]
+
         include:
           - os:
-              platform: ubuntu-latest
-            sanitizer: [memory, leak]
+              platform: ubuntu
+              target: x86_64-unknown-linux-gnu
+            sanitizer: memory
+          - os:
+              platform: ubuntu
+              target: x86_64-unknown-linux-gnu
+            sanitizer: leak
 
-    runs-on: ${{ matrix.os.platform }}
+    runs-on: ${{ matrix.os.platform }}-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -244,10 +250,10 @@ jobs:
           Remove-Item -Recurse .\protoc
           Remove-Item .\protoc.zip
 
-      - name: Install Rust nightly
-        run: rustup component add rust-src --toolchain nightly-${TARGET}
-        env:
-          TARGET: ${{ matrix.os.target }}
+      - name: Install Rust nightly toolchain
+        run: |
+          rustup toolchain install nightly
+          rustup component add rust-src --toolchain nightly
 
       - name: Run sanitizer tests for Linux
         if: ${{ runner.os == 'Linux' }}
