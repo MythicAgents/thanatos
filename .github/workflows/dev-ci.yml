@@ -9,7 +9,8 @@ on:
     paths:
       - Payload_Type/thanatos/agent/**
       - Payload_Type/thanatos/mythic/**
-      - .github/**
+      - .github/workflows/**
+      - .github/actions/**
 
 env:
   AGENT_CODE: Payload_Type/thanatos/agent
