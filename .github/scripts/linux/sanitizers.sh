@@ -1,7 +1,6 @@
 #!/bin/bash
 
 REPO_BASE=""
-MYTHIC_CODE="Payload_Type/thanatos/mythic"
 AGENT_CODE="Payload_Type/thanatos/agent"
 
 # Populates the 'REPO_BASE' to the base of the repo
@@ -10,7 +9,7 @@ repo_base() {
     local _script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
     # Traverse up to the base of the git repository
-    local _repo_base_dir=${_script_dir}/../..
+    local _repo_base_dir=${_script_dir}/../../..
 
     # Ensure that the repo base contains the '.git' directory
     if [ ! -d "${_repo_base_dir}/.git" ]; then
@@ -22,26 +21,23 @@ repo_base() {
     REPO_BASE="$(realpath ${_repo_base_dir})"
 }
 
-checkformat_requirements() {
-    gofmt --help &> /dev/null
-    cargo fmt --version &> /dev/null
+sanitizers_requirements() {
+    cargo +nightly -V &> /dev/null
 }
 
-# Run code format checking
-checkformat() {
-    echo "[*] Running code format checks"
-
-    echo "[*] Mythic code"
-    pushd $MYTHIC_CODE &> /dev/null
-    local _cmd="gofmt -l -d . | diff -u /dev/null -"
+sanitizers() {
+    pushd $AGENT_CODE &> /dev/null
+    local _cmd="RUSTFLAGS='-Zsanitizer=address' cargo +nightly test -Zbuild-std --color always -p ffiwrappers --all-features --target x86_64-unknown-linux-gnu"
     echo "current directory: $PWD"
     echo "command: $_cmd"
     eval $_cmd
-    popd &> /dev/null
 
-    echo "[*] Agent code"
-    pushd $AGENT_CODE &> /dev/null
-    local _cmd="cargo build -p genconfig && cargo fmt --all -- --color always --check"
+    local _cmd="RUSTFLAGS='-Zsanitizer=memory' cargo +nightly test -Zbuild-std --color always -p ffiwrappers --all-features --target x86_64-unknown-linux-gnu"
+    echo "current directory: $PWD"
+    echo "command: $_cmd"
+    eval $_cmd
+
+    local _cmd="RUSTFLAGS='-Zsanitizer=leak' cargo +nightly test -Zbuild-std --color always -p ffiwrappers --all-features --target x86_64-unknown-linux-gnu"
     echo "current directory: $PWD"
     echo "command: $_cmd"
     eval $_cmd
@@ -50,7 +46,7 @@ checkformat() {
 
 set -e
 repo_base
-checkformat_requirements
+sanitizers_requirements
 pushd $REPO_BASE &> /dev/null
-checkformat
+sanitizers
 popd &> /dev/null

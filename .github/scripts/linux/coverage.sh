@@ -10,7 +10,7 @@ repo_base() {
     local _script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
     # Traverse up to the base of the git repository
-    local _repo_base_dir=${_script_dir}/../..
+    local _repo_base_dir=${_script_dir}/../../..
 
     # Ensure that the repo base contains the '.git' directory
     if [ ! -d "${_repo_base_dir}/.git" ]; then

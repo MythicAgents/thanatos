@@ -10,7 +10,7 @@ repo_base() {
     local _script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
     # Traverse up to the base of the git repository
-    local _repo_base_dir=${_script_dir}/../..
+    local _repo_base_dir=${_script_dir}/../../..
 
     # Ensure that the repo base contains the '.git' directory
     if [ ! -d "${_repo_base_dir}/.git" ]; then
@@ -22,18 +22,17 @@ repo_base() {
     REPO_BASE="$(realpath ${_repo_base_dir})"
 }
 
-lint_requirements() {
-    golangci-lint --version &> /dev/null
-    cargo clippy --version &> /dev/null
-}
-
-# Run lint checks
-lint() {
-    echo "[*] Running lint checks"
+# Run tests
+test() {
+    echo "[*] Running tests"
 
     echo "[*] Mythic code"
     pushd $MYTHIC_CODE &> /dev/null
-    local _cmd="golangci-lint run"
+    local _cmd="go test ./commands/..."
+    echo "current directory: $PWD"
+    echo "command: $_cmd"
+    eval $_cmd
+    local _cmd="go test -run \"^TestPayloadMockBuild/\" ./builder"
     echo "current directory: $PWD"
     echo "command: $_cmd"
     eval $_cmd
@@ -41,7 +40,7 @@ lint() {
 
     echo "[*] Agent code"
     pushd $AGENT_CODE &> /dev/null
-    local _cmd="cargo build -p genconfig && cargo clippy --workspace --color always --all-features --all-targets -- -D warnings"
+    local _cmd="cargo build -p genconfig && cargo test --color always --workspace --exclude genconfig --all-features"
     echo "current directory: $PWD"
     echo "command: $_cmd"
     eval $_cmd
@@ -51,5 +50,5 @@ lint() {
 set -e
 repo_base
 pushd $REPO_BASE &> /dev/null
-lint
+test
 popd &> /dev/null

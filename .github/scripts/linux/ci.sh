@@ -5,12 +5,12 @@ MYTHIC_CODE="Payload_Type/thanatos/mythic"
 AGENT_CODE="Payload_Type/thanatos/agent"
 
 # Populates the 'REPO_PATH' to the base of the repo
-populate_thanatos_path() {
+repo_base() {
     # Get the path to the directory containing this script
     local _script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
     # Traverse up to the base of the git repository
-    local _repo_base=${_script_dir}/../..
+    local _repo_base=${_script_dir}/../../..
 
     # Ensure that the repo base contains the '.git' directory
     if [ ! -d "${_repo_base}/.git" ]; then
@@ -26,16 +26,16 @@ populate_thanatos_path() {
 set -e
 populate_thanatos_path
 pushd $REPO_PATH &> /dev/null
-./.github/scripts/checkformat.sh
+./.github/scripts/linux/checkformat.sh
 echo ""
 
-./.github/scripts/lint.sh
+./.github/scripts/linux/lint.sh
 echo ""
 
-./.github/scripts/test.sh
+./.github/scripts/linux/test.sh
 echo ""
 
-./.github/scripts/sanitizers.sh
+./.github/scripts/linux/sanitizers.sh
 echo ""
 
 popd &> /dev/null

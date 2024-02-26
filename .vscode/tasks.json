@@ -4,26 +4,35 @@
         {
             "label": "Thanatos: Check formatting",
             "type": "shell",
-            "command": "./.github/scripts/checkformat.sh",
+            "command": "./.github/scripts/linux/checkformat.sh",
+            "windows": {
+                "command": "./.github/scripts/windows/checkformat.ps1"
+            },
             "group": "test",
         },
         {
             "label": "Thanatos: Generate code coverage data",
             "type": "shell",
-            "command": "./.github/scripts/coverage.sh",
+            "command": "./.github/scripts/linux/coverage.sh",
             "group": "none",
             "problemMatcher": [],
         },
         {
             "label": "Thanatos: Lint",
             "type": "shell",
-            "command": "./.github/scripts/lint.sh",
+            "command": "./.github/scripts/linux/lint.sh",
+            "windows": {
+                "command": "./.github/scripts/windows/lint.ps1"
+            },
             "group": "test",
         },
         {
             "label": "Thanatos: Tests",
             "type": "shell",
-            "command": "./.github/scripts/test.sh",
+            "command": "./.github/scripts/linux/test.sh",
+            "windows": {
+                "command": "./.github/scripts/windows/test.ps1"
+            },
             "group": {
                 "isDefault": true,
                 "kind": "test"
@@ -32,7 +41,10 @@
         {
             "label": "Thanatos: Sanitizer tests",
             "type": "shell",
-            "command": "./.github/scripts/sanitizers.sh",
+            "command": "./.github/scripts/linux/sanitizers.sh",
+            "windows": {
+                "command": "./.github/scripts/windows/sanitizers.ps1"
+            },
             "group": {
                 "isDefault": false,
                 "kind": "test"
@@ -41,7 +53,10 @@
         {
             "label": "Thanatos: CI scripts",
             "type": "shell",
-            "command": "./.github/scripts/ci.sh",
+            "command": "./.github/scripts/linux/ci.sh",
+            "windows": {
+                "command": "./.github/scripts/windows/ci.ps1"
+            },
             "group": {
                 "isDefault": false,
                 "kind": "test"

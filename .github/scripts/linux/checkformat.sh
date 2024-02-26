@@ -10,7 +10,7 @@ repo_base() {
     local _script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
     # Traverse up to the base of the git repository
-    local _repo_base_dir=${_script_dir}/../..
+    local _repo_base_dir=${_script_dir}/../../..
 
     # Ensure that the repo base contains the '.git' directory
     if [ ! -d "${_repo_base_dir}/.git" ]; then
@@ -22,17 +22,18 @@ repo_base() {
     REPO_BASE="$(realpath ${_repo_base_dir})"
 }
 
-# Run tests
-test() {
-    echo "[*] Running tests"
+checkformat_requirements() {
+    gofmt --help &> /dev/null
+    cargo fmt --version &> /dev/null
+}
+
+# Run code format checking
+checkformat() {
+    echo "[*] Running code format checks"
 
     echo "[*] Mythic code"
     pushd $MYTHIC_CODE &> /dev/null
-    local _cmd="go test ./commands/..."
-    echo "current directory: $PWD"
-    echo "command: $_cmd"
-    eval $_cmd
-    local _cmd="go test -run \"^TestPayloadMockBuild/\" ./builder"
+    local _cmd="gofmt -l -d . | diff -u /dev/null -"
     echo "current directory: $PWD"
     echo "command: $_cmd"
     eval $_cmd
@@ -40,7 +41,7 @@ test() {
 
     echo "[*] Agent code"
     pushd $AGENT_CODE &> /dev/null
-    local _cmd="cargo build -p genconfig && cargo test --color always --workspace --exclude genconfig --all-features"
+    local _cmd="cargo build -p genconfig && cargo fmt --all -- --color always --check"
     echo "current directory: $PWD"
     echo "command: $_cmd"
     eval $_cmd
@@ -49,6 +50,7 @@ test() {
 
 set -e
 repo_base
+checkformat_requirements
 pushd $REPO_BASE &> /dev/null
-test
+checkformat
 popd &> /dev/null
