@@ -14,6 +14,8 @@ cfg_if::cfg_if! {
 
         pub struct ConfigVars(config_pb::Config);
 
+        pub use config_pb::HttpConfig;
+
         impl ConfigVars {
             pub fn parse() -> Result<ConfigVars, ThanatosError> {
                 Ok(ConfigVars(config_pb::Config::decode(CONFIG).map_err(|_| ThanatosError::ConfigParseError)?))

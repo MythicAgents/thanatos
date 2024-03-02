@@ -4,17 +4,28 @@ package msg.checkin;
 
 message CheckinInfo {
     string uuid = 1;
-    repeated string ips = 2;
-    optional string user = 3;
-    optional string host = 4;
-    optional uint32 pid = 5;
-    Architecture architecture = 6;
-    optional string domain = 7;
-    optional uint32 integrity_level = 8;
-    optional string process_name = 9;
+    CheckinData data = 2;
+}
+
+message CheckinData {
+    optional string user = 1;
+    optional string host = 2;
+    optional uint32 pid = 3;
+    Architecture architecture = 4;
+    optional string domain = 5;
+    optional uint32 integrity_level = 6;
+    optional string process_name = 7;
     oneof platform_info {
-        WindowsInfo windows = 11;
-        LinuxInfo linux = 12;
+        WindowsInfo windows = 8;
+        LinuxInfo linux = 9;
+    }
+    repeated IpType ips = 10;
+}
+
+message IpType {
+    oneof ip {
+        uint32 ipv4 = 1;
+        bytes ipv6 = 2;
     }
 }
 

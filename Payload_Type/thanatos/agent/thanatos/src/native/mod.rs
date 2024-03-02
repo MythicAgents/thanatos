@@ -1,4 +1,4 @@
-use crate::proto::checkin::Architecture;
+use base_profile::msg::checkin::Architecture;
 
 pub mod checkininfo;
 
@@ -26,7 +26,7 @@ pub fn architecture() -> Architecture {
 mod tests {
     use std::ffi::c_void;
 
-    use crate::proto::checkin::Architecture;
+    use super::Architecture;
 
     #[test]
     fn detect_architecture() {

@@ -6,6 +6,8 @@ fn main() {
         .unwrap()
         .parent()
         .unwrap()
+        .parent()
+        .unwrap()
         .join("mythic")
         .join("protos");
 
@@ -17,10 +19,6 @@ fn main() {
     prost_build::compile_protos(&[&checkin_proto], &[proto_dir]).expect("Failed to compile protos");
     println!(
         "cargo:rerun-if-changed={}",
-        checkin_proto
-            .canonicalize()
-            .expect("Failed to find checkin.proto")
-            .to_str()
-            .unwrap()
+        checkin_proto.as_os_str().to_string_lossy()
     );
 }

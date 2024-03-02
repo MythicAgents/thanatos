@@ -26,14 +26,12 @@ macro_rules! debug {
                 }
             }
         }
-        #[cfg(not(debug_assertions))]
-        {}
     };
 
     ($($val:expr),+ $(,)?) => {
         #[cfg(debug_assertions)]
         {
-            ($($crate::log!($val)),+,)
+            ($($crate::debug!($val)),+,)
         }
         #[cfg(not(debug_assertions))]
         {}

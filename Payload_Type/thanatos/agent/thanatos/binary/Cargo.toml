@@ -6,5 +6,19 @@ homepage.workspace = true
 license.workspace = true
 version.workspace = true
 
-[dependencies]
-thanatos = { path = ".." }
+[dependencies.thanatos]
+path = ".."
+default-features = false
+
+[features]
+default = ["crypto-internal"]
+crypto-system = ["thanatos/crypto-system"]
+crypto-internal = ["thanatos/crypto-internal"]
+domaincheck = ["thanatos/domaincheck"]
+hostnamecheck = ["thanatos/hostnamecheck"]
+usernamecheck = ["thanatos/usernamecheck"]
+init-fork = ["thanatos/init-fork"]
+init-thread = ["thanatos/init-thread"]
+tlsuntrusted = ["thanatos/tlsuntrusted"]
+http = ["thanatos/http"]
+tcp = ["thanatos/tcp"]

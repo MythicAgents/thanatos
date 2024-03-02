@@ -1,7 +1,7 @@
-use crate::proto::checkin::{checkin_info::PlatformInfo, CheckinInfo};
+use base_profile::msg::checkin::{checkin_data::PlatformInfo, CheckinData};
 
 #[cfg(target_os = "windows")]
-pub fn get_checkininfo(uuid: String) -> CheckinInfo {
+pub fn get_checkininfo() -> CheckinData {
     use crate::{native, os::windows, proto::checkin::WindowsInfo};
 
     CheckinInfo {
@@ -22,11 +22,11 @@ pub fn get_checkininfo(uuid: String) -> CheckinInfo {
 }
 
 #[cfg(target_os = "linux")]
-pub fn get_checkininfo(uuid: String) -> CheckinInfo {
-    use crate::{native, os::linux, proto::checkin::LinuxInfo};
+pub fn get_checkininfo() -> CheckinData {
+    use crate::{native, os::linux};
+    use base_profile::msg::checkin::LinuxInfo;
 
-    CheckinInfo {
-        uuid,
+    CheckinData {
         user: linux::username().ok(),
         host: linux::hostname().ok(),
         domain: linux::domain().ok(),
@@ -40,6 +40,6 @@ pub fn get_checkininfo(uuid: String) -> CheckinInfo {
             selinux: linux::selinux_enabled().unwrap_or(false),
             container: linux::container_environment().into(),
         })),
-        ips: Vec::new(),
+        ips: linux::internal_ips().unwrap_or_default(),
     }
 }

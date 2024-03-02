@@ -1,0 +1,19 @@
+[package]
+name = "http-profile"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+version.workspace = true
+
+
+[dependencies]
+
+[dependencies.config]
+path = "../../config"
+
+[dependencies.utils]
+path = "../../utils"
+
+[dependencies.base-profile]
+path = "../base"

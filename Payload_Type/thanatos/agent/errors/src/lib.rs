@@ -9,6 +9,7 @@ pub enum ThanatosError {
     IoError(std::io::Error),
 
     ConfigParseError,
+    OutOfProfiles,
 }
 
 impl ThanatosError {

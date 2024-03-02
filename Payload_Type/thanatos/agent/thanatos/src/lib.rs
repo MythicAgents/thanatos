@@ -8,7 +8,6 @@ mod guardrails;
 mod logging;
 mod native;
 mod os;
-mod proto;
 
 pub fn entrypoint() {
     let agent_config = if let Ok(c) = ConfigVars::parse() {

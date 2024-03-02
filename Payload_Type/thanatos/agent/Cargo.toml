@@ -11,6 +11,7 @@ members = [
   "cryptolib",
   "errors",
   "genconfig",
+  "profiles/http", "profiles/base",
 ]
 
 default-members = ["thanatos"]
@@ -27,7 +28,7 @@ version = "0.2.0"
 
 ##### WORKSPACE DEPENDENCIES #####
 [workspace.dependencies]
-base64 = "0.21.5"
+base64 = "0.22.0"
 cfg-if = "1"
 chrono = "0.4.34"
 hex-literal = "0.4.1"
@@ -41,12 +42,17 @@ bitflags = "2.4.2"
 [workspace.dependencies.libc]
 version = "0.2"
 
+[workspace.dependencies.rand]
+version = "0.8.5"
+default-features = false
+features = ["std_rng", "small_rng", "getrandom"]
+
 [workspace.dependencies.serde]
 version = "1"
 features = ["derive"]
 
 [workspace.dependencies.windows]
-version = "0.52.0"
+version = "0.54.0"
 features = [
   "Win32_Foundation",
   "Win32_System",

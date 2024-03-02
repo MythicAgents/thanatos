@@ -12,6 +12,7 @@ cfg-if.workspace = true
 chrono.workspace = true
 hex-literal.workspace = true
 prost.workspace = true
+rand.workspace = true
 
 [dependencies.config]
 path = "../config"
@@ -29,11 +30,18 @@ path = "../ffiwrappers"
 [dependencies.utils]
 path = "../utils"
 
+[dependencies.base-profile]
+path = "../profiles/base"
+
+[dependencies.http-profile]
+optional = true
+path = "../profiles/http"
+
 [build-dependencies]
 prost-build.workspace = true
 
 [features]
-default = ["crypto-internal"]
+default = ["crypto-internal", "http"]
 crypto-system = ["cryptolib/system"]
 crypto-internal = ["cryptolib/internal"]
 domaincheck = []
@@ -42,5 +50,5 @@ usernamecheck = []
 init-fork = []
 init-thread = []
 tlsuntrusted = []
-http = []
+http = ["http-profile"]
 tcp = []
