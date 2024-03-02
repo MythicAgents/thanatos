@@ -29,12 +29,7 @@ impl FfiError {
     #[cfg(target_os = "windows")]
     pub fn os_error() -> Self {
         use windows::Win32::Foundation::GetLastError;
-
-        if let Err(e) = unsafe { GetLastError() } {
-            Self::from_windows_error(e)
-        } else {
-            Self::OsError(0)
-        }
+        Self::OsError(unsafe { GetLastError().0 as i32 })
     }
 }
 

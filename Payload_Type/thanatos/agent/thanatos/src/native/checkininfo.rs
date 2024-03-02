@@ -2,10 +2,10 @@ use base_profile::msg::checkin::{checkin_data::PlatformInfo, CheckinData};
 
 #[cfg(target_os = "windows")]
 pub fn get_checkininfo() -> CheckinData {
-    use crate::{native, os::windows, proto::checkin::WindowsInfo};
+    use crate::{native, os::windows};
+    use base_profile::msg::checkin::WindowsInfo;
 
-    CheckinInfo {
-        uuid,
+    CheckinData {
         user: windows::username().ok(),
         host: windows::hostname().ok(),
         domain: windows::domain().ok(),

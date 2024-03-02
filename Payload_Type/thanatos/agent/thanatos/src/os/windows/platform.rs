@@ -1,44 +1,14 @@
-use ffiwrappers::windows::sysinfoapi::{OsVersionInfo, ProductType};
+use ffiwrappers::windows::sysinfoapi::OsVersionInfo;
 
-use crate::proto::checkin::windows_info::Product;
+use base_profile::msg::checkin::windows_info::Product;
 
-macro_rules! product_mapping {
+macro_rules! map_product {
     ($v:ident, $($field:ident),*) => {
         match $v {
-            ffiwrappers::windows::sysinfoapi::ProductType::Other(o) => $crate::proto::checkin::windows_info::Product::Other(o),
-            $(ffiwrappers::windows::sysinfoapi::ProductType::$field => $crate::proto::checkin::windows_info::Product::ProductType($crate::proto::checkin::WindowsProductType::$field.into()),)*
+            ffiwrappers::windows::sysinfoapi::ProductType::Other(o) => base_profile::msg::checkin::windows_info::Product::Other(o),
+            $(ffiwrappers::windows::sysinfoapi::ProductType::$field => base_profile::msg::checkin::windows_info::Product::ProductType(base_profile::msg::checkin::WindowsProductType::$field.into()),)*
         }
     };
-}
-
-impl From<ProductType> for Product {
-    fn from(value: ProductType) -> Self {
-        product_mapping!(
-            value,
-            Core,
-            Professional,
-            Education,
-            Enterprise,
-            ProWorkstation,
-            ProForEducation,
-            EnterpriseEvaluation,
-            DatacenterServer,
-            DatacenterEvaluationServer,
-            DatacenterServerCore,
-            DatacenterServerCoreV,
-            DatacenterServerV,
-            EnterpriseServer,
-            EnterpriseServerCore,
-            EnterpriseServerCoreV,
-            EnterpriseServerV,
-            HomeBasic,
-            StandardServer,
-            StandardEvaluationServer,
-            StandardServerCore,
-            StandardServerCoreV,
-            StandardServerV
-        )
-    }
 }
 
 pub fn build_number() -> u32 {
@@ -48,5 +18,30 @@ pub fn build_number() -> u32 {
 
 pub fn product() -> Product {
     let osversion = OsVersionInfo::new();
-    osversion.product_type().into()
+    let product_type = osversion.product_type();
+    map_product!(
+        product_type,
+        Core,
+        Professional,
+        Education,
+        Enterprise,
+        ProWorkstation,
+        ProForEducation,
+        EnterpriseEvaluation,
+        DatacenterServer,
+        DatacenterEvaluationServer,
+        DatacenterServerCore,
+        DatacenterServerCoreV,
+        DatacenterServerV,
+        EnterpriseServer,
+        EnterpriseServerCore,
+        EnterpriseServerCoreV,
+        EnterpriseServerV,
+        HomeBasic,
+        StandardServer,
+        StandardEvaluationServer,
+        StandardServerCore,
+        StandardServerCoreV,
+        StandardServerV
+    )
 }
