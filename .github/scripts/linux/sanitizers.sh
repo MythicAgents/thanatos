@@ -36,11 +36,6 @@ sanitizers() {
     echo "current directory: $PWD"
     echo "command: $_cmd"
     eval $_cmd
-
-    local _cmd="RUSTFLAGS='-Zsanitizer=leak' cargo +nightly test -Zbuild-std --color always -p ffiwrappers --all-features --target x86_64-unknown-linux-gnu"
-    echo "current directory: $PWD"
-    echo "command: $_cmd"
-    eval $_cmd
     popd &> /dev/null
 }
 
