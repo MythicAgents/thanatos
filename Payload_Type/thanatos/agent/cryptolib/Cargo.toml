@@ -16,7 +16,7 @@ workspace = true
 optional = true
 
 [target.'cfg(target_os = "linux")'.dependencies.openssl]
-version = "0.10"
+workspace = true
 optional = true
 
 [target.'cfg(target_os = "windows")'.dependencies.ffiwrappers]
