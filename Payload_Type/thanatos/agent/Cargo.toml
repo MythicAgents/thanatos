@@ -11,7 +11,8 @@ members = [
   "cryptolib",
   "errors",
   "genconfig",
-  "profiles/http", "profiles/base",
+  "profiles/http",
+  "profiles/base",
 ]
 
 default-members = ["thanatos"]
@@ -38,6 +39,9 @@ prost-build = "0.12"
 serde_json = "1"
 sha2 = "0.10.8"
 bitflags = "2.4.2"
+openssl = "0.10"
+generic-array = "1"
+bindgen = "0.69.4"
 
 [workspace.dependencies.libc]
 version = "0.2"

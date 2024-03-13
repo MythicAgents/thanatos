@@ -9,7 +9,7 @@ version.workspace = true
 
 [dependencies]
 bitflags.workspace = true
-generic-array = "1"
+generic-array.workspace = true
 hex-literal.workspace = true
 windows.workspace = true
 
@@ -17,4 +17,4 @@ windows.workspace = true
 libc.workspace = true
 
 [build-dependencies]
-bindgen = "0.69.4"
+bindgen.workspace = true
