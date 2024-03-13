@@ -12,6 +12,17 @@ on:
       - .github/workflows/**
       - .github/actions/**
 
+  pull_request:
+    types:
+      - opened
+    branches:
+      - rewrite
+    paths:
+      - Payload_Type/thanatos/agent/**
+      - Payload_Type/thanatos/mythic/**
+      - .github/workflows/**
+      - .github/actions/**
+
 env:
   AGENT_CODE: Payload_Type/thanatos/agent
   MYTHIC_CODE: Payload_Type/thanatos/mythic
