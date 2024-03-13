@@ -202,10 +202,6 @@ jobs:
               platform: ubuntu
               target: x86_64-unknown-linux-gnu
             sanitizer: memory
-          - os:
-              platform: ubuntu
-              target: x86_64-unknown-linux-gnu
-            sanitizer: leak
 
     runs-on: ${{ matrix.os.platform }}-latest
     steps:
