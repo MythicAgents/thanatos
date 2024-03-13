@@ -1,0 +1,51 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/Payload_Type/thanatos/agent"
+    assignees:
+      - "MEhrn00"
+    reviewers:
+      - "MEhrn00"
+    labels:
+      - "dependencies"
+    target-branch: "rewrite"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+    groups:
+      prost:
+        patterns:
+          - "prost*"
+      serde:
+        patterns:
+          - "serde*"
+
+  - package-ecosystem: "gomod"
+    directory: "/Payload_Type/thanatos/mythic"
+    assignees:
+      - "MEhrn00"
+    reviewers:
+      - "MEhrn00"
+    labels:
+      - "dependencies"
+    target-branch: "rewrite"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+    groups:
+      mythic:
+        patterns:
+          - "*Mythic*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    assignees:
+      - "MEhrn00"
+    reviewers:
+      - "MEhrn00"
+    labels:
+      - "dependencies"
+    target-branch: "rewrite"
+    schedule:
+      interval: "weekly"
+      day: "friday"
