@@ -1,0 +1,22 @@
+name: Build the base container image
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build the base container image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build the container image
+        uses: docker/build-push-action@v5
+        with:
+          context: Payload_Type/thanatos
+          file: Payload_Type/thanatos/.docker/Dockerfile
+          tags: testing
+          push: false
