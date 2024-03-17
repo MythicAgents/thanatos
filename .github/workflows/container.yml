@@ -5,6 +5,14 @@ on:
     branches:
       - main
 
+    paths:
+      - Payload_Type/thanatos/thanatos/agent_code
+      - Payload_Type/thanatos/**.py
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build the base container image

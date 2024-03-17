@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+  pull_request:
+    branches:
+      - main
+
 env:
   # Registry for the container image
   CONTAINER_IMAGE_REGISTRY: ghcr.io
@@ -20,11 +24,16 @@ env:
 jobs:
   # Get the new release version number
   version:
-    name: Get the new release version
+    name: Get and verify the new release version
+    if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'release')) }}
     runs-on: ubuntu-latest
 
     outputs:
-      release: ${{ steps.release.number }}
+      number: ${{ steps.release.outputs.version }}
+
+    permissions:
+      contents: read
+      packages: read
 
     steps:
       - name: Checkout the repository
@@ -33,17 +42,38 @@ jobs:
       - name: Get the latest release version from the changelog
         run: echo "RELEASE_VERSION=$(python .github/scripts/changelogtool.py latest)" >> $GITHUB_ENV
 
-      - name: Verify that a tag with this version does not already exist
+      - name: Assert that a git tag does not exist for the latest entry
         run: |
-          git tag -l | grep $RELEASE_VERSION
-          test $? -eq 0 && { echo "Tag for release $RELEASE_VERSION already exists"; exit 1 } || exit 0
+          if [ $(git tag -l "$RELEASE_VERSION") ]; then
+            echo "Git tag for changelog entry $RELEASE_VERSION already exists"
+            false
+          else
+            true
+          fi
+
+      - name: Assert that a release does not already exist for the latest entry
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          export LATEST_RELEASE=$(gh api --silent \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-Github-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/releases/tags/${RELEASE_VERSION} 2>&1)
+
+          if [[ "$LATEST_RELEASE" == *"Not Found"* ]]; then
+            true
+          else
+            echo "Release for changelog entry $RELEASE_VERSION already exists"
+            false
+          fi
 
       - name: Store the new release version number
         id: release
-        run: echo "number=${RELEASE_VERSION#v}" >> $GITHUB_OUTPUT
+        run: echo "version=${RELEASE_VERSION#v}" >> $GITHUB_OUTPUT
 
   bump:
     name: Bump repository version numbers
+    if: ${{ github.event_name == 'push' }}
     needs: version
     runs-on: ubuntu-latest
 
@@ -63,25 +93,25 @@ jobs:
         with:
           file: config.json
           field: remote_images.thanatos
-          value: ${{ env.CONTAINER_IMAGE_REGISTRY }}/${{ env.CONTAINER_IMAGE_NAME }}:v${{ needs.version.release }}
+          value: ${{ env.CONTAINER_IMAGE_REGISTRY }}/${{ env.CONTAINER_IMAGE_NAME }}:v${{ needs.version.outputs.number }}
 
       - name: Set agent_capabilities.json version number
         uses: jossef/action-set-json-field@v2.1
         with:
           file: agent_capabilities.json
           field: agent_version
-          value: ${{ needs.version.release }}
+          value: ${{ needs.version.outputs.number }}
 
       - name: Set base Dockerfile image reference tag to match the version number
         working-directory: Payload_Type/thanatos
         env:
-          VERSION: ${{ needs.version.number }}
+          VERSION: ${{ needs.version.outputs.number }}
         run: sed -i "s|^FROM .*$|FROM ${CONTAINER_IMAGE_REGISTRY}/${CONTAINER_IMAGE_NAME}:v${VERSION}|" Dockerfile
 
       - name: Set agent Cargo.toml version number
         working-directory: ${{ env.AGENT_CODE_PATH }}
         env:
-          VERSION: ${{ needs.version.number }}
+          VERSION: ${{ needs.version.outputs.number }}
         run: sed -i "0,/^version = .*$/s//version = \"${VERSION}\"/" Cargo.toml
 
       - name: Push the updated version number changes
@@ -90,11 +120,12 @@ jobs:
           add: "['config.json', 'agent_capabilities.json', 'Payload_Type/thanatos/Dockerfile', '${{ format('{0}/Cargo.toml', env.AGENT_CODE_PATH) }}']"
           default_author: github_actions
           committer_email: github-actions[bot]@users.noreply.github.com
-          message: "chore(release): bump version numbers to match release 'v${{ needs.version.release }}'"
+          message: "chore(release): bump version numbers to match release 'v${{ needs.version.outputs.number }}'"
           pathspec_error_handling: exitImmediately
 
   image:
-    name: Build the base container image
+    name: Build and push the base container image
+    if: ${{ github.event_name == 'push' }}
     needs:
       - version
       - bump
@@ -111,7 +142,7 @@ jobs:
       - name: Set the container image fully qualified url
         run: echo "CONTAINER_IMAGE_URL=${CONTAINER_IMAGE_URL,,}" >> ${GITHUB_ENV}
         env:
-          CONTAINER_IMAGE_URL: ${{ env.CONTAINER_IMAGE_REGISTRY }}/${{ env.CONTAINER_IMAGE_NAME }}:v${{ needs.version.release }}
+          CONTAINER_IMAGE_URL: ${{ env.CONTAINER_IMAGE_REGISTRY }}/${{ env.CONTAINER_IMAGE_NAME }}:v${{ needs.version.outputs.number }}
 
       - name: Log in to the container registry
         uses: docker/login-action@v3
@@ -134,6 +165,7 @@ jobs:
 
   release:
     name: Create a new release
+    if: ${{ github.event_name == 'push' }}
     needs:
       - version
       - image
@@ -150,21 +182,22 @@ jobs:
       - name: Create a new tag for the release
         uses: EndBug/add-and-commit@v9
         with:
-          message: "chore(release): Thanatos v${{ needs.version.release }}"
+          message: "chore(release): Thanatos v${{ needs.version.outputs.number }}"
           push: true
-          tag: "v${{ needs.version.release }}"
+          tag: "v${{ needs.version.outputs.number }}"
           pathspec_error_handling: exitImmediately
 
       - name: Create a new release
         env:
-          VERSION: ${{ needs.version.release }}
+          VERSION: ${{ needs.version.outputs.number }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           RELEASE_BODY=$(python .github/scripts/changelogtool.py extract $VERSION)
           gh api \
             --method POST \
             -H "Accept: application/vnd.github+json" \
             -H "X-Github-Api-Version: 2022-11-28" \
-            /repos/${GITHUB_REPOSITORY}/releases \
+            /repos/${{ github.repository }}/releases \
             -f tag_name='v${VERSION}' \
             -f target_commitish="$GITHUB_REF_NAME" \
             -f name="Thanatos v${VERSION}" \
