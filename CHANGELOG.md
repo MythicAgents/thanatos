@@ -16,6 +16,9 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 - **releases:** add release automation [3ac7905](https://github.com/MythicAgents/thanatos/commit/3ac79057d7a5f3374c43ce64d171ee96f88d4c88)
 - **ci:** add container build action [d38aa47](https://github.com/MythicAgents/thanatos/commit/d38aa47b6833a981e907ce420dcd12194448474b)
 - **ci:** remove main from lint checks [be67690](https://github.com/MythicAgents/thanatos/commit/be676906537cce5d854ac376368db7d96cc7da61)
+
+### Removed
+
 - **ci:** remove base image build composite workflow [86815f4](https://github.com/MythicAgents/thanatos/commit/86815f412766995608148e3beacc6235703ba524)
 
 ## [0.1.8] - 2024-02-06
