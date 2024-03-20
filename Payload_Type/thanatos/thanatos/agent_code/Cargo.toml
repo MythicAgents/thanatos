@@ -1,7 +1,7 @@
 [package]
 name = "thanatos"
 version = "0.1.9"
-authors = ["Matt Ehrnschwender", "Max Harley"]
+authors = ["Matt Ehrnschwender (@M_alphaaa)"]
 edition = "2021"
 
 

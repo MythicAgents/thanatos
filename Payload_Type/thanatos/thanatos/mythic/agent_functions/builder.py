@@ -22,7 +22,7 @@ from mythic_container.PayloadBuilder import (
 class Thanatos(PayloadType):
     name = "thanatos"  # Name of the payload
     file_extension = "exe"  # default file extension to use when creating payloads
-    author = "@M_alphaaa, 0xdab0"  # authors
+    author = "@M_alphaaa"  # authors
 
     # Platforms that thanatos supports
     supported_os = [
