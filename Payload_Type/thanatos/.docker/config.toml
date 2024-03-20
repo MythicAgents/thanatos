@@ -1,2 +1,18 @@
-[build]
-rustc-wrapper = "/usr/bin/sccache"
+[env]
+OPENSSL_STATIC = "true"
+
+X86_64_UNKNOWN_LINUX_GNU_OPENSSL_LIB_DIR = "/usr/lib/x86_64-linux-gnu"
+X86_64_UNKNOWN_LINUX_GNU_OPENSSL_INCLUDE_DIR = "/usr/include/x86_64-linux-gnu"
+
+I686_UNKNOWN_LINUX_GNU_OPENSSL_LIB_DIR = "/usr/lib/i386-linux-gnu"
+I686_UNKNOWN_LINUX_GNU_OPENSSL_INCLUDE_DIR = "/usr/include/i386-linux-gnu"
+
+X86_64_PC_WINDOWS_GNU_OPENSSL_LIB_DIR = "/usr/x86_64-w64-mingw32/lib"
+X86_64_PC_WINDOWS_GNU_OPENSSL_INCLUDE_DIR = "/usr/x86_64-w64-mingw32/include"
+
+I686_PC_WINDOWS_GNU_OPENSSL_LIB_DIR = "/usr/i686-w64-mingw32/lib"
+I686_PC_WINDOWS_GNU_OPENSSL_INCLUDE_DIR = "/usr/i686-w64-mingw32/include"
+
+CC_x86_64-unknown-linux-musl = "x86_64-linux-musl-gcc"
+X86_64_UNKNOWN_LINUX_MUSL_OPENSSL_LIB_DIR = "/usr/lib/x86_64-linux-musl"
+X86_64_UNKNOWN_LINUX_MUSL_OPENSSL_INCLUDE_DIR = "/usr/include/x86_64-linux-musl"

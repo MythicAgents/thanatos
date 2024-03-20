@@ -1,0 +1,19 @@
+[package]
+name = "thanatos-lib"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+
+[features]
+daemonize = []
+eke = []
+tlsuntrusted = []
+systemproxy = []
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+thanatos = { path = ".." }

@@ -1,0 +1,57 @@
+[package]
+name = "thanatos"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+
+[workspace]
+members = ["binary", "library"]
+
+[workspace.package]
+version = "0.1.10"
+authors = ["Matt Ehrnschwender (@M_alphaaa)"]
+edition = "2021"
+license = "BSD-3-Clause"
+homepage = "https://github.com/MythicAgents/thanatos"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+opt-level = 'z'
+
+[dependencies]
+generic-array = "1.0.0"
+serde_json = "1.0"
+
+[dependencies.serde]
+version = "1"
+features = ["derive"]
+
+[dependencies.ssh2]
+version = "0.9"
+git = "https://github.com/alexcrichton/ssh2-rs"
+rev = "ec94100b4a1c1730bfb30c3a1c88af3ea54fdd78"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"
+openssl = "0.10.45"
+
+[target.'cfg(target_os = "windows")'.dependencies.windows]
+version = "0.56.0"
+features = [
+  "Wdk_System_SystemServices",
+  "Win32_Networking_WinSock",
+  "Win32_NetworkManagement_IpHelper",
+  "Win32_NetworkManagement_Ndis",
+  "Win32_Security_Cryptography",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Performance",
+  "Win32_System_SystemInformation",
+  "Win32_System_SystemServices",
+  "Win32_System_Threading",
+  "Win32_System_WindowsProgramming",
+]

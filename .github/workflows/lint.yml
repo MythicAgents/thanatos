@@ -5,123 +5,100 @@ on:
     branches:
       - dev
     paths:
-      - Payload_Type/thanatos/thanatos/agent_code
-      - Payload_Type/thanatos/**.py
+      - Payload_Type/thanatos/
 
   pull_request:
     branches:
       - main
       - dev
     paths:
-      - Payload_Type/thanatos/thanatos/agent_code
-      - Payload_Type/thanatos/**.py
+      - Payload_Type/thanatos/
 
-  workflow_call:
 
 env:
-  THANATOS_PATH: Payload_Type/thanatos
-  AGENT_CODE: thanatos/agent_code
-  MYTHIC_CODE: thanatos/mythic/agent_functions
+  AGENT_CODE_PATH: Payload_Type/thanatos/agent
+  MYTHIC_CODE_PATH: Payload_Type/thanatos/mythic
 
 jobs:
-  syntax:
-    name: Check Syntax
+  mythic:
+    name: Mythic code checks
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ${{ env.MYTHIC_CODE_PATH }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup environment
-        uses: ./.github/actions/setup-lint
-        with:
-          python-requirements: ${{ env.THANATOS_PATH }}/requirements.txt
-          agent-code: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
+      - name: Install Poetry
+        run: |
+          python -m ensurepip
+          python -m pip install --upgrade pip
+          python -m pip install poetry
 
-      - name: Check Mythic code for errors
-        working-directory: ${{ env.THANATOS_PATH }}
-        run: python -m pylint --rcfile pylintrc -f colorized --errors-only main.py ${MYTHIC_CODE}/*.py
+      - name: Install Python packages
+        run: poetry install
 
-      - name: Check Agent code for errors
-        working-directory: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
-        run: cargo check --color always --all-targets --all-features
-        env:
-          RUSTFLAGS: "--cfg http"
-          UUID: ""
-          AESPSK: ""
-          callback_host: ""
-          callback_interval: ""
-          callback_jitter: ""
-          callback_port: ""
-          connection_retries: ""
-          encrypted_exchange_check: ""
-          get_uri: ""
-          headers: ""
-          post_uri: ""
-          working_hours: ""
+      - name: Formatting
+        run: poetry run black --color --diff --check thanatos
 
-  format:
-    name: Check Formatting
+      - name: Linting
+        run: poetry run pylint thanatos
+
+  agent:
+    name: Agent code checks
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ${{ env.AGENT_CODE_PATH }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup environment
-        uses: ./.github/actions/setup-lint
+      - name: Setup cargo cache
+        uses: actions/cache@v4
         with:
-          python-requirements: ${{ env.THANATOS_PATH }}/requirements.txt
-          agent-code: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
+          path: ~/.cargo
+          key: ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.toml', env.AGENT_CODE_PATH)) }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.toml', env.AGENT_CODE_PATH)) }}
+            ${{ runner.os }}-cargo
 
-      - name: Check Mythic code formatting
-        working-directory: ${{ env.THANATOS_PATH }}
-        run: python -m black --color --diff --check main.py ${MYTHIC_CODE}/*.py
-
-      - name: Check Agent code formatting
-        working-directory: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
-        run: cargo fmt -- --color always --check
-        env:
-          RUSTFLAGS: "--cfg http"
-          UUID: ""
-          AESPSK: ""
-          callback_host: ""
-          callback_interval: ""
-          callback_jitter: ""
-          callback_port: ""
-          connection_retries: ""
-          encrypted_exchange_check: ""
-          get_uri: ""
-          headers: ""
-          post_uri: ""
-          working_hours: ""
-
-  lint:
-    name: Lint Code
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup environment
-        uses: ./.github/actions/setup-lint
+      - name: Setup cargo target cache
+        uses: actions/cache@v4
         with:
-          python-requirements: ${{ env.THANATOS_PATH }}/requirements.txt
-          agent-code: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
+          path: ${{ env.AGENT_CODE_PATH }}/target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.toml', env.AGENT_CODE_PATH)) }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.toml', env.AGENT_CODE_PATH)) }}
+            ${{ runner.os }}-cargo-target
 
       - name: Install Clippy
         run: rustup component add clippy
 
-      - name: Lint Mythic code with pylint
-        working-directory: ${{ env.THANATOS_PATH }}
-        run: python -m pylint --rcfile pylintrc -f colorized main.py ${MYTHIC_CODE}/*.py
+      - name: Formatting
+        run: cargo fmt -- --color always --check
+        env:
+          UUID: ""
+          AESPSK: ""
+          callback_host: ""
+          callback_interval: ""
+          callback_jitter: ""
+          callback_port: ""
+          connection_retries: ""
+          encrypted_exchange_check: ""
+          get_uri: ""
+          headers: ""
+          post_uri: ""
+          working_hours: ""
 
-      - name: Lint Agent code with clippy
-        working-directory: ${{ env.THANATOS_PATH }}/${{ env.AGENT_CODE }}
+      - name: Linting
         run: cargo clippy --color always --all-features --all-targets -- -D warnings
         env:
-          RUSTFLAGS: "--cfg http"
           UUID: ""
           AESPSK: ""
           callback_host: ""
