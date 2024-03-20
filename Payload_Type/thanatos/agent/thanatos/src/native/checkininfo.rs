@@ -17,7 +17,7 @@ pub fn get_checkininfo() -> CheckinData {
         })),
         integrity_level: windows::integrity_level(),
         process_name: windows::process_name().ok(),
-        ips: Vec::new(),
+        ips: windows::internal_ips().unwrap_or_default(),
     }
 }
 

@@ -16,6 +16,7 @@ pub use domain::domain;
 
 pub mod bcrypt;
 mod cffiheaders;
+pub mod interfaces;
 pub mod peb;
 pub mod processthreadsapi;
 pub mod sysinfoapi;

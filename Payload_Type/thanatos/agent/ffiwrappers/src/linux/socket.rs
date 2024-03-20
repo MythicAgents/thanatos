@@ -72,45 +72,6 @@ impl SockAddrFamily for AfInet6 {
     type Inner = libc::sockaddr_in6;
 }
 
-pub enum SockAddr<'a> {
-    AfInet(SockAddrIn<'a, AfInet>),
-    AfInet6(SockAddrIn<'a, AfInet6>),
-}
-
-impl<'a> SockAddr<'a> {
-    /// # Safety
-    ///
-    /// The pointer is not validated to ensure that it is of the correct type
-    pub unsafe fn from_ptr(ptr: *mut libc::sockaddr) -> Option<SockAddr<'a>> {
-        if ptr.is_null() {
-            return None;
-        }
-
-        match unsafe { (*ptr).sa_family } as i32 {
-            libc::AF_INET6 => {
-                let addr: NonNull<libc::sockaddr_in6> = NonNull::new(ptr.cast())?;
-                Some(SockAddr::AfInet6(unsafe {
-                    SockAddrIn::<AfInet6>::from_raw(addr)
-                }))
-            }
-            libc::AF_INET => {
-                let addr: NonNull<libc::sockaddr_in> = NonNull::new(ptr.cast())?;
-
-                Some(SockAddr::AfInet(unsafe {
-                    SockAddrIn::<AfInet>::from_raw(addr)
-                }))
-            }
-            _ => None,
-        }
-    }
-}
-
-#[repr(transparent)]
-pub struct SockAddrIn<'a, T: SockAddrFamily> {
-    addr: NonNull<T::Inner>,
-    _marker: PhantomData<&'a T::Inner>,
-}
-
 impl<'a> SockAddrIn<'a, AfInet> {
     /// # Safety
     ///

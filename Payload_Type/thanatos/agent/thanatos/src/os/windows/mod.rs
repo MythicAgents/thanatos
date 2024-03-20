@@ -4,7 +4,7 @@ use ffiwrappers::windows::{processthreadsapi::token::CurrentToken, sysinfoapi};
 mod platform;
 pub use platform::{build_number, product};
 
-use base_profile::msg::checkin::Architecture;
+use base_profile::msg::checkin::{Architecture, IpType};
 
 pub fn username() -> Result<String, ThanatosError> {
     ffiwrappers::windows::username().map_err(ThanatosError::FFIError)
@@ -36,4 +36,8 @@ pub fn integrity_level() -> Option<u32> {
     let sid = token.integrity_level().ok()?;
     let rid = sid.sid().subauthorities().first()?.to_owned();
     Some(rid >> 12)
+}
+
+pub fn internal_ips() -> Result<Vec<IpType>, ThanatosError> {
+    todo!()
 }
