@@ -9,6 +9,7 @@ mod agent;
 mod cat;
 mod cd;
 mod cp;
+mod crypto;
 mod download;
 mod exit;
 mod getenv;

