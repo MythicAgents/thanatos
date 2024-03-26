@@ -14,7 +14,7 @@ cfg_if::cfg_if! {
         use crate::utils::linux as native;
     } else if #[cfg(target_os = "windows")] {
         mod ls_windows;
-        use ls_windows::{FilePermissions, get_file_owner};
+        use ls_windows::FilePermissions;
         use crate::utils::windows as native;
     }
 }
@@ -261,7 +261,7 @@ impl File {
             access_time,
             modify_time,
             size,
-            owner: get_file_owner(path),
+            owner: Default::default(),
         })
     }
 }

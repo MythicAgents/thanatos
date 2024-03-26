@@ -1,26 +1,24 @@
 //! This module is only imported when targeting windows
 use serde::Serialize;
 use std::ops::Deref;
-use winapi::{
-    ctypes::c_void,
-    um::handleapi::{CloseHandle, INVALID_HANDLE_VALUE},
-};
+use windows::Win32::Foundation::{CloseHandle, HANDLE};
 
 pub mod whoami {
+    use windows::core::PWSTR;
+    use windows::Win32::Foundation::{ERROR_INSUFFICIENT_BUFFER, HANDLE};
+    use windows::Win32::Security::{
+        GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation, TokenIntegrityLevel,
+        TOKEN_MANDATORY_LABEL, TOKEN_QUERY,
+    };
+    use windows::Win32::System::SystemInformation::{
+        ComputerNameDnsDomain, ComputerNameDnsHostname, GetComputerNameExW,
+    };
+    use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
+    use windows::Win32::System::WindowsProgramming::GetUserNameW;
+
     use super::Handle;
     use std::convert::TryInto;
-    use std::os::raw::c_ulong;
     use std::os::windows::ffi::OsStringExt;
-    use winapi::{
-        ctypes::c_void,
-        um::{
-            processthreadsapi::{GetCurrentProcess, OpenProcessToken},
-            securitybaseapi::{GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation},
-            sysinfoapi::{ComputerNameDnsDomain, ComputerNameDnsHostname, GetComputerNameExW},
-            winbase::GetUserNameW,
-            winnt::{TokenIntegrityLevel, TOKEN_MANDATORY_LABEL, TOKEN_QUERY},
-        },
-    };
 
     /// Get the platform information
     /// TODO: Query the system to get the Windows version
@@ -39,22 +37,17 @@ pub mod whoami {
         let mut name_len = 0;
         // Call `GetUserNameW` to get the username length
         let _ = unsafe {
-            GetUserNameW(std::ptr::null_mut(), &mut name_len);
+            GetUserNameW(PWSTR::null(), &mut name_len);
         };
 
-        let mut name: Vec<u16> = Vec::with_capacity(name_len.try_into().unwrap_or(usize::MAX));
-        name_len = name.capacity().try_into().unwrap_or(c_ulong::MAX);
+        let mut name: Vec<u16> = Vec::with_capacity(name_len.try_into().ok()?);
+        name_len = name.capacity().try_into().ok()?;
 
         // Call `GetUserNameW` to get the current username
-        let ret = unsafe {
-            let ret = GetUserNameW(name.as_mut_ptr().cast(), &mut name_len);
-            name.set_len(name_len.try_into().unwrap_or(usize::MAX));
-            ret
+        unsafe {
+            GetUserNameW(PWSTR(name.as_mut_ptr().cast()), &mut name_len).ok()?;
+            name.set_len(name_len.try_into().ok()?);
         };
-
-        if ret == 0 {
-            return None;
-        }
 
         // Remove the null-terminator
         name.pop();
@@ -72,22 +65,22 @@ pub mod whoami {
         let mut name_len = 0;
         // Get the computer name length
         let _ = unsafe {
-            GetComputerNameExW(ComputerNameDnsHostname, std::ptr::null_mut(), &mut name_len);
+            GetComputerNameExW(ComputerNameDnsHostname, PWSTR::null(), &mut name_len);
         };
 
-        let mut name: Vec<u16> = Vec::with_capacity(name_len.try_into().unwrap_or(usize::MAX));
-        name_len = name.capacity().try_into().unwrap_or(c_ulong::MAX);
+        let mut name: Vec<u16> = Vec::with_capacity(name_len.try_into().ok()?);
+        name_len = name.capacity().try_into().ok()?;
 
         // Get the computer hostname
-        let ret = unsafe {
-            let ret = GetComputerNameExW(ComputerNameDnsHostname, name.as_mut_ptr(), &mut name_len);
-            name.set_len(name_len.try_into().unwrap_or(usize::MAX));
-            ret
+        unsafe {
+            GetComputerNameExW(
+                ComputerNameDnsHostname,
+                PWSTR(name.as_mut_ptr()),
+                &mut name_len,
+            )
+            .ok()?;
+            name.set_len(name_len.try_into().ok()?);
         };
-
-        if ret == 0 {
-            return None;
-        }
 
         // Return the hostname as a String
         Some(
@@ -101,22 +94,20 @@ pub mod whoami {
     pub fn domain() -> Option<String> {
         let mut name_len = 0;
         // Get the domain name length
-        let _ = unsafe {
-            GetComputerNameExW(ComputerNameDnsDomain, std::ptr::null_mut(), &mut name_len)
-        };
+        let _ = unsafe { GetComputerNameExW(ComputerNameDnsDomain, PWSTR::null(), &mut name_len) };
 
-        let mut name: Vec<u16> = Vec::with_capacity(name_len.try_into().unwrap_or(usize::MAX));
-        name_len = name.capacity().try_into().unwrap_or(c_ulong::MAX);
+        let mut name: Vec<u16> = Vec::with_capacity(name_len.try_into().ok()?);
+        name_len = name.capacity().try_into().ok()?;
 
         // Get the domain name
-        let ret = unsafe {
-            let ret = GetComputerNameExW(ComputerNameDnsDomain, name.as_mut_ptr(), &mut name_len);
-            name.set_len(name_len.try_into().unwrap_or(usize::MAX));
-            ret
-        };
-
-        if ret == 0 {
-            return None;
+        unsafe {
+            GetComputerNameExW(
+                ComputerNameDnsDomain,
+                PWSTR(name.as_mut_ptr()),
+                &mut name_len,
+            )
+            .ok()?;
+            name.set_len(name_len.try_into().ok()?);
         };
 
         // Return the domain name as a String
@@ -131,46 +122,37 @@ pub mod whoami {
     pub fn get_integrity_level() -> Option<u32> {
         // Get a handle to the current process
         let p_handle = unsafe { GetCurrentProcess() };
-        if p_handle.is_null() {
+        if p_handle.is_invalid() {
             return None;
         }
 
         // Grab the process' token
-        let mut t_handle: *mut c_void = std::ptr::null_mut();
-        if unsafe { OpenProcessToken(p_handle, TOKEN_QUERY, &mut t_handle) == 0 } {
-            return None;
-        }
+        let mut t_handle = HANDLE::default();
+        unsafe { OpenProcessToken(p_handle, TOKEN_QUERY, &mut t_handle).ok()? };
 
-        let t_handle = Handle::new(t_handle)?;
+        let t_handle = Handle::from(t_handle);
 
         // Grab the token information size
         let mut len: u32 = 0;
-        if unsafe {
-            GetTokenInformation(
-                *t_handle,
-                TokenIntegrityLevel,
-                std::ptr::null_mut(),
-                0,
-                &mut len,
-            ) == 1
-        } {
-            return None;
-        }
+        match unsafe { GetTokenInformation(*t_handle, TokenIntegrityLevel, None, 0, &mut len) } {
+            Err(e) if e == ERROR_INSUFFICIENT_BUFFER.into() => (),
+            Err(e) => return None,
+            _ => unreachable!(),
+        };
 
         let mut buffer: Vec<u8> = vec![0; len as usize];
 
         // Grab the current process token information
-        if unsafe {
+        unsafe {
             GetTokenInformation(
                 *t_handle,
                 TokenIntegrityLevel,
-                buffer.as_mut_ptr() as *mut c_void,
+                Some(buffer.as_mut_ptr().cast()),
                 len,
                 &mut len,
-            ) == 0
-        } {
-            return None;
-        }
+            )
+            .ok()?
+        };
 
         // Get the integrity level from the token
         let integrity_level_sid: &u32 = unsafe {
@@ -194,7 +176,7 @@ pub mod whoami {
 
 /// Abstraction over windows handles for garbage collection
 #[derive(Debug)]
-pub struct Handle(*mut c_void);
+pub struct Handle(HANDLE);
 
 impl Drop for Handle {
     /// Close the handle when it goes out of scope
@@ -204,22 +186,9 @@ impl Drop for Handle {
 }
 
 impl Deref for Handle {
-    type Target = *mut c_void;
+    type Target = HANDLE;
     fn deref(&self) -> &Self::Target {
         &self.0
-    }
-}
-
-impl Handle {
-    /// Create a new handle from a raw pointer
-    /// Returns `None` if the handle is invalid
-    /// * `handle` - handle pointer
-    pub fn new(h: *mut c_void) -> Option<Self> {
-        if h.is_null() || h == INVALID_HANDLE_VALUE {
-            None
-        } else {
-            Some(Handle(h))
-        }
     }
 }
 
@@ -227,14 +196,14 @@ impl From<usize> for Handle {
     /// Create a handle without checking if it's valid
     /// * `handle` - handle as a usize
     fn from(h: usize) -> Self {
-        Handle(h as *mut c_void)
+        Handle(HANDLE(h as isize))
     }
 }
 
-impl From<*mut c_void> for Handle {
+impl From<HANDLE> for Handle {
     /// Create a handle without checking if it's valid
     /// * `handle` - handle as a raw pointer
-    fn from(h: *mut c_void) -> Self {
+    fn from(h: HANDLE) -> Self {
         Handle(h)
     }
 }

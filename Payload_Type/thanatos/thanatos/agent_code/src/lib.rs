@@ -47,7 +47,7 @@ pub fn real_main() -> Result<(), Box<dyn Error>> {
 
             // Hide the console window for windows
             #[cfg(target_os = "windows")]
-            if unsafe { winapi::um::wincon::FreeConsole() } != 0 {
+            if unsafe { windows::Win32::System::Console::FreeConsole().is_ok() } {
                 run_beacon()?;
             }
             return Ok(());

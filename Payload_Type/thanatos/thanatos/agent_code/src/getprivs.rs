@@ -140,12 +140,16 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
 /// * `task` - Tasking information
 #[cfg(target_os = "windows")]
 pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Error>> {
-    use winapi::um::{
-        errhandlingapi::GetLastError,
-        processthreadsapi::{GetCurrentProcess, OpenProcessToken},
-        securitybaseapi::GetTokenInformation,
-        winbase::LookupPrivilegeNameA,
-        winnt::{TokenPrivileges, LUID_AND_ATTRIBUTES, TOKEN_PRIVILEGES, TOKEN_QUERY},
+    use windows::{
+        core::{PCSTR, PSTR},
+        Win32::{
+            Foundation::{ERROR_INSUFFICIENT_BUFFER, HANDLE},
+            Security::{
+                GetTokenInformation, LookupPrivilegeNameA, TokenPrivileges, LUID_AND_ATTRIBUTES,
+                TOKEN_PRIVILEGES, TOKEN_QUERY,
+            },
+            System::Threading::{GetCurrentProcess, OpenProcessToken},
+        },
     };
 
     // Create the initial output
@@ -156,55 +160,31 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
     );
 
     // Get a handle to the current process
-    let mut t_handle = std::ptr::null_mut();
-    if unsafe { OpenProcessToken(GetCurrentProcess() as _, TOKEN_QUERY, &mut t_handle) } == 0 {
-        return Err(
-            std::io::Error::new(std::io::ErrorKind::Other, "Failed to open token handle").into(),
-        );
-    }
+    let mut t_handle = HANDLE::default();
+    unsafe { OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut t_handle)? };
     let t_handle = Handle::from(t_handle);
 
     // Get the token information length
     let mut priv_len = 0u32;
-    if unsafe {
-        GetTokenInformation(
-            *t_handle,
-            TokenPrivileges,
-            std::ptr::null_mut(),
-            0,
-            &mut priv_len,
-        )
-    } != 0
-    {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("Failed to get token information {}", unsafe {
-                GetLastError()
-            }),
-        )
-        .into());
+    match unsafe { GetTokenInformation(*t_handle, TokenPrivileges, None, 0, &mut priv_len) } {
+        Err(e) if e == ERROR_INSUFFICIENT_BUFFER.into() => (),
+        Err(e) => return Err(Box::new(windows::core::Error::from(e))),
+        _ => unreachable!(),
     };
 
     let mut privs: Vec<u8> = Vec::new();
     privs.resize(priv_len as usize, 0);
 
     // Get the token information
-    if unsafe {
+    unsafe {
         GetTokenInformation(
             *t_handle,
             TokenPrivileges,
-            privs.as_mut_ptr().cast(),
+            Some(privs.as_mut_ptr().cast()),
             priv_len,
             &mut priv_len,
         )
-    } == 0
-    {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("Failed to query privileges {}", unsafe { GetLastError() }),
-        )
-        .into());
-    }
+    }?;
 
     let privileges: &mut TOKEN_PRIVILEGES = unsafe { &mut *privs.as_mut_ptr().cast() };
     let count = privileges.PrivilegeCount;
@@ -214,23 +194,22 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
         std::slice::from_raw_parts_mut(privileges.Privileges.as_mut_ptr(), count as usize)
     };
 
-    let mut cch_name = [0i8; 512];
+    let mut cch_name = [0u8; 512];
     let mut cch_name_size: u32 = cch_name.len() as u32;
 
     // Iterate over each LUID mapping it to a Windows privilege
     for luid in luids.iter_mut() {
-        if unsafe {
+        if let Ok(_) = unsafe {
             LookupPrivilegeNameA(
-                std::ptr::null_mut(),
+                PCSTR::null(),
                 &mut luid.Luid,
-                cch_name.as_mut_ptr(),
+                PSTR(cch_name.as_mut_ptr()),
                 &mut cch_name_size,
             )
-        } != 0
-        {
+        } {
             output.push_str(
                 format!("{}\n", unsafe {
-                    std::ffi::CStr::from_ptr(cch_name.as_ptr())
+                    std::ffi::CStr::from_ptr(cch_name.as_ptr().cast())
                         .to_str()
                         .unwrap()
                 })
