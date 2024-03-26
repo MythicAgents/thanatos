@@ -1,7 +1,7 @@
 use crate::payloadvars;
 use crate::tasking::Tasker;
 use chrono::prelude::{DateTime, NaiveDate};
-use chrono::{Duration, Local, NaiveDateTime, NaiveTime};
+use chrono::{Local, NaiveDateTime, NaiveTime, TimeDelta};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -239,13 +239,22 @@ impl Agent {
             if now < working_start {
                 // Calculate the sleep interval if the current time is before
                 // the working hours
-                let delta = Duration::seconds(working_start.timestamp() - now.timestamp());
+                let delta = TimeDelta::try_seconds(
+                    working_start.and_utc().timestamp() - now.and_utc().timestamp(),
+                )
+                .unwrap_or_default();
                 sleep_time = delta.to_std().unwrap();
             } else if now > working_end {
                 // Calculate the sleep interval if the current time as after the
                 // working hours
-                let next_start = working_start.checked_add_signed(Duration::days(1)).unwrap();
-                let delta = Duration::seconds(next_start.timestamp() - now.timestamp());
+                let next_start = working_start
+                    .checked_add_signed(TimeDelta::try_days(1).unwrap())
+                    .unwrap();
+
+                let delta = TimeDelta::try_seconds(
+                    next_start.and_utc().timestamp() - now.and_utc().timestamp(),
+                )
+                .unwrap_or_default();
                 sleep_time = delta.to_std().unwrap();
             }
 

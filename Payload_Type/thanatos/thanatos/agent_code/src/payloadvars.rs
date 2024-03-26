@@ -1,7 +1,7 @@
 //! This file holds all of the information regarding the C2 and payload build configuration
 //! It should be noted that the `env!()` macro will be set during agent compile time instead
 //! of run time.
-use chrono::{Duration, Local, NaiveTime};
+use chrono::{Local, NaiveTime, TimeDelta};
 use serde::{Deserialize, Serialize};
 
 /// Structure to hold the http header information
@@ -67,7 +67,9 @@ pub fn killdate() -> String {
         Some(date) => String::from(date),
         None => {
             let local = Local::now().naive_local();
-            (local + Duration::days(30)).format("%Y-%m-%d").to_string()
+            (local + TimeDelta::try_days(30).unwrap())
+                .format("%Y-%m-%d")
+                .to_string()
         }
     }
 }
