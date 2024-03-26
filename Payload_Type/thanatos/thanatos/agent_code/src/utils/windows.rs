@@ -36,8 +36,9 @@ pub mod whoami {
     pub fn username() -> Option<String> {
         let mut name_len = 0;
         // Call `GetUserNameW` to get the username length
-        let _ = unsafe {
-            GetUserNameW(PWSTR::null(), &mut name_len);
+        match unsafe { GetUserNameW(PWSTR::null(), &mut name_len) } {
+            Err(e) if e == ERROR_INSUFFICIENT_BUFFER.into() => (),
+            _ => return None,
         };
 
         let mut name: Vec<u16> = Vec::with_capacity(name_len.try_into().ok()?);
@@ -64,8 +65,9 @@ pub mod whoami {
     pub fn hostname() -> Option<String> {
         let mut name_len = 0;
         // Get the computer name length
-        let _ = unsafe {
-            GetComputerNameExW(ComputerNameDnsHostname, PWSTR::null(), &mut name_len);
+        match unsafe { GetComputerNameExW(ComputerNameDnsHostname, PWSTR::null(), &mut name_len) } {
+            Err(e) if e == ERROR_INSUFFICIENT_BUFFER.into() => (),
+            _ => return None,
         };
 
         let mut name: Vec<u16> = Vec::with_capacity(name_len.try_into().ok()?);
@@ -136,8 +138,7 @@ pub mod whoami {
         let mut len: u32 = 0;
         match unsafe { GetTokenInformation(*t_handle, TokenIntegrityLevel, None, 0, &mut len) } {
             Err(e) if e == ERROR_INSUFFICIENT_BUFFER.into() => (),
-            Err(e) => return None,
-            _ => unreachable!(),
+            _ => return None,
         };
 
         let mut buffer: Vec<u8> = vec![0; len as usize];
@@ -172,6 +173,14 @@ pub mod whoami {
 
         Some(integrity_level_sid >> 12)
     }
+
+    #[cfg(test)]
+    mod tests {
+        #[test]
+        fn whoami_debug() {
+            let _ = super::username().unwrap();
+        }
+    }
 }
 
 /// Abstraction over windows handles for garbage collection
@@ -181,7 +190,7 @@ pub struct Handle(HANDLE);
 impl Drop for Handle {
     /// Close the handle when it goes out of scope
     fn drop(&mut self) {
-        unsafe { CloseHandle(self.0) };
+        let _ = unsafe { CloseHandle(self.0) };
     }
 }
 
