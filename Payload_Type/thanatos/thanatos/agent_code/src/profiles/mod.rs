@@ -10,7 +10,7 @@ use serde_json::json;
 use sha2::Sha256;
 
 // Import the http profile
-#[cfg(http)]
+#[cfg(feature = "http")]
 mod http;
 
 /// Struct holding the response for a key exchange
@@ -75,7 +75,7 @@ impl Profile {
         let mut profiles: Vec<Box<dyn C2Profile>> = Vec::new();
 
         // HTTP profile specified
-        #[cfg(http)]
+        #[cfg(feature = "http")]
         {
             use http::{profilevars, HTTPProfile};
 

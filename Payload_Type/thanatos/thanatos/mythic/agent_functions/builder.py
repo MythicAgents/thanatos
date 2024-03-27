@@ -133,9 +133,6 @@ class Thanatos(PayloadType):
             # Start formulating the rust flags
             rustflags = []
 
-            # Add the C2 profile to the compile flags
-            rustflags.append(f"--cfg {profile}")
-
             # Check for static linking
             abi = "gnu"
             if self.selected_os == SupportedOS.Linux:
@@ -202,8 +199,12 @@ class Thanatos(PayloadType):
                     v = json.dumps(val)
                     command += f"{key}='{v}' "
 
+            # Add the C2 profile to as a feature flag
+            features = [profile]
+            feature_flags = ",".join(features)
+
             # Finish off the cargo command used for building the agent
-            command += f"cargo build --target {target_os} --release"
+            command += f"cargo build --target {target_os} --features {feature_flags} --release"
 
             # Copy any prebuilt dependencies if they exist
             deps_suffix = "_static" if self.get_parameter("static") == "yes" else ""
