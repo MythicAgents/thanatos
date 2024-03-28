@@ -205,28 +205,7 @@ impl File {
     /// Creates a new `File` struct
     /// * `path` - Path to the file
     fn new(path: &Path) -> Result<Self, Box<dyn Error>> {
-        let path = std::path::Path::new(path);
-
-        // Grab the absolute path to the file
-        let full_name = unverbatim(path_clean::clean(&path.to_string_lossy()).into());
-
-        // Get the name of the file
-        let name = if full_name.is_file() {
-            if let Some(name) = path.file_name() {
-                name.to_string_lossy()
-            } else {
-                std::ffi::OsStr::new("").to_string_lossy()
-            }
-        } else {
-            path.components()
-                .last()
-                .ok_or("")?
-                .as_os_str()
-                .to_string_lossy()
-        }
-        .to_string();
-
-        let full_name = full_name.to_string_lossy().to_string();
+        let full_path = std::path::Path::new(path).canonicalize()?;
 
         // Grab the time metadata from the file
         let mut access_time = 0i64;
@@ -234,30 +213,28 @@ impl File {
 
         let mut size = 0;
 
-        if let Ok(path) = path.canonicalize() {
-            if let Ok(meta) = path.metadata() {
-                if let Ok(accessed) = meta.accessed() {
-                    if accessed >= std::time::UNIX_EPOCH {
-                        access_time = DateTime::<Local>::from(accessed).timestamp_millis();
-                    }
+        if let Ok(meta) = full_path.metadata() {
+            if let Ok(accessed) = meta.accessed() {
+                if accessed >= std::time::UNIX_EPOCH {
+                    access_time = DateTime::<Local>::from(accessed).timestamp_millis();
                 }
-
-                if let Ok(modified) = meta.modified() {
-                    if modified >= std::time::UNIX_EPOCH {
-                        modify_time = DateTime::<Local>::from(modified).timestamp_millis();
-                    }
-                }
-
-                size = meta.len()
             }
+
+            if let Ok(modified) = meta.modified() {
+                if modified >= std::time::UNIX_EPOCH {
+                    modify_time = DateTime::<Local>::from(modified).timestamp_millis();
+                }
+            }
+
+            size = meta.len()
         }
 
         // Create the File struct
         Ok(Self {
             is_file: path.is_file(),
             permissions: FilePermissions::new(path), // Get the permissions of the file
-            name,
-            full_name,
+            name: full_path.file_name().unwrap().to_string_lossy().to_string(),
+            full_name: full_path.to_string_lossy().to_string(),
             access_time,
             modify_time,
             size,

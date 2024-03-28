@@ -1,4 +1,6 @@
+use crate::utils::cleanpath;
 use crate::utils::parse_linux_mode;
+use crate::utils::unverbatim;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use ssh2::Session;
@@ -116,14 +118,15 @@ impl File {
         let path = Path::new(&path);
 
         // Get the full path to the file
-        let full_name = path_clean::clean(&path.to_string_lossy());
+        let full_path = cleanpath(&path);
 
         // Get the name of the file
         let name = if stats.is_file() {
-            String::from(path.file_name().unwrap().to_string_lossy())
+            String::from(full_path.file_name().unwrap().to_string_lossy())
         } else {
             String::from(
-                path.components()
+                full_path
+                    .components()
                     .last()
                     .ok_or("")?
                     .as_os_str()
@@ -138,7 +141,7 @@ impl File {
             is_file: stats.is_file(),
             permissions: FilePermissions::new(&stats),
             name,
-            full_name,
+            full_name: unverbatim(full_path).to_string_lossy().to_string(),
             access_time,
             modify_time,
             size: stats.size.unwrap(),

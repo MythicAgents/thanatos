@@ -1,17 +1,14 @@
 use crate::agent::{AgentTask, ContinuedData};
 use crate::crypto::base64;
 use crate::mythic_success;
-use crate::utils::unverbatim;
+use crate::utils::{cleanpath, unverbatim};
 use serde::Deserialize;
 use serde_json::json;
 use std::error::Error;
 use std::io::prelude::*;
 use std::io::ErrorKind;
-use std::path::Path;
 use std::result::Result;
 use std::sync::mpsc;
-
-use path_clean::PathClean;
 
 /// Chunk size used for file transfer (5KB)
 const CHUNK_SIZE: usize = 512000;
@@ -38,14 +35,14 @@ pub fn upload_file(
     let cwd = std::env::current_dir()?;
     let file_path = cwd.join(args.path);
 
-    // Get the full path as a string
-    let file_path_str = unverbatim(file_path.clean()).to_string_lossy().to_string();
-
     // Check if the file path being uploaded to already exists
-    let file_path = Path::new(&file_path);
     if file_path.exists() {
         return Err("Remote path already exists.".into());
     }
+
+    let file_path_str = unverbatim(cleanpath(&file_path))
+        .to_string_lossy()
+        .to_string();
 
     // Send up the upload message to Mythic and initiate the upload
     tx.send(json!({
@@ -53,7 +50,7 @@ pub fn upload_file(
             "chunk_size": CHUNK_SIZE,
             "file_id": args.file,
             "chunk_num": 1,
-            "full_path": file_path_str,
+            "full_path": &file_path_str,
         }),
         "task_id": task.id,
         "user_output": "Uploading chunk 1\n",
@@ -79,7 +76,7 @@ pub fn upload_file(
                 "chunk_size": CHUNK_SIZE,
                 "file_id": args.file,
                 "chunk_num": chunk_num,
-                "full_path": file_path_str,
+                "full_path": "",
             }),
             "task_id": task.id,
             "user_output": format!("Uploading chunk {}/{}\n", chunk_num, total_chunks),
@@ -93,7 +90,7 @@ pub fn upload_file(
     }
 
     // Open the file handle. This will check if the agent has the correct permissions.
-    let mut f = std::fs::File::create(&file_path_str)?;
+    let mut f = std::fs::File::create(file_path)?;
 
     // Write out the received file to disk
     f.write_all(&file_data)?;
@@ -101,8 +98,22 @@ pub fn upload_file(
     // Send up a success to Mythic
     tx.send(mythic_success!(
         task.id,
-        format!("Uploaded '{}' to host", file_path_str)
+        format!("Uploaded '{file_path_str}' to host")
     ))?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::utils::cleanpath;
+
+    #[test]
+    fn path_behavior() {
+        let p = std::env::current_dir().unwrap();
+        let v = p.join(".././mythic/./../agent_code");
+
+        let cleaned = cleanpath(v);
+        dbg!(cleaned);
+    }
 }

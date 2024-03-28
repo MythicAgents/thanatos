@@ -7,8 +7,6 @@ use std::io::ErrorKind;
 use std::path::Path;
 use std::result::Result;
 
-use path_clean::PathClean;
-
 /// Struct containing the `mv` parameters
 #[derive(Deserialize)]
 struct MvArgs {
@@ -54,7 +52,7 @@ pub fn move_file(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Error>> 
             d_path
         }
     } else {
-        d_path.to_path_buf().clean()
+        d_path.to_path_buf()
     };
 
     // Move the file

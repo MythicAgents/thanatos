@@ -1,4 +1,7 @@
-use std::path::{Component, PathBuf};
+use std::{
+    ffi::OsStr,
+    path::{Component, Path, PathBuf},
+};
 
 #[cfg(target_os = "linux")]
 pub mod linux;
@@ -22,21 +25,40 @@ pub mod local_ipaddress {
 
 /// Convert a windows verbatim path into a nonverbatim one
 /// * `path` - Path to clean up
-pub fn unverbatim(path: PathBuf) -> PathBuf {
-    match path.components().next() {
+pub fn unverbatim(path: impl AsRef<Path>) -> PathBuf {
+    match path.as_ref().components().next() {
         Some(Component::Prefix(p)) => {
             if p.kind().is_verbatim() {
                 PathBuf::from(
-                    path.as_os_str()
+                    path.as_ref()
+                        .as_os_str()
                         .to_string_lossy()
                         .trim_start_matches(r"\\?\"),
                 )
             } else {
-                path.to_path_buf()
+                path.as_ref().to_path_buf()
             }
         }
-        _ => path.to_path_buf(),
+        _ => path.as_ref().to_path_buf(),
     }
+}
+
+pub fn cleanpath(path: impl AsRef<Path>) -> PathBuf {
+    let mut cleaned: Vec<&OsStr> = Vec::new();
+
+    let mut components = path.as_ref().components().rev();
+    while let Some(p) = components.next() {
+        match p {
+            Component::ParentDir => {
+                if components.next().is_none() {
+                    break;
+                }
+            }
+            v => cleaned.push(v.as_os_str()),
+        }
+    }
+
+    PathBuf::from_iter(cleaned.iter().rev())
 }
 
 /// Helper function to convert a linux integer mode into a human-readable format
