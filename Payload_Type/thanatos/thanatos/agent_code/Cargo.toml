@@ -40,7 +40,7 @@ version = "1"
 features = ["derive"]
 
 [dependencies.ssh2]
-version = "0.9.3"
+version = "0.9"
 
 [dependencies.tokio]
 version = "1.16.1"
