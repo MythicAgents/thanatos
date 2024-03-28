@@ -1,4 +1,5 @@
 use crate::agent::{AgentTask, ContinuedData};
+use crate::crypto::base64;
 use crate::mythic_success;
 use crate::utils::unverbatim;
 use serde::Deserialize;

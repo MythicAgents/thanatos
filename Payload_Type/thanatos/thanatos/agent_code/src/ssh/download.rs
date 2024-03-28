@@ -2,6 +2,7 @@ use serde::Serialize;
 use serde_json::json;
 
 use crate::agent::{AgentTask, ContinuedData};
+use crate::crypto::base64;
 use crate::mythic_success;
 
 use ssh2::Session;

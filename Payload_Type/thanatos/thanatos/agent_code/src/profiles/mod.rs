@@ -1,4 +1,7 @@
-use crate::{crypto::Rsa, payloadvars};
+use crate::{
+    crypto::{base64, Rsa},
+    payloadvars,
+};
 use rand::Rng;
 use std::error::Error;
 

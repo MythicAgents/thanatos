@@ -23,7 +23,6 @@ http = []
 
 [dependencies]
 aes = "0.7.5"
-base64 = "0.13"
 block-modes = "0.8.1"
 cfg-if = "1.0"
 chrono = "0.4"

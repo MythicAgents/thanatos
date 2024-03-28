@@ -1,6 +1,7 @@
 use super::{ssh_authenticate, Credentials};
 use crate::agent::AgentTask;
 use crate::agent::ContinuedData;
+use crate::crypto::base64;
 use crate::{mythic_continued, mythic_success};
 use serde::Deserialize;
 use serde_json::json;

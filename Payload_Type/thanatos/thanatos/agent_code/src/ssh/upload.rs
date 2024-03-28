@@ -1,5 +1,6 @@
 use super::ssh_authenticate;
 use crate::agent::{AgentTask, ContinuedData};
+use crate::crypto::base64;
 use crate::{mythic_continued, mythic_success};
 use serde_json::json;
 use std::error::Error;

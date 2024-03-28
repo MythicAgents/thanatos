@@ -1,4 +1,5 @@
 use crate::agent::AgentTask;
+use crate::crypto::base64;
 use crate::mythic_success;
 use serde::Deserialize;
 use ssh2::Session;
