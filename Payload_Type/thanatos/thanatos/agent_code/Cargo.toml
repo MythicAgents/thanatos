@@ -16,7 +16,11 @@ name = "thanatos"
 path = "src/main.rs"
 
 [profile.release]
-strip = "symbols"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+opt-level = 'z'
 
 [features]
 http = []
