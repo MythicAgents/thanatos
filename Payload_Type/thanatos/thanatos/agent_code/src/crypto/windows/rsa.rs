@@ -1,79 +1,31 @@
 use std::error::Error;
 
 use windows::{
-    core::{PCSTR, PCWSTR, PSTR},
+    core::PSTR,
     Win32::Security::Cryptography::{
-        BCryptCloseAlgorithmProvider, BCryptDecrypt, BCryptDestroyKey, BCryptFinalizeKeyPair,
-        BCryptGenerateKeyPair, BCryptOpenAlgorithmProvider, CryptBinaryToStringA,
-        CryptExportPublicKeyInfoFromBCryptKeyHandle, BCRYPT_ALG_HANDLE, BCRYPT_KEY_HANDLE,
-        BCRYPT_OAEP_PADDING_INFO, BCRYPT_OPEN_ALGORITHM_PROVIDER_FLAGS, BCRYPT_PAD_OAEP,
-        BCRYPT_RSA_ALGORITHM, BCRYPT_SHA1_ALGORITHM, CERT_PUBLIC_KEY_INFO,
-        CRYPT_OID_INFO_PUBKEY_ENCRYPT_KEY_FLAG, CRYPT_STRING, CRYPT_STRING_BASE64,
-        CRYPT_STRING_NOCR, X509_ASN_ENCODING,
+        CryptBinaryToStringA, BCRYPT_OAEP_PADDING_INFO, BCRYPT_PAD_OAEP, BCRYPT_SHA1_ALGORITHM,
+        CERT_PUBLIC_KEY_INFO, CRYPT_OID_INFO_PUBKEY_ENCRYPT_KEY_FLAG, CRYPT_STRING,
+        CRYPT_STRING_BASE64, CRYPT_STRING_NOCR, X509_ASN_ENCODING,
     },
 };
 
-pub struct Rsa(BCRYPT_KEY_HANDLE);
+use super::bcrypt::{BCryptAlgorithm, BCryptAlgorithmHandle, BCryptAsymmetricKeyHandle};
+
+pub struct Rsa(BCryptAsymmetricKeyHandle);
 
 impl Rsa {
     pub fn generate(bits: u32) -> Result<Rsa, Box<dyn Error>> {
-        let mut algorithm_handle = BCRYPT_ALG_HANDLE::default();
-        unsafe {
-            BCryptOpenAlgorithmProvider(
-                &mut algorithm_handle,
-                BCRYPT_RSA_ALGORITHM,
-                PCWSTR::null(),
-                BCRYPT_OPEN_ALGORITHM_PROVIDER_FLAGS(0),
-            )
-        }
-        .ok()?;
-
-        let mut key_handle = BCRYPT_KEY_HANDLE::default();
-        unsafe {
-            BCryptGenerateKeyPair(algorithm_handle, &mut key_handle, bits, 0)
-                .ok()
-                .inspect_err(|_| {
-                    BCryptCloseAlgorithmProvider(algorithm_handle, 0);
-                })?;
-        }
-
-        let _ = unsafe { BCryptCloseAlgorithmProvider(algorithm_handle, 0) };
-
-        unsafe { BCryptFinalizeKeyPair(key_handle, 0).ok()? };
-
+        let bcrypt_handle = BCryptAlgorithmHandle::new(BCryptAlgorithm::RSA)?;
+        let key_handle = bcrypt_handle.generate_keypair(bits)?;
         Ok(Self(key_handle))
     }
 
     pub fn public_key(&self) -> Result<String, Box<dyn Error>> {
-        let mut blob_size = 0u32;
-        unsafe {
-            CryptExportPublicKeyInfoFromBCryptKeyHandle(
-                self.0,
-                X509_ASN_ENCODING,
-                PCSTR::null(),
-                CRYPT_OID_INFO_PUBKEY_ENCRYPT_KEY_FLAG.0,
-                None,
-                None,
-                &mut blob_size,
-            )
-            .ok()?
-        };
+        let blob_data = self
+            .0
+            .export_public_key_info(X509_ASN_ENCODING, CRYPT_OID_INFO_PUBKEY_ENCRYPT_KEY_FLAG.0)?;
 
-        let mut blob_buffer = vec![0u8; blob_size as usize];
-        unsafe {
-            CryptExportPublicKeyInfoFromBCryptKeyHandle(
-                self.0,
-                X509_ASN_ENCODING,
-                PCSTR::null(),
-                0,
-                None,
-                Some(blob_buffer.as_mut_ptr().cast()),
-                &mut blob_size,
-            )
-            .ok()?
-        };
-
-        let pubkey_blob = blob_buffer.as_ptr() as *const CERT_PUBLIC_KEY_INFO;
+        let pubkey_blob = blob_data.as_ptr() as *const CERT_PUBLIC_KEY_INFO;
 
         let pubkey_data = unsafe {
             std::slice::from_raw_parts(
@@ -120,70 +72,22 @@ impl Rsa {
             cbLabel: 0,
         };
 
-        let mut decrypted_length = 0u32;
-        unsafe {
-            BCryptDecrypt(
-                self.0,
-                Some(data),
-                Some(&padding_info as *const _ as *const _),
-                None,
-                None,
-                &mut decrypted_length,
-                BCRYPT_PAD_OAEP,
-            )
-            .ok()
-        }
-        .unwrap();
-
-        let mut decrypted_buffer = vec![0u8; decrypted_length as usize];
-        unsafe {
-            BCryptDecrypt(
-                self.0,
-                Some(data),
-                Some(&padding_info as *const _ as *const _),
-                None,
-                Some(&mut decrypted_buffer),
-                &mut decrypted_length,
-                BCRYPT_PAD_OAEP,
-            )
-            .ok()
-        }
-        .unwrap();
-
-        Ok(decrypted_buffer)
-    }
-}
-
-impl Drop for Rsa {
-    fn drop(&mut self) {
-        unsafe { BCryptDestroyKey(self.0) };
+        self.0.private_decrypt(
+            data,
+            Some(&padding_info as *const _ as *const _),
+            BCRYPT_PAD_OAEP,
+        )
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::io::{Read, Write};
-
     use super::Rsa;
 
     #[test]
     fn debug_rsa() {
         let r = Rsa::generate(4096).unwrap();
         let pub_key = r.public_key().unwrap();
-
-        let mut kf = std::fs::File::create("pubkey.pem").unwrap();
-        kf.write_all(pub_key.as_bytes()).unwrap();
-
-        println!("Waiting.....");
-        let mut buff = String::new();
-        std::io::stdin().read_line(&mut buff).unwrap();
-
-        let mut f = std::fs::File::open("data.dat").unwrap();
-        let mut buf = Vec::new();
-        f.read_to_end(&mut buf).unwrap();
-
-        let decrypted = r.private_decrypt(&buf).unwrap();
-        let decrypted = std::str::from_utf8(&decrypted).unwrap();
-        dbg!(decrypted);
+        dbg!(pub_key);
     }
 }
