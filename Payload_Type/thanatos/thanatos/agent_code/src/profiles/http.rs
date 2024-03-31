@@ -1,4 +1,4 @@
-use crate::profiles::C2Profile;
+use crate::{crypto::base64, profiles::C2Profile};
 use std::error::Error;
 
 /// Struct holding information for the HTTP profile
