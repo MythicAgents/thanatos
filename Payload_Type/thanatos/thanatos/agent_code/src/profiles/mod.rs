@@ -1,16 +1,12 @@
 use crate::{
-    crypto::{base64, Rsa},
+    crypto::{aes, base64, Rsa},
     payloadvars,
 };
 use rand::Rng;
 use std::error::Error;
 
-use aes::Aes256;
-use block_modes::{block_padding::Pkcs7, BlockMode, Cbc};
-use hmac::{Hmac, Mac, NewMac};
 use serde::Deserialize;
 use serde_json::json;
-use sha2::Sha256;
 
 // Import the http profile
 #[cfg(feature = "http")]
@@ -111,7 +107,7 @@ impl Profile {
                 data.as_bytes(),
                 key,
                 Some(&self.callback_uuid),
-            )),
+            )?),
             None => base64::encode(format!("{}{}", self.callback_uuid, data)),
         };
 
@@ -123,7 +119,7 @@ impl Profile {
 
         // Decrypt the payload if needed
         let decrypted_body: Vec<u8> = match profile.get_aes_key() {
-            Some(key) => decrypt_payload(&decoded, key, Some(&payloadvars::payload_uuid())),
+            Some(key) => decrypt_payload(&decoded, key, Some(&payloadvars::payload_uuid()))?,
             None => decoded[36..].to_vec(),
         };
 
@@ -214,14 +210,18 @@ impl Profile {
 /// * `message` - Message to encrypt
 /// * `key` - AES key for encryption
 /// * `uuid` - UUID of the agent for the payload
-fn encrypt_payload(message: &[u8], key: &[u8], uuid: Option<&String>) -> Vec<u8> {
-    let encrypted_data = encrypt_aes256(message, key);
+fn encrypt_payload(
+    message: &[u8],
+    key: &[u8],
+    uuid: Option<&str>,
+) -> Result<Vec<u8>, Box<dyn Error>> {
+    let encrypted_data = encrypt_aes256(message, key)?;
     match uuid {
         Some(id) => {
             let id = id.as_bytes();
-            [id, &encrypted_data[..]].concat()
+            Ok([id, &encrypted_data[..]].concat())
         }
-        None => encrypted_data,
+        None => Ok(encrypted_data),
     }
 }
 
@@ -229,7 +229,11 @@ fn encrypt_payload(message: &[u8], key: &[u8], uuid: Option<&String>) -> Vec<u8>
 /// * `message` - Message to decrypt
 /// * `key` - AES key for decryption
 /// * `uuid` - Agent's UUID
-fn decrypt_payload(message: &[u8], key: &[u8], uuid: Option<&String>) -> Vec<u8> {
+fn decrypt_payload(
+    message: &[u8],
+    key: &[u8],
+    uuid: Option<&str>,
+) -> Result<Vec<u8>, Box<dyn Error>> {
     match uuid {
         Some(_) => decrypt_aes256(&message[36..], key),
         None => decrypt_aes256(message, key),
@@ -239,50 +243,52 @@ fn decrypt_payload(message: &[u8], key: &[u8], uuid: Option<&String>) -> Vec<u8>
 /// AES encrypts data with HMAC
 /// * `data` - Data to encrypt
 /// * `key` - Key for encryption
-fn encrypt_aes256(data: &[u8], key: &[u8]) -> Vec<u8> {
-    // Use SHA 256 for the hmac signing
-    type HmacSha256 = Hmac<Sha256>;
-
-    // Create a new hmac object
-    let mut h = HmacSha256::new_from_slice(key).unwrap();
-
-    // Generate a random IV
+fn encrypt_aes256(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
     let iv = rand::random::<[u8; 16]>().to_vec();
+    let encrypted = aes::encrypt(key, &iv, data)?;
+    let mut msg: Vec<u8> = [&iv[..], &encrypted[..]].concat();
 
-    // AES encrypt the data
-    type Aes256Cbc = Cbc<Aes256, Pkcs7>;
-    let cipher = Aes256Cbc::new_from_slices(key, &iv).unwrap();
-    let mut ciphertext = cipher.encrypt_vec(data);
-
-    // Create the encrypted output (iv + message + mac)
-    let mut msg = iv;
-    msg.append(&mut ciphertext);
-
-    h.update(&msg);
-    let mac = h.finalize();
-    msg.append(&mut mac.into_bytes().to_vec());
-
-    // Return the encrypted data
-    msg
+    let hmac = aes::calc_sha256_hmac(key, &msg)?;
+    msg.extend_from_slice(&hmac);
+    Ok(msg)
 }
 
 /// AES descrypts data
 /// * `data` - Data to decrypt
 /// * `key` - Key for decryption
-fn decrypt_aes256(data: &[u8], key: &[u8]) -> Vec<u8> {
+fn decrypt_aes256(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
+    // Grab the MAC
+    let mac = <[u8; 32]>::try_from(&data[data.len() - 32..]).unwrap();
+    let calc_hmac = aes::calc_sha256_hmac(key, &data[..data.len() - 32])?;
+
+    if mac != calc_hmac {
+        return Err(Box::from("Invalid hmac"));
+    }
+
     // Grab the IV
     let iv = &data[..16];
-
-    // Grab the MAC
-    let _mac = &data[data.len() - 32..];
 
     // Grab the encrypted message
     let message = &data[16..data.len() - 32];
 
     // Decrypt the message
-    type Aes256Cbc = Cbc<Aes256, Pkcs7>;
-    let cipher = Aes256Cbc::new_from_slices(key, iv).unwrap();
+    let decrypted = aes::decrypt(key, iv, message)?;
 
-    // Return the decrypted message
-    cipher.decrypt_vec(message).unwrap()
+    Ok(decrypted)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{decrypt_aes256, encrypt_aes256};
+
+    #[test]
+    fn aes_test() {
+        let key = rand::random::<[u8; 32]>();
+        let msg = "HelloWorldHelloWorldHelloWorldHelloWorld";
+
+        let encrypted = encrypt_aes256(msg.as_bytes(), &key).unwrap();
+        let decrypted = decrypt_aes256(&encrypted, &key).unwrap();
+
+        assert_eq!(msg.as_bytes(), decrypted);
+    }
 }
