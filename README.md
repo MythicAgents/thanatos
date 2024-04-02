@@ -64,7 +64,6 @@ mv | `mv [source] [destination]` | Move a file from [source] to [destination] (s
 portscan | `portscan [popup]` | Scan a list of IPs for open ports.
 ps | `ps` | Get a list of currently running processes.
 pwd | `pwd` | Print working directory.
-redirect | `redirect [<bindhost>:<bindport>:<connecthost>:<connectport>]` | Setup a TCP redirector on the remote system.
 rm | `rm [path]` | Remove a file or directory (supports relative paths).
 setenv | `setenv [name] [value]` | Set environment variable [name] to [value].
 shell | `shell [command]` | Run a shell command with `bash -c` on Linux or `cmd.exe /c` on Windows in a new thread.
