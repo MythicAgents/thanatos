@@ -9,8 +9,8 @@ use std::sync::{
 
 // Import all of the commands
 use crate::{
-    cat, cd, cp, download, exit, getenv, getprivs, jobs, ls, mkdir, mv, portscan, ps, pwd,
-    redirect, rm, setenv, shell, sleep, ssh, unsetenv, upload, workinghours,
+    cat, cd, cp, download, exit, getenv, getprivs, jobs, ls, mkdir, mv, portscan, ps, pwd, rm,
+    setenv, shell, sleep, ssh, unsetenv, upload, workinghours,
 };
 
 /// Struct which holds the information about background jobs
@@ -108,15 +108,6 @@ impl Tasker {
                     #[cfg(target_os = "windows")]
                     "powershell" => {
                         if let Err(e) = self.spawn_background(task, shell::run_powershell, false) {
-                            self.completed_tasks
-                                .push(mythic_error!(task.id, e.to_string()));
-                        }
-                        continue;
-                    }
-
-                    "redirect" => {
-                        if let Err(e) = self.spawn_background(task, redirect::setup_redirect, true)
-                        {
                             self.completed_tasks
                                 .push(mythic_error!(task.id, e.to_string()));
                         }

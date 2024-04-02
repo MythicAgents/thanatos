@@ -23,7 +23,6 @@ mod portscan;
 mod profiles;
 mod ps;
 mod pwd;
-mod redirect;
 mod rm;
 mod setenv;
 mod shell;
