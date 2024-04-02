@@ -37,6 +37,8 @@ features = ["derive"]
 
 [dependencies.ssh2]
 version = "0.9"
+git = "https://github.com/alexcrichton/ssh2-rs"
+rev = "ec94100b4a1c1730bfb30c3a1c88af3ea54fdd78"
 
 [dependencies.tokio]
 version = "1.16.1"
