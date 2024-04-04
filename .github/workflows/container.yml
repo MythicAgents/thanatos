@@ -1,4 +1,4 @@
-name: Build the base container image
+name: Test build base container image
 
 on:
   pull_request:
@@ -6,8 +6,7 @@ on:
       - main
 
     paths:
-      - Payload_Type/thanatos/thanatos/agent_code
-      - Payload_Type/thanatos/**.py
+      - Payload_Type/thanatos/
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -15,7 +14,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build the base container image
+    name: Build base container image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

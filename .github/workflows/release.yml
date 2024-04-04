@@ -19,7 +19,9 @@ env:
   # License for the base container image
   CONTAINER_IMAGE_LICENSE: BSD-3-Clause
   # Path to the agent code
-  AGENT_CODE_PATH: Payload_Type/thanatos/thanatos/agent_code
+  AGENT_CODE_PATH: Payload_Type/thanatos/agent
+  # Path to the Mythic code
+  MYTHIC_CODE_PATH: Payload_Type/thanatos/mythic
 
 jobs:
   # Get the new release version number
@@ -88,6 +90,12 @@ jobs:
       - name: Lowercase the container image name
         run: echo "CONTAINER_IMAGE_NAME=${CONTAINER_IMAGE_NAME,,}" >> ${GITHUB_ENV}
 
+      - name: Install Poetry
+        run: |
+          python -m ensurepip
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+
       - name: Set config.json version number
         uses: jossef/action-set-json-field@v2.1
         with:
@@ -113,6 +121,12 @@ jobs:
         env:
           VERSION: ${{ needs.version.outputs.number }}
         run: sed -i "0,/^version = .*$/s//version = \"${VERSION}\"/" Cargo.toml
+
+      - name: Set Mythic code version number
+        working-directory: ${{ env.MYTHIC_CODE_PATH }}
+        env:
+          VERSION: ${{ needs.version.outputs.number }}
+        run: poetry version ${VERSION}
 
       - name: Push the updated version number changes
         uses: EndBug/add-and-commit@v9
