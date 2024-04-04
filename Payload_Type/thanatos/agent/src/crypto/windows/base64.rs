@@ -67,7 +67,7 @@ mod tests {
 
     #[test]
     fn encode_test() {
-        for (value, expected) in CASES.into_iter() {
+        for (value, expected) in CASES.iter() {
             let encoded = super::encode(*value);
             assert_eq!(encoded.as_str(), *expected);
         }
@@ -75,7 +75,7 @@ mod tests {
 
     #[test]
     fn decode_test() {
-        for (expected, value) in CASES.into_iter() {
+        for (expected, value) in CASES.iter() {
             let decoded = super::decode(*value).unwrap();
             assert_eq!(decoded, (*expected).as_bytes());
         }

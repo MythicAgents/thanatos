@@ -15,7 +15,7 @@ pub struct Rsa(BCryptAsymmetricKeyHandle);
 
 impl Rsa {
     pub fn generate(bits: u32) -> Result<Rsa, Box<dyn Error>> {
-        let bcrypt_handle = BCryptAlgorithmHandle::new(BCryptAlgorithm::RSA)?;
+        let bcrypt_handle = BCryptAlgorithmHandle::new(BCryptAlgorithm::Rsa)?;
         let key_handle = bcrypt_handle.generate_keypair(bits)?;
         Ok(Self(key_handle))
     }

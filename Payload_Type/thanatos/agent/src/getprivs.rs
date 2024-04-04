@@ -168,12 +168,11 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
     let mut priv_len = 0u32;
     match unsafe { GetTokenInformation(*t_handle, TokenPrivileges, None, 0, &mut priv_len) } {
         Err(e) if e == ERROR_INSUFFICIENT_BUFFER.into() => (),
-        Err(e) => return Err(Box::new(windows::core::Error::from(e))),
+        Err(e) => return Err(Box::new(e)),
         _ => unreachable!(),
     };
 
-    let mut privs: Vec<u8> = Vec::new();
-    privs.resize(priv_len as usize, 0);
+    let mut privs: Vec<u8> = vec![0; priv_len as usize];
 
     // Get the token information
     unsafe {
@@ -199,14 +198,16 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
 
     // Iterate over each LUID mapping it to a Windows privilege
     for luid in luids.iter_mut() {
-        if let Ok(_) = unsafe {
+        if unsafe {
             LookupPrivilegeNameA(
                 PCSTR::null(),
-                &mut luid.Luid,
+                &luid.Luid,
                 PSTR(cch_name.as_mut_ptr()),
                 &mut cch_name_size,
             )
-        } {
+        }
+        .is_ok()
+        {
             output.push_str(
                 format!("{}\n", unsafe {
                     std::ffi::CStr::from_ptr(cch_name.as_ptr().cast())

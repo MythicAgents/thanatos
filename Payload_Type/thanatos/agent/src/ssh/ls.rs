@@ -118,7 +118,7 @@ impl File {
         let path = Path::new(&path);
 
         // Get the full path to the file
-        let full_path = cleanpath(&path);
+        let full_path = cleanpath(path);
 
         // Get the name of the file
         let name = if stats.is_file() {

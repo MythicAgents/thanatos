@@ -20,7 +20,7 @@ pub struct FilePermissions {
 
 /// Get the ACLs for the specified path
 /// * `fname` - File name for the object to get the ACLs
-fn get_acls(fname: &str) -> Option<Vec<Acl>> {
+fn get_acls(_fname: &str) -> Option<Vec<Acl>> {
     todo!();
 }
 
@@ -45,16 +45,12 @@ impl FilePermissions {
         };
 
         // Get the creation date timestamp
-        let creation_date = fpath
-            .metadata()
-            .ok()
-            .map(|meta| {
-                meta.created().ok().and_then(|created| {
-                    (created >= std::time::UNIX_EPOCH)
-                        .then(|| DateTime::<Local>::from(created).timestamp())
-                })
+        let creation_date = fpath.metadata().ok().and_then(|meta| {
+            meta.created().ok().and_then(|created| {
+                (created >= std::time::UNIX_EPOCH)
+                    .then(|| DateTime::<Local>::from(created).timestamp())
             })
-            .flatten();
+        });
 
         // Return the file permissions
         FilePermissions {

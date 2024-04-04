@@ -14,17 +14,17 @@ use windows::{
 };
 
 pub enum BCryptAlgorithm {
-    RSA,
-    AES,
-    SHA256,
+    Rsa,
+    Aes,
+    Sha256,
 }
 
-impl Into<PCWSTR> for BCryptAlgorithm {
-    fn into(self) -> PCWSTR {
-        match self {
-            Self::RSA => BCRYPT_RSA_ALGORITHM,
-            Self::AES => BCRYPT_AES_ALGORITHM,
-            Self::SHA256 => BCRYPT_SHA256_ALGORITHM,
+impl From<BCryptAlgorithm> for PCWSTR {
+    fn from(value: BCryptAlgorithm) -> Self {
+        match value {
+            BCryptAlgorithm::Rsa => BCRYPT_RSA_ALGORITHM,
+            BCryptAlgorithm::Aes => BCRYPT_AES_ALGORITHM,
+            BCryptAlgorithm::Sha256 => BCRYPT_SHA256_ALGORITHM,
         }
     }
 }
@@ -45,9 +45,9 @@ fn pkcs7_unpad(data: &[u8], blocksize: usize) -> Vec<u8> {
 
     let p = &data[data.len() - l as usize..];
     if p.iter().all(|v| v == &l) {
-        return data[..data.len() - l as usize].to_vec();
+        data[..data.len() - l as usize].to_vec()
     } else {
-        return data.to_vec();
+        data.to_vec()
     }
 }
 
@@ -312,7 +312,7 @@ mod tests {
 
     #[test]
     fn hash_property() {
-        let alg_handle = BCryptAlgorithmHandle::new(BCryptAlgorithm::SHA256).unwrap();
+        let alg_handle = BCryptAlgorithmHandle::new(BCryptAlgorithm::Sha256).unwrap();
         let d = [0u8; 32];
         let s = [0u8; 32];
         alg_handle.hash_data(&d, Some(&s)).unwrap();

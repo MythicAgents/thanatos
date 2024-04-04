@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error, ffi::c_void, io::Read};
+use std::{collections::HashMap, error::Error, ffi::c_void, fmt::Write, io::Read};
 use windows::{
     core::{HSTRING, PCWSTR},
     Win32::Networking::WinHttp::{
@@ -13,15 +13,15 @@ use super::profilevars;
 
 #[allow(unused)]
 enum HttpVerb {
-    GET,
-    POST,
+    Get,
+    Post,
 }
 
 impl HttpVerb {
     pub fn as_hstring(&self) -> HSTRING {
         match self {
-            HttpVerb::GET => HSTRING::from("GET"),
-            HttpVerb::POST => HSTRING::from("POST"),
+            HttpVerb::Get => HSTRING::from("GET"),
+            HttpVerb::Post => HSTRING::from("POST"),
         }
     }
 }
@@ -80,12 +80,12 @@ struct WinHttpConnectHandle {
 
 impl WinHttpConnectHandle {
     pub fn post(self, uri: &str, tls: bool) -> Result<WinHttpRequestHandle, Box<dyn Error>> {
-        self.open_request(HttpVerb::POST, uri, tls)
+        self.open_request(HttpVerb::Post, uri, tls)
     }
 
     #[allow(unused)]
     pub fn get(self, uri: &str, tls: bool) -> Result<WinHttpRequestHandle, Box<dyn Error>> {
-        self.open_request(HttpVerb::GET, uri, tls)
+        self.open_request(HttpVerb::Get, uri, tls)
     }
 
     pub fn open_request(
@@ -149,8 +149,10 @@ impl WinHttpRequestHandle {
 
         let headers = headers
             .into_iter()
-            .map(|(key, value)| format!("{}: {}\r\n", key, value))
-            .collect::<String>();
+            .fold(String::new(), |mut header_string, (key, value)| {
+                write!(&mut header_string, "{}: {}\r\n", key, value).unwrap();
+                header_string
+            });
 
         let headers = HSTRING::from(headers);
         unsafe {
@@ -221,10 +223,10 @@ impl Read for WinHttpResponse {
 
 pub fn http_post(host: &str, port: u16, uri: &str, body: &str) -> Result<String, Box<dyn Error>> {
     let secure = host.starts_with("https://");
-    let domain = host.split("/").last().unwrap();
+    let domain = host.split('/').last().unwrap();
 
     let mut resp = WinHttpSession::new(&profilevars::useragent())?
-        .connect(&domain, port)?
+        .connect(domain, port)?
         .post(uri, secure)?
         .add_headers(profilevars::headers().unwrap_or_default())?
         .send_body(body)?;
