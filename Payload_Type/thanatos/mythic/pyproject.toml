@@ -1,0 +1,54 @@
+[tool.poetry]
+name = "thanatos"
+version = "0.1.10"
+description = "Mythic code for the Thanatos agent"
+authors = ["Matt Ehrnschwender <matthewe2020@gmail.com>"]
+readme = "../../README.md"
+license = "BSD-3-Clause"
+package-mode = false
+
+[tool.poetry.scripts]
+thanatos = "thanatos.main:main"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+mythic-container = "^0.4.15"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.1.1"
+pytest-asyncio = "^0.23.6"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.3.0"
+pylint = "^3.1.0"
+
+[tool.black]
+line-length = 90
+target-version = ['py311']
+
+[tool.pytest.ini_options]
+filterwarnings = [
+  "ignore:You are using GLOBAL_ENV_FOR_DYNACONF which is a deprecated settings",
+]
+
+[tool.pylint."messages control"]
+disable = [
+  "raw-checker-failed",
+  "bad-inline-option",
+  "locally-disabled",
+  "file-ignored",
+  "suppressed-message",
+  "useless-suppression",
+  "deprecated-pragma",
+  "use-symbolic-message-instead",
+  "use-implicit-booleaness-not-comparison-to-string",
+  "use-implicit-booleaness-not-comparison-to-zero",
+  "missing-module-docstring",
+  "missing-class-docstring",
+  "missing-function-docstring",
+  "duplicate-code",
+]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
