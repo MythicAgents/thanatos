@@ -112,6 +112,57 @@ async def post_run_actions(
     )
 
 
+def parse_working_start(start: str) -> (int, int, int):
+    working_start = start.split(":")
+    try:
+        working_start_hours = int(working_start[0])
+    except IndexError as exc:
+        raise ValueError("Hour portion of the start working hours not provided") from exc
+    except ValueError as exc:
+        raise ValueError(
+            "Hour portion of the start working hours is not an integer"
+        ) from exc
+
+    try:
+        working_start_minutes = int(working_start[1])
+    except IndexError as exc:
+        raise ValueError(
+            "Minute portion of the start working hours not provided"
+        ) from exc
+    except ValueError:
+        raise ValueError(
+            "Minute portion of the start working hours is not an integer"
+        ) from exc
+
+    working_start = (int(working_start_hours) * 3600) + (int(working_start_minutes) * 60)
+    return working_start_hours, working_start_minutes, working_start
+
+
+def parse_working_end(end: str) -> (int, int, int):
+    # Parse the end portion of the working hours
+    working_end = end.split(":")
+    try:
+        working_end_hours = int(working_end[0])
+    except IndexError as exc:
+        raise ValueError("Hour portion of the end working hours not provided") from exc
+    except ValueError as exc:
+        raise ValueError(
+            "Hour portion of the end working hours is not an integer"
+        ) from exc
+
+    try:
+        working_end_minutes = int(working_end[1])
+    except IndexError as exc:
+        raise ValueError("Minute portion of the end working hours not provided") from exc
+    except ValueError as exc:
+        raise ValueError(
+            "Minute portion of the end working hours is not an integer"
+        ) from exc
+
+    working_end = (int(working_end_hours) * 3600) + (int(working_end_minutes) * 60) + 60
+    return working_end_hours, working_end_minutes, working_end
+
+
 class WorkingHoursCommand(CommandBase):
     cmd = "workinghours"
     needs_admin = False
@@ -130,79 +181,25 @@ class WorkingHoursCommand(CommandBase):
     async def create_go_tasking(
         self, task_data: PTTaskMessageAllData
     ) -> PTTaskCreateTaskingMessageResponse:
-        working_start = task_data.args.get_arg("start")
-        working_end = task_data.args.get_arg("end")
-
-        # Parse the start portion of the working hours
-        working_start = working_start.split(":")
-        try:
-            working_start_hours = int(working_start[0])
-        except IndexError:
-            return PTTaskCreateTaskingMessageResponse(
-                TaskID=task_data.Task.ID,
-                Success=False,
-                Error="Hour portion of the start working hours not provided",
-            )
-        except ValueError:
-            return PTTaskCreateTaskingMessageResponse(
-                TaskID=task_data.Task.ID,
-                Success=False,
-                Error="Hour portion of the start working hours is not an integer",
-            )
-
-        try:
-            working_start_minutes = int(working_start[1])
-        except IndexError:
-            return PTTaskCreateTaskingMessageResponse(
-                TaskID=task_data.Task.ID,
-                Success=False,
-                Error="Minute portion of the start working hours not provided",
-            )
-        except ValueError:
-            return PTTaskCreateTaskingMessageResponse(
-                TaskID=task_data.Task.ID,
-                Success=False,
-                Error="Minute portion of the start working hours is not an integer",
-            )
-
-        working_start = (int(working_start_hours) * 3600) + (
-            int(working_start_minutes) * 60
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID, Success=False
         )
-        # Parse the end portion of the working hours
-        working_end = working_end.split(":")
-        try:
-            working_end_hours = int(working_end[0])
-        except IndexError:
-            return PTTaskCreateTaskingMessageResponse(
-                TaskID=task_data.Task.ID,
-                Success=False,
-                Error="Hour portion of the end working hours not provided",
-            )
-        except ValueError:
-            return PTTaskCreateTaskingMessageResponse(
-                TaskID=task_data.Task.ID,
-                Success=False,
-                Error="Hour portion of the end working hours is not an integer",
-            )
 
         try:
-            working_end_minutes = int(working_end[1])
-        except IndexError:
-            return PTTaskCreateTaskingMessageResponse(
-                TaskID=task_data.Task.ID,
-                Success=False,
-                Error="Minute portion of the end working hours not provided",
+            working_start_hours, working_start_minutes, working_start = (
+                parse_working_start(task_data.args.get_arg("start"))
             )
-        except ValueError:
-            return PTTaskCreateTaskingMessageResponse(
-                TaskID=task_data.Task.ID,
-                Success=False,
-                Error="Minute portion of the end working hours is not an integer",
-            )
+        except ValueError as exc:
+            response.Error = exc
+            return response
 
-        working_end = (
-            (int(working_end_hours) * 3600) + (int(working_end_minutes) * 60) + 60
-        )
+        try:
+            working_end_hours, working_end_minutes, working_end = parse_working_end(
+                task_data.args.get_arg("end")
+            )
+        except ValueError as exc:
+            response.Error = exc
+            return response
 
         if working_start >= working_end:
             return PTTaskCreateTaskingMessageResponse(
@@ -218,12 +215,11 @@ class WorkingHoursCommand(CommandBase):
         task_data.args.remove_arg("end")
         task_data.args.add_arg("end", working_end, type=ParameterType.Number)
 
-        return PTTaskCreateTaskingMessageResponse(
-            TaskID=task_data.Task.ID,
-            Success=True,
-            DisplayParams=(
-                f"start = {working_start_hours:02d}:{working_start_minutes:02d}, "
-                f"end = {working_end_hours:02d}:{working_end_minutes:02d}"
-            ),
-            CompletionFunctionName="post_run_actions",
+        response.CompletionFunctionName = "post_run_actions"
+
+        response.DisplayParams = (
+            f"start = {working_start_hours:02d}:{working_start_minutes:02d}, "
+            f"end = {working_end_hours:02d}:{working_end_minutes:02d}"
         )
+        response.Success = True
+        return response

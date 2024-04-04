@@ -220,7 +220,8 @@ class SshSpawnCommand(CommandBase):
                 PayloadUUID=payload_uuid,
                 RemoteHost=task_data.args.get_arg("host"),
                 NewDescription=(
-                    f"{task_data.Task.OperatorUsername}'s spawned session from task {str(task_data.Task.ID)}"
+                    f"{task_data.Task.OperatorUsername}'s spawned session from task "
+                    f"{str(task_data.Task.ID)}"
                 ),
             )
         )
@@ -279,7 +280,7 @@ class SshSpawnCommand(CommandBase):
             return PTTaskCreateTaskingMessageResponse(
                 TaskID=task_data.Task.ID,
                 Success=False,
-                Error="Failed to decode upload params"
+                Error="Failed to decode upload params",
             )
 
         file_resp = await SendMythicRPCFileCreate(

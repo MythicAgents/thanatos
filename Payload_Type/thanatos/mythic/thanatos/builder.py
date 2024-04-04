@@ -145,7 +145,7 @@ class Thanatos(PayloadType):
         if arch == "i686" and abi == "musl":
             return BuildResponse(
                 status=BuildStatus.Error,
-                build_message="Cannot build 32 bit statically linked payload."
+                build_message="Cannot build 32 bit statically linked payload.",
             )
 
         # Get the target OS to compile for from the selected OS in Mythic
@@ -240,9 +240,7 @@ class Thanatos(PayloadType):
         if "executable" in self.get_parameter("output"):
             # Set the payload output to the built executable
             target_name = (
-                "thanatos"
-                if self.selected_os == SupportedOS.Linux
-                else "thanatos.exe"
+                "thanatos" if self.selected_os == SupportedOS.Linux else "thanatos.exe"
             )
             payload_path = (
                 f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
