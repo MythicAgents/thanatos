@@ -8,7 +8,7 @@ ARG SCCACHE_VERSION=0.7.7
 RUN apt-get update -y && apt-get install -y \
     curl \
     python3 \
-    python3-pip \
+    python3-venv \
     gcc \
     gcc-multilib \
     mingw-w64-x86-64-dev \
@@ -54,10 +54,25 @@ RUN cp -v libssl-mingw/lib/libcrypto.a /usr/i686-w64-mingw32/lib/
 RUN cp -v libssl-mingw/lib/libssl.a /usr/i686-w64-mingw32/lib/
 RUN rm -rf libssl-mingw libssl-mingw.tar.gz
 
-# Install the python dependencies
-COPY requirements.txt .
-RUN python3 -m pip install -r requirements.txt
-RUN rm requirements.txt
+# Install sccache
+RUN curl -L \
+    "https://github.com/mozilla/sccache/releases/download/v${SCCACHE_VERSION}/sccache-v${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+    -o sccache-v${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
+RUN tar xf sccache-v${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
+RUN mv sccache-v${SCCACHE_VERSION}-x86_64-unknown-linux-musl/sccache /usr/bin/sccache
+RUN rm -rf sccache-v${SCCACHE_VERSION}-x86_64-unknown-linux-musl sccache-v${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
+RUN chmod +x /usr/bin/sccache
+
+# Create a thanatos service user for running the service
+RUN useradd \
+    -r \
+    -c "Thanatos service account" \
+    -m \
+    -d /thanatos \
+    -s /usr/sbin/nologin \
+    thanatos
+
+USER thanatos
 
 # Install rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh \
@@ -72,28 +87,31 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh \
 
 RUN rm -vf rustup.sh
 
-ENV PATH=$PATH:/root/.cargo/bin
+ENV PATH=$PATH:/thanatos/.cargo/bin
 
-# Install sccache
-RUN curl -L \
-    "https://github.com/mozilla/sccache/releases/download/v${SCCACHE_VERSION}/sccache-v${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
-    -o sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
-RUN tar xf sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
-RUN mv sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl/sccache /usr/bin/sccache
-RUN chmod +x /usr/bin/sccache
-RUN rm -rf sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl
-RUN rm -vf sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
-
-WORKDIR /Mythic
-COPY main.py main.py
-COPY thanatos thanatos
+WORKDIR /thanatos
+COPY mythic mythic
+COPY agent agent
 
 # Fetch Rust dependencies
-WORKDIR /Mythic/thanatos/agent_code
+WORKDIR /thanatos/agent
 RUN cargo fetch
 
-WORKDIR /Mythic
+# Copy Rust Cargo config.toml
+COPY .docker/config.toml /thanatos/.cargo/config.toml
 
-COPY .docker/config.toml /root/.cargo/config.toml
-ENV SCCACHE_DIR /Mythic/.cache/sccache
-CMD ["python3", "main.py"]
+WORKDIR /thanatos
+
+# Setup poetry
+RUN python3 -m venv .poetry-venv
+RUN .poetry-venv/bin/pip install -U pip setuptools
+RUN .poetry-venv/bin/pip install poetry
+
+# Install dependencies
+WORKDIR /thanatos/mythic
+RUN /thanatos/.poetry-venv/bin/poetry install --only main
+
+# Set SCCACHE cache directory
+ENV SCCACHE_DIR /thanatos/.cache/sccache
+
+CMD ["/thanatos/.poetry-venv/bin/poetry", "run", "thanatos"]
