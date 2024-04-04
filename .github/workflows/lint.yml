@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - dev
-      - deps-refactor
     paths:
       - Payload_Type/thanatos/
 
