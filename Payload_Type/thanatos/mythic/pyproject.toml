@@ -12,7 +12,7 @@ thanatos = "thanatos.main:main"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-mythic-container = "^0.4.15"
+mythic-container = "^0.4.17"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.1.1"

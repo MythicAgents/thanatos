@@ -653,13 +653,13 @@ files = [
 
 [[package]]
 name = "mythic-container"
-version = "0.4.15"
+version = "0.4.17"
 description = "Functionality for Mythic Services"
 optional = false
 python-versions = "*"
 files = [
-    {file = "mythic_container-0.4.15-py3-none-any.whl", hash = "sha256:b0330c1da886b6b4df3cf0d8bf5ff6697436050b033da86e1167747d7feace00"},
-    {file = "mythic_container-0.4.15.tar.gz", hash = "sha256:5fb1ece4188dc64ff3c5678feabfc55d5c0cb6c10d64838277fd933de68cb364"},
+    {file = "mythic_container-0.4.17-py3-none-any.whl", hash = "sha256:bc5de91f53b62dd53475522f66a376900c41b0ef3e1874ddc0ffe4f39d869fa4"},
+    {file = "mythic_container-0.4.17.tar.gz", hash = "sha256:edb8571f950da19024733750d640cf768a39f393fea3d2b07af2a06c007100fc"},
 ]
 
 [package.dependencies]
@@ -1058,4 +1058,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "d762c4821fecc7906b3f27dac9996ee3f0b3923765932a7fbb121b937c499f1b"
+content-hash = "0fce0ac8334904634c7d48053982105d8d25c81e14423407e8cb45f3323321d8"
