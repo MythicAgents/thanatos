@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import mythic_container
 import thanatos.builder as _
+import thanatos.commands as _
 
 
 def main():
