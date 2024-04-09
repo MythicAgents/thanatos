@@ -1,0 +1,16 @@
+{
+    "rust-analyzer.server.extraEnv": {
+        "UUID": "1234",
+        "AESPSK": "1234",
+        "callback_host": "1234",
+        "callback_interval": "1234",
+        "callback_jitter": "1234",
+        "callback_port": "1234",
+        "connection_retries": "1234",
+        "encrypted_exchange_check": "1234",
+        "get_uri": "1234",
+        "headers": "1234",
+        "post_uri": "1234",
+        "working_hours": "1234"
+    }
+}
