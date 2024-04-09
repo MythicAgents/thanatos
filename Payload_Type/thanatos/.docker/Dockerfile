@@ -86,7 +86,6 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh \
     -t i686-pc-windows-gnu
 
 RUN rm -vf rustup.sh
-
 ENV PATH=$PATH:/thanatos/.cargo/bin
 
 WORKDIR /thanatos
@@ -106,12 +105,13 @@ WORKDIR /thanatos
 RUN python3 -m venv .poetry-venv
 RUN .poetry-venv/bin/pip install -U pip setuptools
 RUN .poetry-venv/bin/pip install poetry
+ENV PATH=$PATH:/thanatos/.poetry-venv/bin
 
 # Install dependencies
 WORKDIR /thanatos/mythic
-RUN /thanatos/.poetry-venv/bin/poetry install --only main
+RUN poetry install --only main
 
 # Set SCCACHE cache directory
 ENV SCCACHE_DIR /thanatos/.cache/sccache
 
-CMD ["/thanatos/.poetry-venv/bin/poetry", "run", "thanatos"]
+CMD ["poetry", "run", "thanatos"]

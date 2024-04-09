@@ -3,9 +3,7 @@ name = "thanatos"
 version = "0.1.10"
 description = "Mythic code for the Thanatos agent"
 authors = ["Matt Ehrnschwender <matthewe2020@gmail.com>"]
-readme = "../../README.md"
 license = "BSD-3-Clause"
-package-mode = false
 
 [tool.poetry.scripts]
 thanatos = "thanatos.main:main"
