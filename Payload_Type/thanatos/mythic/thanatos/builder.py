@@ -3,6 +3,7 @@ import json
 import os
 import pathlib
 import tempfile
+import time
 from shutil import copytree
 from mythic_container.PayloadBuilder import (
     PayloadType,
@@ -12,8 +13,6 @@ from mythic_container.PayloadBuilder import (
     BuildResponse,
     BuildStatus,
 )
-
-# pylint: disable=too-many-locals,too-many-branches,too-many-statements
 
 
 # Class defining information about the Thanatos payload
@@ -99,169 +98,189 @@ class Thanatos(PayloadType):
     # Supported C2 profiles for thanatos
     c2_profiles = ["http"]
 
-    agent_path = pathlib.Path("..")
+    agent_path = pathlib.Path(os.path.dirname(__file__)) / ".." / ".."
     agent_code_path = agent_path / "agent"
-    agent_icon_path = pathlib.Path(".") / "icon" / "thanatos.svg"
+    agent_icon_path = agent_path / "mythic" / "icon" / "thanatos.svg"
 
     # This function is called to build a new payload
     async def build(self) -> BuildResponse:
         # Setup a new build response object
         resp = BuildResponse(status=BuildStatus.Error)
 
-        # Make a temporary directory for building the implant
-        agent_build_path = tempfile.TemporaryDirectory(suffix=self.uuid)
+        start_time = time.time()
 
-        # Copy the implant code to the temporary directory
-        copytree(self.agent_code_path, agent_build_path.name, dirs_exist_ok=True)
-
-        # Get the C2 profile information
-        c2 = self.c2info[0]
-        profile = c2.get_c2profile()["name"]
-        if profile not in self.c2_profiles:
-            resp.build_message = "Invalid C2 profile name specified"
+        try:
+            configured_build_parameters = self.get_payload_build_parameters()
+        except ValueError as exc:
+            resp.build_message(
+                "Failed to build payload. Check build errors for more information"
+            )
+            resp.build_stderr(exc)
             return resp
 
-        # Get the architecture from the build parameter
+        # Combine the C2 parameters with the build parameters
+        payload_parameters = {
+            "UUID": self.uuid,
+            **self.get_c2_profile_parameters(),
+            **configured_build_parameters,
+        }
+
+        # Create the build command
+        build_command = [
+            "env",
+            " ".join(
+                [
+                    (
+                        f"{key}='{val}'"
+                        if isinstance(val, str)
+                        else f"{key}='{json.dumps(val)}'"
+                    )
+                    for key, val in payload_parameters.items()
+                ]
+            ),
+            "cargo build",
+            f"--target {self.get_rust_triple()}",
+            f"--features {self.get_c2_profile_name()}",
+            "--release",
+        ]
+
+        command = " ".join(build_command)
+
+        # Set the build stdout to the build command
+        resp.build_message = str(command)
+
+        # Make a temporary directory for building the implant
+        with tempfile.TemporaryDirectory(suffix=self.uuid) as agent_build_path:
+            # Copy the implant code to the temporary directory
+            copytree(self.agent_code_path, agent_build_path, dirs_exist_ok=True)
+
+            # Run the cargo command which builds the agent
+            proc = await asyncio.create_subprocess_shell(
+                command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=agent_build_path,
+            )
+
+            # Get the build command's stdout and stderr messages
+            stdout, stderr = await proc.communicate()
+
+            if stdout:
+                resp.set_build_stdout(stdout.decode())
+
+            if stderr:
+                resp.set_build_stderr(stderr.decode())
+
+            # Check if the build command returned an error and send that error to Mythic
+            # stdout/stderr
+            if proc.returncode != 0:
+                resp.set_build_message(
+                    "Failed to build payload. Check build errors for more information",
+                )
+                return resp
+
+            resp.payload = self.get_built_payload(agent_build_path)
+
+        elapsed = time.time() - start_time
+
+        # Notify Mythic that the build was successful
+        resp.build_message = (
+            "Successfully built thanatos agent.\n\n"
+            f"Payload build time: {elapsed // 60:0.0f} "
+            f"{'minutes' if elapsed // 60 != 1 else 'minute'}, "
+            f"{elapsed % 60:0.0f} "
+            f"{'seconds' if elapsed % 60 != 1 else 'second'} "
+            f"({elapsed:0.0f} total seconds)\n\n"
+            "Build command:\n"
+            f"{command}"
+        )
+
+        resp.status = BuildStatus.Success
+        return resp
+
+    def get_c2_profile_name(self) -> str:
+        """Gets the configured C2 profile name"""
+        return self.c2info[0].get_c2profile()["name"]
+
+    def get_c2_profile_parameters(self) -> dict:
+        """Gets the configured C2 profile parameters"""
+        return self.c2info[0].get_parameters_dict()
+
+    def get_payload_build_parameters(self):
+        """Gets the configured build parameter values for the payload and validates them"""
+        params = self.get_build_instance_values()
+
+        # Building 32 bit statically linked payloads is not supported due to musl/openssl
+        # limitations
+        if (self.selected_os == SupportedOS.Linux) and (
+            params["architecture"] == "x86" and params["static"]
+        ):
+            raise ValueError("Cannot build 32 bit statically linked payload on Linux")
+
+        # Check working hours hour value
+        working_hour = int(params["working_hours"].split(":")[0])
+
+        if working_hour > 24:
+            raise ValueError("Working hours start hour is larger than 24")
+
+        working_hour = int(params["working_hours"].split("-")[1].split(":")[0])
+        if working_hour > 24:
+            raise ValueError("Working hours end hour is larger than 24")
+
+        del params["architecture"]
+        del params["static"]
+        del params["output"]
+        return params
+
+    def get_rust_triple(self) -> str:
+        """Gets the Rust triple from the selected build parameters
+
+        Returns:
+            Fully formed Rust triple
+        """
+
+        # Get triple architecture
         if self.get_parameter("architecture") == "x64":
             arch = "x86_64"
         else:
             arch = "i686"
 
-        # Start formulating the rust flags
-        rustflags = []
-
-        # Check for static linking
-        abi = "gnu"
+        # Get triple vendor and OS type
         if self.selected_os == SupportedOS.Linux:
-            if self.get_parameter("static"):
-                rustflags.append("-C target-feature=+crt-static")
-                abi = "musl"
-        elif self.selected_os == SupportedOS.Windows:
-            rustflags.append("-C target-feature=+crt-static")
+            vendor = "unknown"
+            os_type = "linux"
+        else:
+            vendor = "pc"
+            os_type = "windows"
 
-        # Fail if trying to build a 32 bit statically linked payload.
-        # This is a limitation in musl/openssl since 32 bit integers in musl libc
-        # do not allow for enough precision in openssl.
-        if arch == "i686" and abi == "musl":
-            return BuildResponse(
-                status=BuildStatus.Error,
-                build_message="Cannot build 32 bit statically linked payload.",
-            )
+        # Get triple environment type
+        if self.selected_os == SupportedOS.Linux and self.get_parameter("static"):
+            env_type = "musl"
+        else:
+            env_type = "gnu"
 
-        # Get the target OS to compile for from the selected OS in Mythic
-        target_os = (
-            f"{arch}-unknown-linux-{abi}"
-            if self.selected_os == SupportedOS.Linux
-            else f"{arch}-pc-windows-gnu"
+        return f"{arch}-{vendor}-{os_type}-{env_type}"
+
+    def get_built_payload(self, build_path: str) -> bytes:
+        """Opens the path containing the built payload and returns the raw data of it"""
+
+        payload_path = (
+            pathlib.Path(build_path) / "target" / self.get_rust_triple() / "release"
         )
-
-        # Combine the C2 parameters with the build parameters
-        c2_params = c2.get_parameters_dict()
-        c2_params["UUID"] = self.uuid
-
-        c2_params["daemonize"] = str(self.get_parameter("daemonize"))
-
-        c2_params["connection_retries"] = self.get_parameter("connection_retries")
-        c2_params["working_hours"] = self.get_parameter("working_hours")
-
-        # Start formulating the command to build the agent
-        command = "env "
-
-        # Add any rustflags if they exist
-        if rustflags:
-            rustflags = " ".join(rustflags)
-            command += f'RUSTFLAGS="{rustflags}" '
-
-        # Loop through each C2/build parameter creating environment variable
-        # key/values for each option
-        for key, val in c2_params.items():
-            if isinstance(val, str):
-                command += f"{key}='{val}' "
-            else:
-                v = json.dumps(val)
-                command += f"{key}='{v}' "
-
-        # Add the C2 profile to as a feature flag
-        features = [profile]
-        feature_flags = ",".join(features)
-
-        # Finish off the cargo command used for building the agent
-        command += (
-            f"cargo build --target {target_os} --features {feature_flags} --release"
-        )
-
-        # Copy any prebuilt dependencies if they exist
-        deps_suffix = "_static" if self.get_parameter("static") == "yes" else ""
-
-        deps_path = f"/opt/{target_os}{deps_suffix}"
-        if os.path.exists(deps_path):
-            copytree(
-                f"{deps_path}",
-                f"{agent_build_path.name}/target",
-                dirs_exist_ok=True,
-            )
-
-        # Set the build stdout to the build command invocation
-        resp.build_message = str(command)
-
-        # Run the cargo command which builds the agent
-        proc = await asyncio.create_subprocess_shell(
-            command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            cwd=agent_build_path.name,
-        )
-
-        # Grab stdout/stderr
-        stdout, stderr = await proc.communicate()
-
-        # Check if the build command returned an error and send that error to Mythic
-        # stdout/stderr
-        if proc.returncode != 0:
-            resp.set_build_stdout(stdout.decode())
-            resp.set_build_stderr(stderr.decode())
-            resp.set_build_message(
-                "Failed to build payload. Check build errors for more information",
-            )
-            return resp
-
-        # Copy any dependencies that were compiled
-        built_path = f"{agent_build_path.name}/target"
-        if os.path.exists(built_path):
-            copytree(f"{built_path}", f"{deps_path}", dirs_exist_ok=True)
-
-        # Check if there is anything on stdout/stderr and forward to Mythic
-        if stdout:
-            resp.set_build_stdout(f"{command}\n\n{stdout.decode()}")
-        if stderr:
-            resp.set_build_stderr(stdout.decode())
 
         # Parse the output format for the payload
         if "executable" in self.get_parameter("output"):
-            # Set the payload output to the built executable
-            target_name = (
-                "thanatos" if self.selected_os == SupportedOS.Linux else "thanatos.exe"
+            binary_name = "thanatos" + (
+                ".exe" if self.selected_os == SupportedOS.Windows else ""
             )
-            payload_path = (
-                f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
-            )
+
         elif "shared library" in self.get_parameter("output"):
-            # Set the payload output to the build shared library
-            target_name = (
+            binary_name = (
                 "libthanatos.so"
                 if self.selected_os == SupportedOS.Linux
                 else "thanatos.dll"
             )
-            payload_path = (
-                f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
-            )
 
+        payload_path = payload_path / binary_name
         with open(payload_path, "rb") as f:
-            resp.payload = f.read()
-
-        # Notify Mythic that the build was successful
-        resp.set_build_message("Successfully built thanatos agent.")
-        resp.build_message += "\n"
-        resp.build_message += str(command)
-        resp.status = BuildStatus.Success
-        return resp
+            return f.read()
