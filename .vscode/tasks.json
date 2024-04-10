@@ -1,0 +1,45 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Deploy changes",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}",
+            },
+            "command": "ssh",
+            "args": [
+                "mythic",
+                "./redeploy.sh",
+            ],
+            "group": "build",
+            "dependsOn": [
+                "Build base Docker image"
+            ]
+        },
+        {
+            "label": "Build base Docker image",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/Payload_Type/thanatos",
+            },
+            "command": "docker",
+            "args": [
+                "build",
+                "-f",
+                ".docker/Dockerfile",
+                "-t",
+                "ghcr.io/mythicagents/thanatos:${input:tag}",
+                "."
+            ],
+            "group": "build"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "tag",
+            "description": "Image tag",
+            "type": "promptString"
+        }
+    ]
+}
