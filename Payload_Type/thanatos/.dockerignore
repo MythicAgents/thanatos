@@ -1,0 +1,3 @@
+agent/target
+mythic/.pytest_cache
+__pycache__
