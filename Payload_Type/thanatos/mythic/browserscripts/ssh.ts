@@ -1,4 +1,4 @@
-function(task, responses) {
+function ssh(task, responses) {
   if (task.status.includes("error")) {
     const combined = responses.reduce((prev, cur) => {
       return prev + cur;
@@ -311,8 +311,10 @@ function(task, responses) {
       return { 'plaintext': combined };
     }
   } else {
-    return { "plaintext": responses.reduce((prev, curr) => {
-      return prev + "\n" + curr;
-    }) };
+    return {
+      "plaintext": responses.reduce((prev, curr) => {
+        return prev + "\n" + curr;
+      })
+    };
   }
 }

@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "module": "ES2022",
+    "strict": true
+  },
+  "include": [
+    "*.ts"
+  ]
+}

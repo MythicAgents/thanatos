@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	thanatoserror "thanatos/errors"
+
+	thanatoserror "github.com/MythicAgents/thanatos/errors"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 	"github.com/MythicMeta/MythicContainer/mythicrpc"

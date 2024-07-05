@@ -7,8 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	thanatoserror "thanatos/errors"
 	"time"
+
+	thanatoserror "github.com/MythicAgents/thanatos/errors"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 )

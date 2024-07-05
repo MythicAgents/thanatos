@@ -1,29 +1,31 @@
-function(task, responses) {
-  if (task.status.includes("error")) {
-    const combined = responses.reduce((prev, cur) => {
+import { Task, BrowserScriptResponse, TableRowEntry, PlaintextResponse, TableResponse } from "./mythic.js";
+
+type GetEnvResponse = Array<EnvironmentVariable>;
+
+type EnvironmentVariable = {
+  key: string,
+  value: string,
+}
+
+interface EnvironmentVariableRow extends TableRowEntry {
+  actions: string
+}
+
+function getenv(task: Task, responses: Array<string>): PlaintextResponse | TableResponse<EnvironmentVariableRow> {
+  if (task.status == "error") {
+    const combined: string = responses.reduce((prev, cur) => {
       return prev + cur;
     }, "");
-    return { "plaintext": combined };
+    return {
+      plaintext: combined,
+    }
   }
 
-  let headers = [
-    { "plaintext": "actions", "type": "button", "cellStyle": {}, "width": 120, "disableSort": true },
-    { "plaintext": "key", "type": "string", "fillWidth": true, "cellStyle": {} },
-    { "plaintext": "value", "type": "string", "fillWidth": true, "cellStyle": {} },
-  ];
-
   let rows = [];
-  let title = "";
-
   for (let i = 0; i < responses.length; i++) {
-    let data = JSON.parse(responses[i]);
-
-    title = "Environment Variables";
+    let data: GetEnvResponse = JSON.parse(responses[i]);
 
     for (let j = 0; j < data.length; j++) {
-      let variable_value = {};
-      variable_value[data[j].key] = data[j].value;
-
       let row = {
         "rowStyle": {},
         "actions": {
@@ -62,9 +64,26 @@ function(task, responses) {
 
   return {
     "table": [{
-      "headers": headers,
+      "title": "Environment Variables",
+      "headers": [
+        {
+          plaintext: "actions",
+          type: "button",
+          width: 120,
+          disableSort: true
+        },
+        {
+          plaintext: "key",
+          type: "string",
+          fillWidth: true,
+        },
+        {
+          plaintext: "value",
+          type: "string",
+          fillWidth: true
+        },
+      ],
       "rows": rows,
-      "title": title,
     }]
   };
 }

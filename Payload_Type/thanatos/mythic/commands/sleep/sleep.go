@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"thanatos/commands/utils"
-	thanatoserror "thanatos/errors"
+
+	"github.com/MythicAgents/thanatos/commands/utils"
+	thanatoserror "github.com/MythicAgents/thanatos/errors"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 )

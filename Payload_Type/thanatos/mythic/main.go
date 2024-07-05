@@ -4,9 +4,9 @@
 package main
 
 import (
+	"github.com/MythicAgents/thanatos/builder"
+	"github.com/MythicAgents/thanatos/commands"
 	"github.com/MythicMeta/MythicContainer"
-	"thanatos/builder"
-	"thanatos/commands"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module thanatos
+module github.com/MythicAgents/thanatos
 
 go 1.22
 

@@ -5,7 +5,8 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	thanatoserror "thanatos/errors"
+
+	thanatoserror "github.com/MythicAgents/thanatos/errors"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 )

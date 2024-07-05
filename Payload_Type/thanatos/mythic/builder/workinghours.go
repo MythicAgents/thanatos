@@ -5,8 +5,9 @@ import (
 	"errors"
 	"strconv"
 	"strings"
-	thanatoserror "thanatos/errors"
 	"time"
+
+	thanatoserror "github.com/MythicAgents/thanatos/errors"
 )
 
 type ParsedWorkingHours struct {

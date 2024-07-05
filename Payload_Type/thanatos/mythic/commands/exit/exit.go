@@ -1,8 +1,8 @@
 package exit
 
 import (
+	thanatoserrors "github.com/MythicAgents/thanatos/errors"
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
-	thanatoserrors "thanatos/errors"
 )
 
 type exitOption string

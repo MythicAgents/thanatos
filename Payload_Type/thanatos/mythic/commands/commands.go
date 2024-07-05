@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"thanatos/commands/exit"
-	"thanatos/commands/sleep"
+	"github.com/MythicAgents/thanatos/commands/exit"
+	"github.com/MythicAgents/thanatos/commands/sleep"
 )
 
 func Initialize() {

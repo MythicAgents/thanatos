@@ -2,7 +2,8 @@ package builder
 
 import (
 	"crypto/sha256"
-	"thanatos/pb/config"
+
+	"github.com/MythicAgents/thanatos/pb/config"
 )
 
 func createConfig(payloadParameters ParsedPayloadParameters) *config.Config {
@@ -10,8 +11,8 @@ func createConfig(payloadParameters ParsedPayloadParameters) *config.Config {
 
 	payloadConfig.Uuid = payloadParameters.Uuid[:]
 
-	payloadConfig.WorkingHoursStart = int64(payloadParameters.BuildParameters.WorkingHours.StartTime.Seconds())
-	payloadConfig.WorkingHoursEnd = int64(payloadParameters.BuildParameters.WorkingHours.EndTime.Seconds())
+	payloadConfig.WorkingHoursStart = uint32(payloadParameters.BuildParameters.WorkingHours.StartTime.Seconds())
+	payloadConfig.WorkingHoursEnd = uint32(payloadParameters.BuildParameters.WorkingHours.EndTime.Seconds())
 
 	payloadConfig.ConnectionRetries = payloadParameters.BuildParameters.ConnectionRetries
 	payloadConfig.SpawnTo = payloadParameters.BuildParameters.SpawnTo
