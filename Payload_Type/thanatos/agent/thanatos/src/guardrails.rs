@@ -6,28 +6,20 @@ use crate::os::linux as system;
 #[cfg(target_os = "windows")]
 use crate::os::windows as system;
 
-#[cfg(feature = "crypto-system")]
-use cryptolib::hash::system::Sha256;
+use cryptolib::hash::Sha256;
 
-#[cfg(not(feature = "crypto-system"))]
-use cryptolib::hash::internal::Sha256;
-
-use config::ConfigVars;
 use errors::ThanatosError;
 
 #[inline(always)]
-pub fn run_guardrails(agent_config: &ConfigVars) -> bool {
-    #[cfg(feature = "usernamecheck")]
+pub fn run_guardrails() -> bool {
     if !run_check(agent_config.usernames(), system::username) {
         return false;
     }
 
-    #[cfg(feature = "hostnamecheck")]
     if !run_check(agent_config.hostnames(), system::hostname) {
         return false;
     }
 
-    #[cfg(feature = "domaincheck")]
     if !run_check(agent_config.domains(), system::domain) {
         return false;
     }
@@ -61,8 +53,7 @@ fn check_hashlist_with(hlist: &[[u8; 32]], value: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{check_hashlist_with, run_check};
-    use config::ConfigVars;
-    use cryptolib::hash::internal::Sha256;
+    use cryptolib::hash::Sha256;
     use errors::ThanatosError;
 
     #[test]

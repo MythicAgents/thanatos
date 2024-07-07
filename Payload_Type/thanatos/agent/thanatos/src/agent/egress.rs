@@ -1,7 +1,6 @@
 use std::time::SystemTime;
 
 use chrono::{DateTime, NaiveTime, Utc};
-use config::ConfigVars;
 use errors::ThanatosError;
 use rand::{rngs::SmallRng, seq::IteratorRandom, SeedableRng};
 

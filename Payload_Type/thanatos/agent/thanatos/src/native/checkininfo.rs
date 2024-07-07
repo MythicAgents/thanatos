@@ -1,4 +1,4 @@
-use base_profile::msg::checkin::{checkin_data::PlatformInfo, CheckinData};
+use thanatos_protos::msg::checkin::CheckinData;
 
 #[cfg(target_os = "windows")]
 pub fn get_checkininfo() -> CheckinData {
@@ -23,8 +23,9 @@ pub fn get_checkininfo() -> CheckinData {
 
 #[cfg(target_os = "linux")]
 pub fn get_checkininfo() -> CheckinData {
+    use thanatos_protos::msg::checkin::{checkin_data::PlatformInfo, LinuxInfo};
+
     use crate::{native, os::linux};
-    use base_profile::msg::checkin::LinuxInfo;
 
     CheckinData {
         user: linux::username().ok(),

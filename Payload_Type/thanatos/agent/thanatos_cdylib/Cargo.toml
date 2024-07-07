@@ -1,14 +1,13 @@
 [package]
-name = "base-profile"
+name = "thanatos_cdylib"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
 license.workspace = true
 version.workspace = true
 
+[lib]
+crate-type = ["cdylib"]
 
 [dependencies]
-prost.workspace = true
-
-[build-dependencies]
-prost-build.workspace = true
+thanatos = { path = "../thanatos" }

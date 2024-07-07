@@ -7,8 +7,7 @@ use ffiwrappers::linux::{
     uname::{self, UtsName},
     user::UserInfo,
 };
-
-use base_profile::msg::checkin::{ip_type, Architecture, ContainerEnv, IpType};
+use thanatos_protos::msg::checkin::{ip_type, Architecture, ContainerEnv, IpType};
 
 mod dnsname;
 pub use dnsname::{domain, hostname};

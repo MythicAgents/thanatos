@@ -1,4 +1,4 @@
-use base_profile::msg::checkin::Architecture;
+use thanatos_protos::msg::checkin::Architecture;
 
 pub mod checkininfo;
 

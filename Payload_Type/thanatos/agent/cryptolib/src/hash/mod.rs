@@ -1,5 +1,11 @@
-#[cfg(feature = "internal")]
-pub mod internal;
+#[cfg(unix)]
+mod linux;
 
-#[cfg(feature = "system")]
-pub mod system;
+#[cfg(unix)]
+pub use linux::*;
+
+#[cfg(windows)]
+mod windows;
+
+#[cfg(windows)]
+pub use windows::*;

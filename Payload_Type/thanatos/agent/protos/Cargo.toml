@@ -1,25 +1,13 @@
 [package]
-name = "config"
+name = "thanatos_protos"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
 license.workspace = true
 version.workspace = true
 
-
 [dependencies]
 prost.workspace = true
-cfg-if.workspace = true
-
-[dependencies.errors]
-path = "../errors"
-
-[dependencies.utils]
-path = "../utils"
 
 [build-dependencies]
 prost-build.workspace = true
-
-[features]
-default = ["full"]
-full = []

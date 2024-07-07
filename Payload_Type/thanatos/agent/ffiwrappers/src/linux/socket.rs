@@ -1,5 +1,44 @@
 use std::{marker::PhantomData, ptr::NonNull};
 
+use crate::internal::SealedTrait;
+
+pub struct AfUnspec;
+impl SealedTrait for AfUnspec {}
+
+pub enum SockAddr<'a> {
+    AfInet(SockAddrIn<'a, AfInet>),
+    AfInet6(SockAddrIn<'a, AfInet6>),
+}
+
+impl<'a> SockAddr<'a> {
+    pub(crate) unsafe fn from_ptr(s: *mut libc::sockaddr) -> Option<SockAddr<'a>> {
+        match (*s).sa_family as i32 {
+            libc::AF_INET6 => Some(SockAddr::AfInet6(SockAddrIn::<AfInet6>::from_raw(
+                NonNull::new(s)?.cast(),
+            ))),
+            libc::AF_INET => Some(SockAddr::AfInet(SockAddrIn::<AfInet>::from_raw(
+                NonNull::new(s)?.cast(),
+            ))),
+            _ => None,
+        }
+    }
+}
+
+#[repr(transparent)]
+pub struct SockAddrIn<'a, S: SockAddrFamily> {
+    pub(crate) addr: NonNull<S::Inner>,
+    _marker: PhantomData<&'a S::Inner>,
+}
+
+impl<'a, S: SockAddrFamily> SockAddrIn<'a, S> {
+    pub(crate) unsafe fn from_raw(addr: NonNull<S::Inner>) -> SockAddrIn<'a, S> {
+        SockAddrIn {
+            addr,
+            _marker: PhantomData,
+        }
+    }
+}
+
 #[repr(i32)]
 #[derive(Default, Debug, PartialEq, Eq)]
 pub enum Family {
@@ -73,16 +112,6 @@ impl SockAddrFamily for AfInet6 {
 }
 
 impl<'a> SockAddrIn<'a, AfInet> {
-    /// # Safety
-    ///
-    /// This pointer is not validated to ensure that it is of the correct type
-    pub unsafe fn from_raw(addr: NonNull<libc::sockaddr_in>) -> Self {
-        Self {
-            addr,
-            _marker: PhantomData,
-        }
-    }
-
     pub const fn sin_family(&self) -> Family {
         Family::from_value(unsafe { self.addr.as_ref().sin_family } as i32)
     }
@@ -97,16 +126,6 @@ impl<'a> SockAddrIn<'a, AfInet> {
 }
 
 impl<'a> SockAddrIn<'a, AfInet6> {
-    /// # Safety
-    ///
-    /// This pointer is not validated to ensure that it is of the correct type
-    pub const unsafe fn from_raw(addr: NonNull<libc::sockaddr_in6>) -> Self {
-        Self {
-            addr,
-            _marker: PhantomData,
-        }
-    }
-
     pub fn sin6_family(&self) -> Family {
         Family::from_value(unsafe { self.addr.as_ref().sin6_family } as i32)
     }

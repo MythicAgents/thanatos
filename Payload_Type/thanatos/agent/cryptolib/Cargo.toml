@@ -7,23 +7,11 @@ license.workspace = true
 version.workspace = true
 
 
-[dependencies]
+[dev-dependencies]
 hex-literal.workspace = true
-cfg-if.workspace = true
-
-[dependencies.sha2]
-workspace = true
-optional = true
 
 [target.'cfg(target_os = "linux")'.dependencies.openssl]
 workspace = true
-optional = true
 
 [target.'cfg(target_os = "windows")'.dependencies.ffiwrappers]
 path = "../ffiwrappers"
-optional = true
-
-[features]
-default = ["internal", "system"]
-internal = ["dep:sha2"]
-system = ["dep:openssl", "dep:ffiwrappers"]

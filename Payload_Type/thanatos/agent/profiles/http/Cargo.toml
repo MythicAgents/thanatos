@@ -9,11 +9,5 @@ version.workspace = true
 
 [dependencies]
 
-[dependencies.config]
-path = "../../config"
-
 [dependencies.utils]
 path = "../../utils"
-
-[dependencies.base-profile]
-path = "../base"

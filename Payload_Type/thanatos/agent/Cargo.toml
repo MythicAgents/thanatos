@@ -2,22 +2,17 @@
 [workspace]
 resolver = "2"
 members = [
-  "config",
+  "errors",
   "ffiwrappers",
   "thanatos",
-  "thanatos/cdylib",
-  "thanatos/binary",
+  "thanatos_binary",
+  "thanatos_cdylib",
   "utils",
-  "cryptolib",
-  "errors",
-  "genconfig",
   "profiles/http",
-  "profiles/base",
+  "protos", "genconfig",
 ]
 
 default-members = ["thanatos"]
-
-exclude = ["shellcode-builder"]
 
 [workspace.package]
 authors = ["@M_alphaaa"]
@@ -37,9 +32,9 @@ chrono = "0.4.34"
 generic-array = "1"
 hex-literal = "0.4.1"
 openssl = "0.10.63"
-prost = "0.12.0"
-prost-types = "0.12.0"
-prost-build = "0.12.0"
+prost = "0.12.6"
+prost-types = "0.12.6"
+prost-build = "0.12.6"
 serde_json = "1"
 sha2 = "0.10.8"
 

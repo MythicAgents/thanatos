@@ -14,12 +14,8 @@ hex-literal.workspace = true
 prost.workspace = true
 rand.workspace = true
 
-[dependencies.config]
-path = "../config"
-
 [dependencies.cryptolib]
 path = "../cryptolib"
-optional = true
 
 [dependencies.errors]
 path = "../errors"
@@ -30,25 +26,8 @@ path = "../ffiwrappers"
 [dependencies.utils]
 path = "../utils"
 
-[dependencies.base-profile]
-path = "../profiles/base"
-
 [dependencies.http-profile]
-optional = true
 path = "../profiles/http"
 
-[build-dependencies]
-prost-build.workspace = true
-
-[features]
-default = ["crypto-internal", "http"]
-crypto-system = ["cryptolib/system"]
-crypto-internal = ["cryptolib/internal"]
-domaincheck = []
-hostnamecheck = []
-usernamecheck = []
-init-fork = []
-init-thread = []
-tlsuntrusted = []
-http = ["http-profile"]
-tcp = []
+[dependencies.thanatos_protos]
+path = "../protos"
