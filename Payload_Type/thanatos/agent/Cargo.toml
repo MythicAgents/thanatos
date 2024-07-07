@@ -9,7 +9,7 @@ members = [
   "thanatos_cdylib",
   "utils",
   "profiles/http",
-  "protos", "genconfig",
+  "protos",
 ]
 
 default-members = ["thanatos"]
