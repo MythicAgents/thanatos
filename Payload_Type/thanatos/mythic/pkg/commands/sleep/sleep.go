@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MythicAgents/thanatos/commands/utils"
-	thanatoserror "github.com/MythicAgents/thanatos/errors"
+	"github.com/MythicAgents/thanatos/pkg/commands/utils"
+	thanatoserror "github.com/MythicAgents/thanatos/pkg/errors"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 )

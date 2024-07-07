@@ -1,36 +1,50 @@
+# Go compiler
 GO = go
-FLAGS =
+
+# Go module base name
 GOMOD := github.com/MythicAgents/thanatos
 
+# Protobuf compiler
 PROTOC = protoc
 
-go_src := $(wildcard *.go) $(wildcard ./*/*.go) $(wildcard ./*/*/*.go)
-proto_src := $(wildcard proto/*.proto) $(wildcard proto/*/*.proto) $(wildcard proto/*/*/*.proto)
+# List of targets to build for `make all`
+all_targets := server genconfig
 
-protopath := proto
-genprotopath := pb
+# Output directory for built protobufs
+proto_outdir := proto
 
-VPATH := $(protopath)
+# Directory with protobuf sources
+proto_srcdir := protobuf
 
-generated_protos := $(proto_src:$(protopath)/%.proto=pb/%.pb.go)
+define create-proto-target
+	$1: $(patsubst $(proto_srcdir)/%.proto,$(proto_outdir)/%.pb.go,$(wildcard $(proto_srcdir)/$2/*.proto))
+endef
 
 .PHONY: all
-all: thanatos ## Build all targets
-
-thanatos: $(go_src) $(generated_protos) ## Build the Mythic server code
-	$(GO) build $(FLAGS) -o $@
+all: $(all_targets) ## Build all targets
 
 .PHONY: protobuf
-protobuf: $(generated_protos) ## Build protobuf files
+protobuf: $(proto_srcs:%.proto=$(proto_outdir)/%.pb.go) ## Build all protobuf files
 
-$(genprotopath)/%.pb.go: %.proto
+# Pattern rule for building a protobuf file
+$(proto_outdir)/%.pb.go: $(proto_srcdir)/%.proto
 	@mkdir -p $(dir $@)
-	$(PROTOC) --proto_path=$(protopath) --go_out=$(genprotopath) --go_opt=paths=source_relative --go_opt=M$*.proto=$(GOMOD)/$(@D) $<
+	$(PROTOC) -I$(proto_srcdir) --go_out=$(proto_outdir) --go_opt=paths=source_relative --go_opt=M$*.proto=$(GOMOD)/$(@D) $<
+
 
 .PHONY: clean
-clean: ## Clean project
-	$(RM) -rv pb thanatos
+clean: ## Clean built artifacts
+	$(RM) -rv $(proto_outdir) server genconfig
 
 .PHONY: help
 help: ## Print this help output
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[32m%s:\033[0m\n\t%s\n", $$1, $$2}'
+	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[32m%-11s\033[0m- %s\n", $$1, $$2}'
+
+# Include protobuf sources
+-include protobuf/sources.mk
+
+# Include the cmd make modules
+-include cmd/*/*.mk
+
+# Include pkg proto make modules
+-include pkg/*/proto.mk

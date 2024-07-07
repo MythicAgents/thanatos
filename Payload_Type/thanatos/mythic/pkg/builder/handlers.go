@@ -8,8 +8,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/MythicAgents/thanatos/builder/types"
-	thanatoserror "github.com/MythicAgents/thanatos/errors"
+	"github.com/MythicAgents/thanatos/pkg/builder/types"
+	thanatoserror "github.com/MythicAgents/thanatos/pkg/errors"
 
 	"github.com/MythicMeta/MythicContainer/mythicrpc"
 )

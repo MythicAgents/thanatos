@@ -3,10 +3,12 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
+	"fmt"
 	"os"
 
-	"github.com/MythicAgents/thanatos/builder"
-	thanatoserror "github.com/MythicAgents/thanatos/errors"
+	"github.com/MythicAgents/thanatos/pkg/builder"
+	thanatoserror "github.com/MythicAgents/thanatos/pkg/errors"
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 	"google.golang.org/protobuf/proto"
 )
@@ -31,6 +33,43 @@ type payloadC2ProfileConfig struct {
 type payloadBuildParameter struct {
 	Name  string      `json:"name"`
 	Value interface{} `json:"value"`
+}
+
+func main() {
+	flagSet := flag.NewFlagSet("thanatos genconfig", flag.ExitOnError)
+
+	inputFile := ""
+	flagSet.Func("i", "Input Mythic payload JSON configuration file", func(filePath string) error {
+		finfo, err := os.Stat(filePath)
+		if err != nil {
+			return err
+		}
+
+		if finfo.IsDir() {
+			return errors.New("Input path is a directory")
+		}
+
+		inputFile = filePath
+		return nil
+	})
+
+	outputFile := ""
+	flagSet.StringVar(&outputFile, "o", "", "Output path for the serialized configuration file")
+
+	if len(os.Args) < 2 {
+		flagSet.Usage()
+		return
+	}
+
+	if err := flagSet.Parse(os.Args[1:]); err != nil {
+		flagSet.Usage()
+		return
+	}
+
+	if err := GenerateConfig(inputFile, outputFile); err != nil {
+		fmt.Printf("failed to generate config:\n%s", err.Error())
+		return
+	}
 }
 
 func GenerateConfig(inputFile string, outputFile string) error {

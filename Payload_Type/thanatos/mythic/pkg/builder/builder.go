@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/MythicAgents/thanatos/builder/types"
-	thanatoserror "github.com/MythicAgents/thanatos/errors"
+	"github.com/MythicAgents/thanatos/pkg/builder/types"
+	thanatoserror "github.com/MythicAgents/thanatos/pkg/errors"
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 )
 

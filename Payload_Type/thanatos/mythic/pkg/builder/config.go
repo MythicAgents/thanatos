@@ -3,21 +3,21 @@ package builder
 import (
 	"errors"
 
-	"github.com/MythicAgents/thanatos/builder/parsers"
-	thanatoserror "github.com/MythicAgents/thanatos/errors"
-	pbconfig "github.com/MythicAgents/thanatos/pb/config"
+	"github.com/MythicAgents/thanatos/pkg/builder/parsers"
+	thanatoserror "github.com/MythicAgents/thanatos/pkg/errors"
+	"github.com/MythicAgents/thanatos/proto/config"
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 	"github.com/google/uuid"
 	"golang.org/x/exp/slices"
 )
 
-func CreateConfig(buildMsg agentstructs.PayloadBuildMessage) (*pbconfig.Config, error) {
+func CreateConfig(buildMsg agentstructs.PayloadBuildMessage) (*config.Config, error) {
 	payloadUuid, err := uuid.Parse(buildMsg.PayloadUUID)
 	if err != nil {
 		return nil, thanatoserror.Errorf("failed to parse payload uuid: %s", err.Error())
 	}
 
-	resultConfig := &pbconfig.Config{
+	resultConfig := &config.Config{
 		Uuid: payloadUuid[:],
 	}
 
@@ -48,7 +48,7 @@ func CreateConfig(buildMsg agentstructs.PayloadBuildMessage) (*pbconfig.Config, 
 	return resultConfig, nil
 }
 
-func parsePayloadParameters(resultConfig *pbconfig.Config, buildMsg agentstructs.PayloadBuildMessage) error {
+func parsePayloadParameters(resultConfig *config.Config, buildMsg agentstructs.PayloadBuildMessage) error {
 	for name := range buildMsg.BuildParameters.Parameters {
 		paramIndex := slices.IndexFunc(ThanatosBuildParameters, func(param ThanatosBuildParameter) bool {
 			return param.Name == name

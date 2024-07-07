@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MythicAgents/thanatos/builder/types"
-	thanatoserror "github.com/MythicAgents/thanatos/errors"
-	"github.com/MythicAgents/thanatos/pb/config"
+	"github.com/MythicAgents/thanatos/pkg/builder/types"
+	thanatoserror "github.com/MythicAgents/thanatos/pkg/errors"
+	"github.com/MythicAgents/thanatos/proto/config"
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 )
 

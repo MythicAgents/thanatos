@@ -1,7 +1,7 @@
 package exit
 
 import (
-	thanatoserrors "github.com/MythicAgents/thanatos/errors"
+	thanatoserrors "github.com/MythicAgents/thanatos/pkg/errors"
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 )
 
