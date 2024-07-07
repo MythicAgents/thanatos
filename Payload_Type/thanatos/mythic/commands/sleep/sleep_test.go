@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"math"
 	"testing"
-	cmdtesting "thanatos/commands/testing"
+
+	cmdtesting "github.com/MythicAgents/thanatos/commands/testing"
 )
 
 var testCases = []cmdtesting.TestCase{
