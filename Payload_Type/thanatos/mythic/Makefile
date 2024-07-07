@@ -1,10 +1,11 @@
 GO = go
-GOFLAGS =
+FLAGS =
 GOMOD := github.com/MythicAgents/thanatos
 
 PROTOC = protoc
 
-protos := config/config.proto msg/checkin.proto
+go_src := $(wildcard *.go) $(wildcard builder/*.go) $(wildcard builder/*/*.go) $(wildcard errors/*.go) $(wildcard commands/*/*.go)
+protos := config/config.proto msg/checkin/checkin.proto
 
 protopath := proto
 genprotopath := pb
@@ -15,8 +16,8 @@ generated_protos := $(protos:%.proto=pb/%.pb.go)
 .PHONY: all
 all: thanatos ## Build all targets
 
-thanatos: $(generated_protos) ## Build the Mythic server code
-	$(GO) build -o $@ $(GOFLAGS)
+thanatos: $(go_src) $(generated_protos) ## Build the Mythic server code
+	$(GO) build $(FLAGS) -o $@
 
 .PHONY: protobuf
 protobuf: $(generated_protos) ## Build protobuf files

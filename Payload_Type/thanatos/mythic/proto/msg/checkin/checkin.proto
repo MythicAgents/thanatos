@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package msg.checkin;
+
+message CheckinInfo {
+  string uuid = 1;
+  CheckinData data = 2;
+}
+
+message CheckinData {
+  optional string user = 1;
+  optional string host = 2;
+  optional uint32 pid = 3;
+  Architecture architecture = 4;
+  optional string domain = 5;
+  optional uint32 integrity_level = 6;
+  optional string process_name = 7;
+  oneof platform_info {
+    WindowsInfo windows = 8;
+    LinuxInfo linux = 9;
+  }
+  repeated IpType ips = 10;
+}
+
+message IpType {
+  oneof ip {
+    uint32 ipv4 = 1;
+    bytes ipv6 = 2;
+  }
+}
+
+enum Architecture { X86 = 0; X86_64 = 1; }
+
+message LinuxInfo {
+  optional string distro = 1;
+  optional string kernel = 2;
+  bool selinux = 3;
+  ContainerEnv container = 4;
+}
+
+enum ContainerEnv { NONE = 0; DOCKER = 1; CONTAINER = 2; }
+
+message WindowsInfo {
+  uint32 build = 1;
+  oneof product {
+    WindowsProductType product_type = 2;
+    uint32 other = 3;
+  }
+}
+
+enum WindowsProductType {
+  UNKNOWN = 0; CORE = 0x00000065; PROFESSIONAL = 0x00000030;
+  EDUCATION = 0x00000079;
+  ENTERPRISE = 0x00000004;
+  PRO_WORKSTATION = 0x000000A1;
+  PRO_FOR_EDUCATION = 0x000000A4;
+  ENTERPRISE_EVALUATION = 0x00000048;
+  DATACENTER_SERVER = 0x00000008;
+  DATACENTER_EVALUATION_SERVER = 0x00000050;
+  DATACENTER_SERVER_CORE = 0x0000000C;
+  DATACENTER_SERVER_CORE_V = 0x00000027;
+  DATACENTER_SERVER_V = 0x00000025;
+  ENTERPRISE_SERVER = 0x0000000A;
+  ENTERPRISE_SERVER_CORE = 0x0000000E;
+  ENTERPRISE_SERVER_CORE_V = 0x00000029;
+  ENTERPRISE_SERVER_V = 0x00000026;
+  HOME_BASIC = 0x00000002;
+  STANDARD_SERVER = 0x00000007;
+  STANDARD_EVALUATION_SERVER = 0x0000004F;
+  STANDARD_SERVER_CORE = 0x0000000D;
+  STANDARD_SERVER_CORE_V = 0x00000028;
+  STANDARD_SERVER_V = 0x00000024;
+}

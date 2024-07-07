@@ -1,80 +1,68 @@
 package builder
 
 import (
-	"crypto/sha256"
+	"errors"
 
-	"github.com/MythicAgents/thanatos/pb/config"
+	"github.com/MythicAgents/thanatos/builder/parsers"
+	thanatoserror "github.com/MythicAgents/thanatos/errors"
+	pbconfig "github.com/MythicAgents/thanatos/pb/config"
+	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
+	"github.com/google/uuid"
+	"golang.org/x/exp/slices"
 )
 
-func createConfig(payloadParameters ParsedPayloadParameters) *config.Config {
-	payloadConfig := config.Config{}
-
-	payloadConfig.Uuid = payloadParameters.Uuid[:]
-
-	payloadConfig.WorkingHoursStart = uint32(payloadParameters.BuildParameters.WorkingHours.StartTime.Seconds())
-	payloadConfig.WorkingHoursEnd = uint32(payloadParameters.BuildParameters.WorkingHours.EndTime.Seconds())
-
-	payloadConfig.ConnectionRetries = payloadParameters.BuildParameters.ConnectionRetries
-	payloadConfig.SpawnTo = payloadParameters.BuildParameters.SpawnTo
-
-	if len(payloadParameters.BuildParameters.DomainList) > 0 {
-		hashedDomains := make([]byte, len(payloadParameters.BuildParameters.DomainList)*32)
-		for _, domain := range payloadParameters.BuildParameters.DomainList {
-			h := sha256.New()
-			h.Write([]byte(domain))
-			hashedDomains = append(hashedDomains, h.Sum(nil)...)
-		}
-
-		payloadConfig.Domains = hashedDomains
+func CreateConfig(buildMsg agentstructs.PayloadBuildMessage) (*pbconfig.Config, error) {
+	payloadUuid, err := uuid.Parse(buildMsg.PayloadUUID)
+	if err != nil {
+		return nil, thanatoserror.Errorf("failed to parse payload uuid: %s", err.Error())
 	}
 
-	if len(payloadParameters.BuildParameters.HostnameList) > 0 {
-		hashedHostnames := make([]byte, len(payloadParameters.BuildParameters.HostnameList)*32)
-		for _, domain := range payloadParameters.BuildParameters.HostnameList {
-			h := sha256.New()
-			h.Write([]byte(domain))
-			hashedHostnames = append(hashedHostnames, h.Sum(nil)...)
-		}
-
-		payloadConfig.Hostnames = hashedHostnames
+	resultConfig := &pbconfig.Config{
+		Uuid: payloadUuid[:],
 	}
 
-	if len(payloadParameters.BuildParameters.UsernameList) > 0 {
-		hashedUsernames := make([]byte, len(payloadParameters.BuildParameters.UsernameList)*32)
-		for _, domain := range payloadParameters.BuildParameters.UsernameList {
-			h := sha256.New()
-			h.Write([]byte(domain))
-			hashedUsernames = append(hashedUsernames, h.Sum(nil)...)
-		}
-
-		payloadConfig.Usernames = hashedUsernames
+	if err := parsePayloadParameters(resultConfig, buildMsg); err != nil {
+		return nil, errors.Join(thanatoserror.New("failed to parse payload build parameters"), err)
 	}
 
-	if payloadParameters.C2Profiles.HttpC2Profile != nil {
-		payloadConfig.Http = &config.HttpConfig{
-			CallbackPort:     uint32(payloadParameters.C2Profiles.HttpC2Profile.CallbackPort),
-			Killdate:         payloadParameters.C2Profiles.HttpC2Profile.Killdate,
-			CallbackJitter:   uint32(payloadParameters.C2Profiles.HttpC2Profile.CallbackJitter),
-			Headers:          payloadParameters.C2Profiles.HttpC2Profile.Headers,
-			CallbackHost:     payloadParameters.C2Profiles.HttpC2Profile.CallbackHost,
-			GetUri:           payloadParameters.C2Profiles.HttpC2Profile.GetUri,
-			PostUri:          payloadParameters.C2Profiles.HttpC2Profile.PostUri,
-			QueryPathName:    payloadParameters.C2Profiles.HttpC2Profile.QueryPathName,
-			CallbackInterval: uint32(payloadParameters.C2Profiles.HttpC2Profile.CallbackInterval),
+	egressEnabled := false
+	p2pEnabled := false
+
+	for _, profile := range buildMsg.C2Profiles {
+		switch profile.Name {
+		case "http":
+			egressEnabled = true
+			if err := parsers.ParseHttpProfile(resultConfig, profile); err != nil {
+				return nil, errors.Join(thanatoserror.New("failed to parse http profile parameters"), err)
+			}
+		case "tcp":
+			p2pEnabled = true
+			return nil, thanatoserror.New("tcp profile unimplemented")
+		}
+	}
+
+	if egressEnabled && p2pEnabled {
+		return nil, thanatoserror.Errorf("cannot mix egress and p2p C2 profiles")
+	}
+
+	return resultConfig, nil
+}
+
+func parsePayloadParameters(resultConfig *pbconfig.Config, buildMsg agentstructs.PayloadBuildMessage) error {
+	for name := range buildMsg.BuildParameters.Parameters {
+		paramIndex := slices.IndexFunc(ThanatosBuildParameters, func(param ThanatosBuildParameter) bool {
+			return param.Name == name
+		})
+
+		if paramIndex == -1 {
+			return thanatoserror.Errorf("failed to find build parameter %s", name)
 		}
 
-		if payloadParameters.C2Profiles.HttpC2Profile.CryptoInfo != nil {
-			payloadConfig.Http.AesKey = payloadParameters.C2Profiles.HttpC2Profile.CryptoInfo.Key[:]
-		}
-
-		if payloadParameters.C2Profiles.HttpC2Profile.ProxyInfo != nil {
-			payloadConfig.Http.Proxy = &config.ProxyInfo{
-				Host: payloadParameters.C2Profiles.HttpC2Profile.ProxyInfo.Host,
-				Port: uint32(payloadParameters.C2Profiles.HttpC2Profile.ProxyInfo.Port),
-				Pass: payloadParameters.C2Profiles.HttpC2Profile.ProxyInfo.Pass,
+		if parseFn := ThanatosBuildParameters[paramIndex].ParseFunction; parseFn != nil {
+			if err := parseFn(name, resultConfig, &buildMsg); err != nil {
+				return errors.Join(thanatoserror.Errorf("failed to parse %s build parameter", name), err)
 			}
 		}
 	}
-
-	return &payloadConfig
+	return nil
 }

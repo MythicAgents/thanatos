@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
+	"github.com/MythicAgents/thanatos/builder/types"
 	thanatoserror "github.com/MythicAgents/thanatos/errors"
 
-	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 	"github.com/MythicMeta/MythicContainer/mythicrpc"
 )
 
@@ -19,7 +20,7 @@ const AGENT_CODE_PATH = "../agent"
 type MythicPayloadHandler struct{}
 
 // This will build the agent using the specified command string
-func (handler MythicPayloadHandler) Build(target string, config ParsedPayloadParameters, command string) ([]byte, error) {
+func (handler MythicPayloadHandler) Build(command string, target string, output types.PayloadBuildParameterOutputFormat) ([]byte, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return []byte{}, thanatoserror.Errorf("failed to get the current working directory: %s", err.Error())
@@ -30,34 +31,31 @@ func (handler MythicPayloadHandler) Build(target string, config ParsedPayloadPar
 	cmd := exec.Command("/bin/bash", "-c", command)
 	cmd.Dir = agentCodePath
 
-	output, err := cmd.CombinedOutput()
+	cmdOutput, err := cmd.CombinedOutput()
 	if err != nil {
 		errorMsg := thanatoserror.Errorf("failed to build the agent: %s", err.Error())
-		return []byte{}, errors.Join(thanatoserror.Errorf("output for command '/bin/bash -c %s:\n%s", command, string(output)), errorMsg)
+		return []byte{}, errors.Join(thanatoserror.Errorf("output for command '/bin/bash -c %s:\n%s", command, string(cmdOutput)), errorMsg)
 	}
 
 	outpath := fmt.Sprintf("%s/target/%s/release", agentCodePath, target)
 
-	profileType := ""
-	if config.IsP2P {
-		profileType = "p2p"
-	} else {
-		profileType = "egress"
-	}
-
 	filename := ""
-	if config.SelectedOS == agentstructs.SUPPORTED_OS_LINUX {
-		if config.BuildParameters.Output != PayloadBuildParameterOutputFormatExecutable {
-			filename = fmt.Sprintf("libthanatos_%s_cdylib.so", profileType)
-		} else {
-			filename = fmt.Sprintf("thanatos_%s_binary", profileType)
+	if strings.Contains(target, "-unknown-linux-gnu") {
+		switch output {
+		case types.PayloadBuildParameterOutputFormatExecutable:
+			filename = "thanatos_binary"
+		default:
+			filename = "libthanatos_cdylib.so"
 		}
-	} else if config.SelectedOS == agentstructs.SUPPORTED_OS_WINDOWS {
-		if config.BuildParameters.Output == PayloadBuildParameterOutputFormatExecutable {
-			filename = fmt.Sprintf("thanatos_%s_binary.exe", profileType)
-		} else {
-			filename = fmt.Sprintf("thanatos_%s_cdylib.dll", profileType)
+	} else if strings.Contains(target, "-pc-windows-gnu") {
+		switch output {
+		case types.PayloadBuildParameterOutputFormatExecutable:
+			filename = "thanatos_binary.exe"
+		default:
+			filename = "thanatos_cdylib.dll"
 		}
+	} else {
+		return []byte{}, thanatoserror.New("invalid target")
 	}
 
 	payload, err := os.ReadFile(fmt.Sprintf("%s/%s", outpath, filename))
