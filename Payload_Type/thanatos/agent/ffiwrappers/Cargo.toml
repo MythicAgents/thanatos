@@ -10,11 +10,16 @@ version.workspace = true
 [dependencies]
 bitflags.workspace = true
 generic-array.workspace = true
+
+[dev-dependencies]
 hex-literal.workspace = true
-windows.workspace = true
+sha2.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libc.workspace = true
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows.workspace = true
 
 [build-dependencies]
 bindgen.workspace = true

@@ -24,18 +24,15 @@ version = "0.2.0"
 
 ##### WORKSPACE DEPENDENCIES #####
 [workspace.dependencies]
-base64 = "0.22.0"
 bindgen = "0.69.4"
-bitflags = "2.4"
-cfg-if = "1"
-chrono = "0.4.34"
-generic-array = "1"
+bitflags = "2.6.0"
+chrono = "0.4.38"
+generic-array = "1.1.0"
 hex-literal = "0.4.1"
-openssl = "0.10.63"
+openssl = "0.10.64"
 prost = "0.12.6"
 prost-types = "0.12.6"
 prost-build = "0.12.6"
-serde_json = "1"
 sha2 = "0.10.8"
 
 [workspace.dependencies.libc]
@@ -51,7 +48,7 @@ version = "1"
 features = ["derive"]
 
 [workspace.dependencies.windows]
-version = "0.54.0"
+version = "0.58.0"
 features = [
   "Win32_Foundation",
   "Win32_System_SystemInformation",
