@@ -9,7 +9,6 @@ use crate::{debug, native::checkininfo::get_checkininfo};
 use super::workinghours;
 
 enum C2Profile {
-    #[cfg(feature = "http")]
     Http(http_profile::HttpC2Profile),
 }
 
