@@ -4,14 +4,15 @@ GOMOD := github.com/MythicAgents/thanatos
 
 PROTOC = protoc
 
-go_src := $(wildcard *.go) $(wildcard builder/*.go) $(wildcard builder/*/*.go) $(wildcard errors/*.go) $(wildcard commands/*/*.go)
-protos := config/config.proto msg/checkin/checkin.proto
+go_src := $(wildcard *.go) $(wildcard ./*/*.go) $(wildcard ./*/*/*.go)
+proto_src := $(wildcard proto/*.proto) $(wildcard proto/*/*.proto) $(wildcard proto/*/*/*.proto)
 
 protopath := proto
 genprotopath := pb
 
 VPATH := $(protopath)
-generated_protos := $(protos:%.proto=pb/%.pb.go)
+
+generated_protos := $(proto_src:$(protopath)/%.proto=pb/%.pb.go)
 
 .PHONY: all
 all: thanatos ## Build all targets
