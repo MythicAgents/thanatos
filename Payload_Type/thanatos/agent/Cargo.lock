@@ -312,9 +312,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "http-profile"
+name = "http_profile"
 version = "0.2.0"
 dependencies = [
+ "thanatos_protos",
  "utils",
 ]
 
@@ -719,7 +720,7 @@ dependencies = [
  "errors",
  "ffiwrappers",
  "hex-literal",
- "http-profile",
+ "http_profile",
  "prost",
  "rand",
  "thanatos_protos",

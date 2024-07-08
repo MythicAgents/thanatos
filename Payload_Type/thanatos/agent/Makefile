@@ -1,7 +1,7 @@
 CARGO = cargo
 GENCONFIG_EXE = ../mythic/genconfig
 
-CONFIG ?= config.json
+JSON_CONFIG ?= config.json
 
 .PHONY: all
 all: config ## Build all targets
@@ -10,7 +10,7 @@ all: config ## Build all targets
 config: .config ## Build the serialized config from the config.json file
 
 .config: $(GENCONFIG_EXE)
-	$(GENCONFIG_EXE) -i $(CONFIG) -o .config
+	$(GENCONFIG_EXE) -i $(JSON_CONFIG) -o .config
 
 $(GENCONFIG_EXE):
 	$(MAKE) -C ../mythic genconfig

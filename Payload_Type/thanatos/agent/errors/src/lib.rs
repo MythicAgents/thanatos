@@ -5,6 +5,8 @@ pub enum ThanatosError {
     OsError(i32),
     FFIError(FfiError),
     NotDomainJoined,
+    PassedKilldate,
+    GuardrailChecksFailed,
 
     IoError(std::io::Error),
 

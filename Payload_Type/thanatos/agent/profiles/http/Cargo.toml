@@ -1,5 +1,5 @@
 [package]
-name = "http-profile"
+name = "http_profile"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
@@ -8,6 +8,9 @@ version.workspace = true
 
 
 [dependencies]
+
+[dependencies.thanatos_protos]
+path = "../../protos"
 
 [dependencies.utils]
 path = "../../utils"
