@@ -1,5 +1,5 @@
 [package]
-name = "thanatos"
+name = "thanatos_core"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
@@ -9,26 +9,24 @@ version.workspace = true
 
 [dependencies]
 chrono.workspace = true
+crossbeam-channel = "0.5.13"
 prost.workspace = true
 rand.workspace = true
 
 [dependencies.cryptolib]
-path = "../cryptolib"
-
-[dependencies.errors]
-path = "../errors"
+path = "../../cryptolib"
 
 [dependencies.ffiwrappers]
-path = "../ffiwrappers"
+path = "../../ffiwrappers"
 
 [dependencies.utils]
-path = "../utils"
+path = "../../utils"
 
 [dependencies.http_profile]
-path = "../profiles/http"
+path = "../../profiles/http"
 
 [dependencies.thanatos_protos]
-path = "../protos"
+path = "../../protos"
 
 [dev-dependencies]
 hex-literal.workspace = true

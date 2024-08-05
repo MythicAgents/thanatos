@@ -7,5 +7,5 @@
 const CONFIG: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/config.bin"));
 
 fn main() {
-    thanatos::entrypoint(CONFIG);
+    thanatos_core::entrypoint(CONFIG);
 }

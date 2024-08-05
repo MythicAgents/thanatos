@@ -12,7 +12,6 @@ fn main() {
         .unwrap()
         .parent()
         .unwrap()
-        .join("mythic")
         .join("protobuf");
 
     let proto_srcs: Vec<PathBuf> = PROTO_SRCS.into_iter().map(|s| proto_path.join(s)).collect();

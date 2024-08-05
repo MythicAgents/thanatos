@@ -1,6 +1,6 @@
 use std::ffi::CString;
 
-use errors::ThanatosError;
+use crate::errors::ThanatosError;
 use ffiwrappers::{
     errors::FfiError,
     linux::{
@@ -10,14 +10,14 @@ use ffiwrappers::{
 };
 
 pub fn hostname() -> Result<String, ThanatosError> {
-    let h = ffiwrappers::linux::gethostname().map_err(ThanatosError::FFIError)?;
+    let h = ffiwrappers::linux::gethostname().map_err(ThanatosError::FfiError)?;
     Ok(h.split('.').next().unwrap_or(&h).to_string())
 }
 
 pub fn domain() -> Result<String, ThanatosError> {
-    let current_host = ffiwrappers::linux::gethostname().map_err(ThanatosError::FFIError)?;
+    let current_host = ffiwrappers::linux::gethostname().map_err(ThanatosError::FfiError)?;
     let current_host =
-        CString::new(current_host).map_err(|_| ThanatosError::FFIError(FfiError::InteriorNull))?;
+        CString::new(current_host).map_err(|_| ThanatosError::FfiError(FfiError::InteriorNull))?;
 
     let addrlist = AddrInfoList::with_opts(
         Some(&current_host),
@@ -28,17 +28,17 @@ pub fn domain() -> Result<String, ThanatosError> {
             family: Default::default(),
         }),
     )
-    .map_err(ThanatosError::FFIError)?;
+    .map_err(ThanatosError::FfiError)?;
 
     let canonname = addrlist
         .first()
         .canonname()
-        .map_err(ThanatosError::FFIError)?
+        .map_err(ThanatosError::FfiError)?
         .to_string();
 
     let mut s = canonname.split('.');
     s.next()
-        .ok_or(ThanatosError::FFIError(FfiError::CanonNameNotFound))?;
+        .ok_or(ThanatosError::FfiError(FfiError::CanonNameNotFound))?;
     Ok(s.collect::<Vec<&str>>().join("."))
 }
 

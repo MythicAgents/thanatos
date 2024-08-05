@@ -150,6 +150,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "crossbeam-channel"
+version = "0.5.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "33480d6946193aa8033910124896ca395333cae7e2d1113d1fef6c3272217df2"
+dependencies = [
+ "crossbeam-utils",
+]
+
+[[package]]
+name = "crossbeam-utils"
+version = "0.8.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22ec99545bb0ed0ea7bb9b8e1e9122ea386ff8a48c0922e43f36d45ab09e0e80"
+
+[[package]]
 name = "crypto-common"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -198,14 +213,6 @@ checksum = "534c5cf6194dfab3db3242765c03bbe257cf92f22b38f6bc0c58d59108a820ba"
 dependencies = [
  "libc",
  "windows-sys",
-]
-
-[[package]]
-name = "errors"
-version = "0.2.0"
-dependencies = [
- "ffiwrappers",
- "windows",
 ]
 
 [[package]]
@@ -712,12 +719,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "thanatos"
+name = "thanatos_binary"
+version = "0.2.0"
+dependencies = [
+ "thanatos_core",
+]
+
+[[package]]
+name = "thanatos_core"
 version = "0.2.0"
 dependencies = [
  "chrono",
+ "crossbeam-channel",
  "cryptolib",
- "errors",
  "ffiwrappers",
  "hex-literal",
  "http_profile",
@@ -728,17 +742,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "thanatos_binary"
+name = "thanatos_library"
 version = "0.2.0"
 dependencies = [
- "thanatos",
-]
-
-[[package]]
-name = "thanatos_cdylib"
-version = "0.2.0"
-dependencies = [
- "thanatos",
+ "thanatos_core",
 ]
 
 [[package]]

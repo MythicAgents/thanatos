@@ -1,9 +1,10 @@
 use std::io::{BufRead, BufReader};
 
-use errors::ThanatosError;
+use crate::errors::ThanatosError;
 
 pub fn selinux_enabled() -> Result<bool, ThanatosError> {
-    let f = std::fs::File::open("/proc/self/mountinfo").map_err(ThanatosError::IoError)?;
+    let f = std::fs::File::open("/proc/self/mountinfo")
+        .map_err(|e| ThanatosError::IoError(e.kind()))?;
     let reader = BufReader::new(f);
 
     for line in reader.lines().map_while(Result::ok) {

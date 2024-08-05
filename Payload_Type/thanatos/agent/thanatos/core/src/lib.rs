@@ -5,6 +5,7 @@ use prost::Message;
 use thanatos_protos::config::{self, InitAction};
 
 mod agent;
+mod errors;
 mod guardrails;
 mod logging;
 mod os;
@@ -14,7 +15,7 @@ pub fn entrypoint(config: &[u8]) {
     let agent_config = match config::Config::decode(config) {
         Ok(c) => c,
         Err(e) => {
-            debug!("Failed to decode config: {:?}", e);
+            log!("Failed to decode config: {:?}", e);
             return;
         }
     };
@@ -35,7 +36,7 @@ pub fn entrypoint(config: &[u8]) {
                 match fork::fork() {
                     Ok(fork::ForkProcess::Child) => run_agent(agent_config),
                     Err(e) => {
-                        debug!("Failed to fork process: {:?}", e);
+                        log!("Failed to fork process: {:?}", e);
                         return;
                     }
                     _ => (),
@@ -52,7 +53,7 @@ fn run_agent(agent_config: config::Config) {
     let agent = match Agent::initialize(&agent_config) {
         Ok(a) => a,
         Err(e) => {
-            debug!("Failed to initialize agent: {:?}", e);
+            log!("Failed to initialize agent: {:?}", e);
             return;
         }
     };

@@ -1,10 +1,13 @@
 [package]
-name = "thanatos_binary"
+name = "thanatos_library"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
 license.workspace = true
 version.workspace = true
 
-[dependencies.thanatos]
-path = "../thanatos"
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies.thanatos_core]
+path = "../core"

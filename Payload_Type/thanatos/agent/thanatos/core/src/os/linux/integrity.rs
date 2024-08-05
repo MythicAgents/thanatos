@@ -1,16 +1,16 @@
-use errors::ThanatosError;
+use crate::errors::ThanatosError;
 use ffiwrappers::linux::user::UserInfo;
 
 pub fn integrity_level() -> Result<u32, ThanatosError> {
-    let effective_user = UserInfo::effective_user().map_err(ThanatosError::FFIError)?;
+    let effective_user = UserInfo::effective_user().map_err(ThanatosError::FfiError)?;
     if effective_user.uid() == 0 {
         return Ok(4);
     }
 
     let current_groups = UserInfo::current_user()
-        .map_err(ThanatosError::FFIError)?
+        .map_err(ThanatosError::FfiError)?
         .group_membership()
-        .map_err(ThanatosError::FFIError)?;
+        .map_err(ThanatosError::FfiError)?;
 
     for group in current_groups.members {
         if group.gid() == 0 {

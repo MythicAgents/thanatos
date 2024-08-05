@@ -2,17 +2,16 @@
 [workspace]
 resolver = "2"
 members = [
-  "errors",
   "ffiwrappers",
-  "thanatos",
-  "thanatos_binary",
-  "thanatos_cdylib",
+  "thanatos/core",
+  "thanatos/binary",
+  "thanatos/library",
   "utils",
   "profiles/http",
   "protos",
 ]
 
-default-members = ["thanatos"]
+default-members = ["thanatos/core"]
 
 [workspace.package]
 authors = ["@M_alphaaa"]

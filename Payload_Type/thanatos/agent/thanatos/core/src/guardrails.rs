@@ -1,26 +1,26 @@
-use crate::debug;
+use crate::log;
 
 use crate::system;
 
 use cryptolib::hash::Sha256;
 
-use errors::ThanatosError;
+use crate::errors::ThanatosError;
 use thanatos_protos::config;
 
 #[inline(always)]
 pub fn run_checks(agent_config: &config::Config) -> bool {
     if !run_check(agent_config.usernames(), system::username) {
-        debug!("Guardrail check failed for usernames");
+        log!("Guardrail check failed for usernames");
         return false;
     }
 
     if !run_check(agent_config.hostnames(), system::hostname) {
-        debug!("Guardrail check failed for hostnames");
+        log!("Guardrail check failed for hostnames");
         return false;
     }
 
     if !run_check(agent_config.domains(), system::domain) {
-        debug!("Guardrail check failed for domain names");
+        log!("Guardrail check failed for domain names");
         return false;
     }
 

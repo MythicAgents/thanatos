@@ -4,6 +4,8 @@ fn main() {
     let fallback_config = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .unwrap()
+        .parent()
+        .unwrap()
         .join(".config");
 
     let out_path = format!("{}/config.bin", std::env::var("OUT_DIR").unwrap());

@@ -1,8 +1,10 @@
-use errors::ThanatosError;
 use http_profile::HttpC2Profile;
 use thanatos_protos::config;
 
-use crate::{debug, system};
+use crate::{
+    errors::{ConfigParseError, ThanatosError},
+    system,
+};
 
 enum C2Profile {
     Http(http_profile::HttpC2Profile),
@@ -32,7 +34,7 @@ impl Agent {
         if let Some(ref profile) = profiles.iter().max_by_key(|v| v.killdate) {
             let e = system::time::epoch_timestamp();
             if profile.killdate <= e {
-                return Err(ThanatosError::PassedKilldate);
+                return Err(ThanatosError::PastKilldate);
             }
         } else {
             return Err(ThanatosError::OutOfProfiles);
@@ -43,7 +45,7 @@ impl Agent {
                 .uuid
                 .clone()
                 .try_into()
-                .map_err(|_| ThanatosError::ConfigParseError)?,
+                .map_err(|_| ThanatosError::ConfigParse(ConfigParseError::InvalidUuidLength))?,
             profiles,
         })
     }
