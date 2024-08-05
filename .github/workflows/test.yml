@@ -1,15 +1,20 @@
 name: Run tests
 
 on:
-  workflow_call:
+  push:
+    branches:
+      - rewrite
+    paths:
+      - "Payload_Type/thanatos/**"
+      - ".github/workflows/**"
 
 env:
   AGENT_CODE: Payload_Type/thanatos/agent
   MYTHIC_CODE: Payload_Type/thanatos
 
 jobs:
-  agent:
-    name: Agent Tests
+  test-agent:
+    name: Test Agent Code
     runs-on: ubuntu-latest
 
     defaults:
@@ -20,75 +25,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Golang
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: ${{ env.MYTHIC_CODE }}/go.mod
-          cache-dependency-path: ${{ env.MYTHIC_CODE }}/go.sum
+      - name: Install dependencies
+        uses: ./.github/workflows/dependencies
 
-      - name: Setup cargo cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo
-          key: ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
-            ${{ runner.os }}-cargo
+      - name: Run tests
+        run: make test
 
-      - name: Setup cargo target cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.AGENT_CODE }}/target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
-            ${{ runner.os }}-cargo-target
-
-      - name: Install protoc (Linux)
-        if: ${{ runner.os == 'Linux' }}
-        run: |
-          mkdir -p /tmp/protoc
-          pushd /tmp/protoc
-          curl -L https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-linux-x86_64.zip -o protoc.zip
-          unzip protoc.zip
-          mv bin/protoc /usr/local/bin
-          popd
-          rm -rf /tmp/protoc
-
-      - name: Install protoc (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        run: |
-          Invoke-WebRequest -Uri https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-win64.zip -OutFile protoc.zip
-          Expand-Archive protoc.zip
-          Copy-Item -Path .\protoc\bin\protoc.exe -Destination $env:SYSTEMROOT\System32\protoc.exe
-          Remove-Item -Recurse .\protoc
-          Remove-Item .\protoc.zip
-
-      - name: Add Rust LLVM tools
-        run: rustup component add llvm-tools-preview
-
-      - name: Install grcov (Linux)
-        if: ${{ runner.os == 'Linux' }}
-        run: |
-          curl -L https://github.com/mozilla/grcov/releases/download/v0.8.19/grcov-x86_64-unknown-linux-gnu.tar.bz2 -o grcov.tar.bz2
-          tar xvf grcov.tar.bz2
-          mv grcov /usr/local/bin
-          rm -rf grcov.tar.bz2
-
-      - name: Install grcov (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        run: |
-          Invoke-WebRequest -Uri https://github.com/mozilla/grcov/releases/download/v0.8.19/grcov-x86_64-pc-windows-msvc.zip -OutFile grcov.zip
-          Expand-Archive grcov.zip
-          Copy-Item -Path .\grcov\grcov.exe -Destination $env:SYSTEMROOT\System32\grcov.exe
-          Remove-Item -Recurse .\grcov
-          Remove-Item .\grcov.zip
-
-      - name: Run coverage tests
-        run: make coverage
-
-  mythic:
-    name: Mythic Tests
+  test-mythic:
+    name: Test Mythic code
     runs-on: ubuntu-latest
 
     defaults:
@@ -99,23 +43,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Golang
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: ${{ env.MYTHIC_CODE }}/go.mod
-          cache-dependency-path: ${{ env.MYTHIC_CODE }}/go.sum
+      - name: Install dependencies
+        uses: ./.github/workflows/dependencies
 
-      - name: Install Go cover
-        run: go install golang.org/x/tools/cmd/cover@latest
+      - name: Run tests
+        run: make test
 
-      - name: Install Golang modules
-        run: go mod download
-
-      - name: Run coverage tests
-        run: make coverage
-
-  sanitizers:
-    name: Sanitizer Tests
+  test-sanitizers:
+    name: Sanitizer Test Agent Code
     runs-on: ubuntu-latest
 
     defaults:
@@ -126,54 +61,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Golang
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: ${{ env.MYTHIC_CODE }}/go.mod
-          cache-dependency-path: ${{ env.MYTHIC_CODE }}/go.sum
-
-      - name: Setup cargo cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo
-          key: ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
-            ${{ runner.os }}-cargo
-
-      - name: Setup cargo target cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.AGENT_CODE }}/target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
-            ${{ runner.os }}-cargo-target
-
-      - name: Install protoc (Linux)
-        if: ${{ runner.os == 'Linux' }}
-        run: |
-          mkdir -p /tmp/protoc
-          pushd /tmp/protoc
-          curl -L https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-linux-x86_64.zip -o protoc.zip
-          unzip protoc.zip
-          mv bin/protoc /usr/local/bin
-          popd
-          rm -rf /tmp/protoc
-
-      - name: Install protoc (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        run: |
-          Invoke-WebRequest -Uri https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-win64.zip -OutFile protoc.zip
-          Expand-Archive protoc.zip
-          Copy-Item -Path .\protoc\bin\protoc.exe -Destination $env:SYSTEMROOT\System32\protoc.exe
-          Remove-Item -Recurse .\protoc
-          Remove-Item .\protoc.zip
-
-      - name: Install Rust nightly toolchain
-        run: |
-          rustup toolchain install nightly
-          rustup component add rust-src --toolchain nightly
+      - name: Install dependencies
+        uses: ./.github/workflows/dependencies
 
       - name: Run sanitizer tests (Linux)
         if: ${{ runner.os == 'Linux' }}
@@ -188,6 +77,6 @@ jobs:
           $env:PATH="$env:PATH;$env:VCToolsInstallDir/bin/Hostx64/x64"
           cargo +nightly test --color always -p ffiwrappers --all-features --target $env:TARGET
         env:
-          TARGET: ${{ matrix.os.target }}
-          RUSTFLAGS: -Zsanitizer=${{ matrix.sanitizer }}
+          TARGET: x86_64-pc-windows-msvc
+          RUSTFLAGS: -Zsanitizer=address
           CARGO_INCREMENTAL: 0

@@ -1,15 +1,20 @@
 name: Lint and check code for errors
 
 on:
-  workflow_call:
+  push:
+    branches:
+      - rewrite
+    paths:
+      - "Payload_Type/thanatos/**"
+      - ".github/workflows/**"
 
 env:
   AGENT_CODE: Payload_Type/thanatos/agent
   MYTHIC_CODE: Payload_Type/thanatos
 
 jobs:
-  agent:
-    name: Agent Code
+  lint-agent:
+    name: Lint Agent Code
     runs-on: ubuntu-latest
 
     defaults:
@@ -20,40 +25,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup cargo cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo
-          key: ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
-            ${{ runner.os }}-cargo
-
-      - name: Setup cargo target cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.AGENT_CODE }}/target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-target-${{ hashFiles(format('{0}/Cargo.lock', env.AGENT_CODE)) }}
-            ${{ runner.os }}-cargo-target
-
-      - name: Install protoc
-        if: ${{ runner.os == 'Linux' }}
-        run: |
-          mkdir -p /tmp/protoc
-          pushd /tmp/protoc
-          curl -L https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-linux-x86_64.zip -o protoc.zip
-          unzip protoc.zip
-          mv bin/protoc /usr/local/bin
-          popd
-          rm -rf /tmp/protoc
-
-      - name: Install Clippy
-        run: rustup component add clippy
-
-      - name: Install system libraries
-        run: sudo apt-get update -y && sudo apt-get install -y make libdbus-1-dev
+      - name: Install dependencies
+        uses: ./.github/workflows/dependencies
 
       - name: Lint agent code
         run: make lint
@@ -61,8 +34,8 @@ jobs:
       - name: Check agent code formatting
         run: make checkformat
 
-  mythic:
-    name: Mythic Code
+  lint-mythic:
+    name: Lint Mythic Code
     runs-on: ubuntu-latest
 
     defaults:
@@ -73,13 +46,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Golang
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: ${{ env.MYTHIC_CODE }}/go.mod
-          cache-dependency-path: ${{ env.MYTHIC_CODE }}/go.sum
+      - name: Install dependencies
+        uses: ./.github/workflows/dependencies
 
-      - name: Lint Mythic code
+      - name: Build protobuf files
+        run: make protobuf
+
+      - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
