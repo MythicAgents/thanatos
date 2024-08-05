@@ -1,6 +1,6 @@
 target
 build.ps1
 tags
-config.json
+/config.json
 .config
 default*.profraw
