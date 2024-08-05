@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - rewrite
-      - test/**
 
     paths:
-      - Payload_Type/thanatos/agent/**
-      - Payload_Type/thanatos/mythic/**
+      - Payload_Type/thanatos/**
       - .github/workflows/**
       - .github/actions/**
 
@@ -18,14 +16,7 @@ on:
     branches:
       - rewrite
     paths:
-      - Payload_Type/thanatos/agent/**
-      - Payload_Type/thanatos/mythic/**
-      - .github/workflows/**
-      - .github/actions/**
-
-env:
-  AGENT_CODE: Payload_Type/thanatos/agent
-  MYTHIC_CODE: Payload_Type/thanatos/mythic
+      - Payload_Type/thanatos/**
 
 jobs:
   lint-workflow:

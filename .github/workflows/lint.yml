@@ -5,7 +5,7 @@ on:
 
 env:
   AGENT_CODE: Payload_Type/thanatos/agent
-  MYTHIC_CODE: Payload_Type/thanatos/mythic
+  MYTHIC_CODE: Payload_Type/thanatos
 
 jobs:
   agent:
@@ -53,17 +53,13 @@ jobs:
         run: rustup component add clippy
 
       - name: Install system libraries
-        run: sudo apt-get update -y && sudo apt-get install -y libdbus-1-dev
+        run: sudo apt-get update -y && sudo apt-get install -y make libdbus-1-dev
 
       - name: Lint agent code
-        run: |
-          cargo build -p genconfig
-          cargo clippy --workspace --color always --all-features --all-targets -- -D warnings
+        run: make lint
 
       - name: Check agent code formatting
-        run: |
-          cargo build -p genconfig
-          cargo fmt --all -- --color always --check
+        run: make checkformat
 
   mythic:
     name: Mythic Code
@@ -90,4 +86,4 @@ jobs:
           working-directory: ${{ env.MYTHIC_CODE }}
 
       - name: Check Mythic code formatting
-        run: gofmt -l -d . | diff -u /dev/null -
+        run: make checkformat
