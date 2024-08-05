@@ -1,7 +1,7 @@
 {
     "recommendations": [
         "rust-lang.rust-analyzer",
-        "serayuzgur.crates",
+        "fill-labs.dependi",
         "tamasfe.even-better-toml",
         "swellaby.vscode-rust-test-adapter",
         "ms-vscode.test-adapter-converter",

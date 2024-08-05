@@ -8,14 +8,14 @@
             "windows": {
                 "command": "./.github/scripts/windows/checkformat.ps1"
             },
-            "group": "test",
+            "group": "none"
         },
         {
             "label": "Thanatos: Generate code coverage data",
             "type": "shell",
             "command": "./.github/scripts/linux/coverage.sh",
             "group": "none",
-            "problemMatcher": [],
+            "problemMatcher": []
         },
         {
             "label": "Thanatos: Lint",
@@ -24,7 +24,7 @@
             "windows": {
                 "command": "./.github/scripts/windows/lint.ps1"
             },
-            "group": "test",
+            "group": "none"
         },
         {
             "label": "Thanatos: Tests",
