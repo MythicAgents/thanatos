@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/MythicAgents/thanatos/commands/utils"
+	"github.com/MythicAgents/thanatos/pkg/commands/utils"
 
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 )

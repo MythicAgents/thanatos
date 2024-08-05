@@ -1,24 +1,41 @@
-# Build the Mythic server side code
-FROM docker.io/library/golang:1.22-alpine as mythic-builder
+### Image for building the server binary
+FROM docker.io/library/golang:1.22-alpine as builder
 
 RUN apk update \
-    && apk add binutils \
+    && apk add \
+        binutils \
+        make \
+        protoc \
+        git \
     && apk cache clean
+
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 
 RUN mkdir -p /usr/local/share/app
 WORKDIR /usr/local/share/app
 
-COPY mythic .
+COPY go.mod go.mod
+COPY go.sum go.sum
+
+COPY Makefile Makefile
+COPY protobuf protobuf
+
+COPY cmd cmd
+COPY pkg pkg
 
 RUN go mod download
+RUN make protobuf
 RUN go mod tidy
-RUN go build -ldflags='-extldflags=-static' -o mythic-server .
-RUN strip -s mythic-server
+RUN make GOFLAGS=-ldflags=-extldflags=-static server
+RUN strip -s server
 
-# Pull in the base image for the payload builder
+
+### Image for running the server
 FROM docker.io/library/debian:bookworm-slim
 
-# Install required system packages
+COPY --from=builder /usr/local/share/app/server /usr/local/bin/thanatos-server
+RUN chmod +x /usr/local/bin/thanatos-server
+
 RUN dpkg --add-architecture i386 && \
     apt-get update -y && apt-get install -y \
     make \
@@ -32,19 +49,6 @@ RUN dpkg --add-architecture i386 && \
 
 WORKDIR /tmp
 
-# Install sccache
-ENV SCCACHE_VERSION v0.7.4
-RUN curl -L \
-    "https://github.com/mozilla/sccache/releases/download/${SCCACHE_VERSION}/sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
-    -o sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
-RUN tar xf sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
-RUN mv sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl/sccache /usr/bin/sccache
-RUN chmod +x /usr/bin/sccache
-RUN rm -rf sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl
-RUN rm -f sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
-ENV SCCACHE_DIR /Mythic/.cache/sccache
-
-# Install Rust with the required toolchains
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh \
     && sh rustup.sh -y \
     --profile minimal \
@@ -56,20 +60,13 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh \
 
 RUN rm -f rustup.sh
 
-# Copy the cargo config.toml
-COPY .docker/config.toml /root/.cargo/config.toml
 ENV PATH=$PATH:/root/.cargo/bin
 
 RUN mkdir /thanatos
 WORKDIR /thanatos
 
 COPY agent agent
+COPY assets assets
+COPY browserscripts browserscripts
 
-RUN mkdir mythic
-WORKDIR /thanatos/mythic
-COPY mythic/assets assets
-COPY mythic/browserscript browserscript
-
-COPY --from=mythic-builder /opt/mythic/mythic-server .
-RUN chmod +x ./mythic-server
-CMD ["./mythic-server"]
+CMD ["thanatos-server"]

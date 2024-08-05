@@ -3,7 +3,7 @@ package exit
 import (
 	"testing"
 
-	cmdtesting "github.com/MythicAgents/thanatos/commands/testing"
+	cmdtesting "github.com/MythicAgents/thanatos/pkg/commands/testing"
 )
 
 var testCases = []cmdtesting.TestCase{

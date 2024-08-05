@@ -46,7 +46,7 @@ func main() {
 		}
 
 		if finfo.IsDir() {
-			return errors.New("Input path is a directory")
+			return errors.New("input path is a directory")
 		}
 
 		inputFile = filePath
