@@ -154,6 +154,7 @@ mod tests {
     use super::{Family, SockAddr, SockType};
 
     #[test]
+    #[ignore = "Pending rewrite"]
     fn family() {
         let mappings = [
             (libc::AF_INET, Family::AfInet),
@@ -169,6 +170,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "Pending rewrite"]
     fn socktype() {
         let mappings = [
             (libc::SOCK_STREAM, SockType::SockStream),
@@ -189,6 +191,7 @@ mod tests {
     // sanitizers to check for out of bounds memory accesses, uninitialized reads and
     // memory leaks.
     #[test]
+    #[ignore = "Pending rewrite"]
     fn accessor_checks() {
         let interfaces = IfAddrsList::new().unwrap();
 

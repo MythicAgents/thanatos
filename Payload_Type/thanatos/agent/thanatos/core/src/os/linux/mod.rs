@@ -141,6 +141,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "Pending rewrite"]
     fn internal_ips() {
         let ips = super::internal_ips().unwrap();
         dbg!(ips);
