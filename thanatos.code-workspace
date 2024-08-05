@@ -2,19 +2,11 @@
     "folders": [
         {
             "name": "Mythic code",
-            "path": "Payload_Type/thanatos/mythic"
+            "path": "Payload_Type/thanatos"
         },
         {
             "name": "Agent code",
             "path": "Payload_Type/thanatos/agent"
-        },
-        {
-            "name": "Protobuf",
-            "path": "Payload_Type/thanatos/mythic/protos"
-        },
-        {
-            "name": "Base Dockerfile",
-            "path": "Payload_Type/thanatos/.docker"
         },
         {
             "name": "Github",
