@@ -1,5 +1,5 @@
 CARGO = cargo
-GENCONFIG_EXE = ../mythic/genconfig
+GENCONFIG_EXE = ../genconfig
 
 JSON_CONFIG ?= config.json
 
@@ -13,7 +13,7 @@ config: .config ## Build the serialized config from the config.json file
 	$(GENCONFIG_EXE) -i $(JSON_CONFIG) -o .config
 
 $(GENCONFIG_EXE):
-	$(MAKE) -C ../mythic genconfig
+	$(MAKE) -C $(@D) genconfig
 
 .PHONY: clean
 clean: ## Clean built artifacts
