@@ -3,7 +3,7 @@ CARGO		= cargo
 GENCONFIG	= ../genconfig
 GRCOV		= grcov
 GENHTML		= genhtml
-JSON_CONFIG ?= config.json
+JSON_CONFIG	?= config.json
 
 
 ### Invoked targets ###
