@@ -1,7 +1,7 @@
 #!/bin/bash
 
 REPO_BASE=""
-MYTHIC_CODE="Payload_Type/thanatos/mythic"
+MYTHIC_CODE="Payload_Type/thanatos"
 AGENT_CODE="Payload_Type/thanatos/agent"
 
 # Populates the 'REPO_BASE' to the base of the repo
@@ -31,7 +31,7 @@ coverage_requirements() {
 
 # Generate coverage
 coverage() {
-    find Payload_Type/thanatos/agent -name "default*.profraw" -exec rm {} \;
+    find $AGENT_CODE -name "default*.profraw" -exec rm {} \;
     rm -f coverage/agent.lcov
 
     rm -rf coverage/html
@@ -71,9 +71,9 @@ coverage() {
 
     popd &> /dev/null
 
-    grcov Payload_Type/thanatos/agent/ \
+    grcov $AGENT_CODE \
         -s . \
-        --binary-path Payload_Type/thanatos/agent/target/x86_64-unknown-linux-gnu/debug/ \
+        --binary-path ${AGENT_CODE}/target/x86_64-unknown-linux-gnu/debug/ \
         -t lcov \
         --branch \
         --ignore-not-existing \
@@ -93,7 +93,7 @@ coverage() {
         --legend \
         coverage/agent.lcov
 
-    find Payload_Type/thanatos/agent -name "default*.profraw" -exec rm {} \;
+    find $AGENT_CODE -name "default*.profraw" -exec rm {} \;
 }
 
 set -e

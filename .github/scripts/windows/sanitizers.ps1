@@ -1,5 +1,5 @@
 $repo_base=""
-$mythic_code="Payload_Type/thanatos/mythic"
+$mythic_code="Payload_Type/thanatos"
 $agent_code="Payload_Type/thanatos/agent"
 
 

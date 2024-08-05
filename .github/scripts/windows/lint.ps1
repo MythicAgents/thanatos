@@ -1,5 +1,5 @@
 $repo_base=""
-$mythic_code="Payload_Type/thanatos/mythic"
+$mythic_code="Payload_Type/thanatos"
 $agent_code="Payload_Type/thanatos/agent"
 
 
@@ -31,7 +31,7 @@ function Lint {
 
     Write-Host "[*] Agent code"
     Push-Location -Path $agent_code
-    $cmd = "cargo build -p genconfig && cargo clippy --workspace --color always --all-features --all-targets -- -D warnings"
+    $cmd = "cargo clippy --workspace --color always --all-features --all-targets -- -D warnings"
     Write-Host "current directory: $pwd"
     Write-Host "command: $cmd"
     Invoke-Expression -Command $cmd

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 REPO_BASE=""
-MYTHIC_CODE="Payload_Type/thanatos/mythic"
+MYTHIC_CODE="Payload_Type/thanatos"
 AGENT_CODE="Payload_Type/thanatos/agent"
 
 # Populates the 'REPO_BASE' to the base of the repo
@@ -41,7 +41,7 @@ checkformat() {
 
     echo "[*] Agent code"
     pushd $AGENT_CODE &> /dev/null
-    local _cmd="cargo build -p genconfig && cargo fmt --all -- --color always --check"
+    local _cmd="cargo fmt --all -- --color always --check"
     echo "current directory: $PWD"
     echo "command: $_cmd"
     eval $_cmd

@@ -1,5 +1,5 @@
 $repo_base=""
-$mythic_code="Payload_Type/thanatos/mythic"
+$mythic_code="Payload_Type/thanatos"
 $agent_code="Payload_Type/thanatos/agent"
 
 
@@ -23,7 +23,7 @@ function CheckFormat {
 
     Write-Host "[*] Agent code"
     Push-Location -Path $agent_code
-    $cmd = "cargo build -p genconfig && cargo fmt --all -- --color always --check"
+    $cmd = "cargo fmt --all -- --color always --check"
     Write-Host "current directory: $pwd"
     Write-Host "command: $cmd"
     Invoke-Expression -Command $cmd

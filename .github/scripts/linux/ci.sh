@@ -1,7 +1,7 @@
 #!/bin/bash
 
 REPO_PATH=""
-MYTHIC_CODE="Payload_Type/thanatos/mythic"
+MYTHIC_CODE="Payload_Type/thanatos"
 AGENT_CODE="Payload_Type/thanatos/agent"
 
 # Populates the 'REPO_PATH' to the base of the repo
