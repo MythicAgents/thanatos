@@ -1,0 +1,91 @@
+{
+  "description": "Description",
+  "uuid": "bb1e2059-7d19-4607-b193-8457fb7fa3db",
+  "payload_type": "thanatos",
+  "c2_profiles": [
+    {
+      "c2_profile": "http",
+      "c2_profile_is_p2p": false,
+      "c2_profile_parameters": {
+        "AESPSK": {
+          "dec_key": "Os69CZmFoyfhH24WcVHxrXOEyMFOLeC4yCEYMK6DhMU=",
+          "enc_key": "Os69CZmFoyfhH24WcVHxrXOEyMFOLeC4yCEYMK6DhMU=",
+          "value": "aes256_hmac"
+        },
+        "callback_host": "http://mythic",
+        "callback_interval": 5,
+        "callback_jitter": 0,
+        "callback_port": 80,
+        "encrypted_exchange_check": true,
+        "get_uri": "index",
+        "headers": {
+          "User-Agent": "User-Agent"
+        },
+        "killdate": "2099-01-01",
+        "post_uri": "data",
+        "proxy_host": "",
+        "proxy_pass": "",
+        "proxy_port": "",
+        "proxy_user": "",
+        "query_path_name": "q"
+      }
+    }
+  ],
+  "build_parameters": [
+    {
+      "name": "architecture",
+      "value": "amd64"
+    },
+    {
+      "name": "buildmode",
+      "value": "release"
+    },
+    {
+      "name": "initaction",
+      "value": "none"
+    },
+    {
+      "name": "connection_retries",
+      "value": -1
+    },
+    {
+      "name": "working_hours",
+      "value": "00:00-23:59"
+    },
+    {
+      "name": "domains",
+      "value": []
+    },
+    {
+      "name": "hostnames",
+      "value": []
+    },
+    {
+      "name": "usernames",
+      "value": []
+    },
+    {
+      "name": "tlsuntrusted",
+      "value": false
+    },
+    {
+      "name": "spawnto",
+      "value": ""
+    },
+    {
+      "name": "libexport",
+      "value": ""
+    },
+    {
+      "name": "output",
+      "value": "executable"
+    }
+  ],
+  "commands": [
+    "sleep",
+    "exit"
+  ],
+  "selected_os": "Linux",
+  "filename": "thanatos",
+  "wrapped_payload": ""
+}

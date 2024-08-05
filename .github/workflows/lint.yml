@@ -17,6 +17,9 @@ jobs:
     name: Lint Agent Code
     runs-on: ubuntu-latest
 
+    env:
+      JSON_CONFIG: testing/configs/config.json
+
     defaults:
       run:
         working-directory: ${{ env.AGENT_CODE }}

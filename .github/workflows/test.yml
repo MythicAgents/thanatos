@@ -17,6 +17,9 @@ jobs:
     name: Test Agent Code
     runs-on: ubuntu-latest
 
+    env:
+      JSON_CONFIG: testing/configs/config.json
+
     defaults:
       run:
         working-directory: ${{ env.AGENT_CODE }}
@@ -52,6 +55,9 @@ jobs:
   test-sanitizers:
     name: Sanitizer Test Agent Code
     runs-on: ubuntu-latest
+
+    env:
+      JSON_CONFIG: testing/configs/config.json
 
     defaults:
       run:
