@@ -75,7 +75,7 @@ func (e *Error) Error() string {
 		errorString += "["
 
 		if e.file != "" {
-			errorString += fmt.Sprintf("%s", e.file)
+			errorString += e.file
 		} else {
 			errorString += "<unknown>"
 		}

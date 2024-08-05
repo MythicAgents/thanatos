@@ -528,7 +528,6 @@ func CreateConfig(buildMsg agentstructs.PayloadBuildMessage) (*config.Config, er
 				return nil, errors.Join(thanatoserror.New("failed to parse http profile parameters"), err)
 			}
 		case "tcp":
-			p2pEnabled = true
 			return nil, thanatoserror.New("tcp profile unimplemented")
 		}
 	}
