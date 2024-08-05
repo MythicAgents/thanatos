@@ -14,7 +14,7 @@ type BuildHandler interface {
 type PayloadBuilder interface {
 	// Method which takes in the raw command for building the agent and returns the contents
 	// of the built payload for Mythic
-	Build(command string, target string, output PayloadBuildParameterOutputFormat) ([]byte, error)
+	RunBuildCommand(command string, target string, output PayloadBuildParameterOutputFormat) ([]byte, error)
 }
 
 // Interface for execution Mythic RPC routines
