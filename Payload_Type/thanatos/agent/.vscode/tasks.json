@@ -1,0 +1,112 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "make: all",
+      "type": "shell",
+      "command": "make",
+      "problemMatcher": "$rustc",
+      "args": [
+        "all"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true,
+      },
+    },
+    {
+      "label": "make: checkformat",
+      "type": "shell",
+      "command": "make",
+      "args": [
+        "checkformat"
+      ],
+      "group": "none"
+    },
+    {
+      "label": "make: ci",
+      "type": "shell",
+      "command": "make",
+      "args": [
+        "ci"
+      ],
+      "group": "test"
+    },
+    {
+      "label": "make: coverage",
+      "type": "shell",
+      "command": "make",
+      "args": [
+        "coverage"
+      ],
+      "group": "test"
+    },
+    {
+      "label": "make: format",
+      "type": "shell",
+      "command": "make",
+      "args": [
+        "format"
+      ],
+      "group": "none"
+    },
+    {
+      "label": "make: test",
+      "type": "shell",
+      "command": "make",
+      "args": [
+        "test"
+      ],
+      "group": "test"
+    },
+    {
+      "label": "make: thanatos",
+      "type": "shell",
+      "command": "make",
+      "problemMatcher": "$rustc",
+      "args": [
+        "thanatos"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "make: binary",
+      "type": "shell",
+      "command": "make",
+      "problemMatcher": "$rustc",
+      "args": [
+        "binary"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "make: library",
+      "type": "shell",
+      "command": "make",
+      "problemMatcher": "$rustc",
+      "args": [
+        "library"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "make: lint",
+      "type": "shell",
+      "command": "make",
+      "problemMatcher": "$rustc",
+      "args": [
+        "lint"
+      ],
+      "group": "none"
+    },
+    {
+      "label": "make: sanitizers",
+      "type": "shell",
+      "command": "make",
+      "args": [
+        "sanitizers"
+      ],
+      "group": "test"
+    },
+  ]
+}
