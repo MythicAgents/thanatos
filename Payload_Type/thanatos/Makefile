@@ -12,10 +12,13 @@ proto_srcdir := protobuf
 ### Protobuf sources ###
 proto_srcs := \
 	config/config.proto \
-	msg/checkin/checkin.proto
+	msg/mythic.proto \
+	msg/checkin/checkin.proto \
+	msg/tasking/tasking.proto
 
 proto_out := $(proto_srcs:%.proto=$(proto_outdir)/%.pb.go)
-
+proto_mods := $(patsubst $(proto_srcdir)/%/,$(GOMOD)/$(proto_outdir)/%,$(dir $(proto_srcs:%=$(proto_srcdir)/%)))
+proto_opts := $(join $(patsubst %,--go_opt=M%=,$(proto_srcs)),$(proto_mods))
 
 ### Invoked targets ###
 .PHONY: all
@@ -61,8 +64,7 @@ test: $(proto_out) ## Run tests
 # Pattern rule protobuf files
 $(proto_outdir)/%.pb.go: $(proto_srcdir)/%.proto
 	@mkdir -p $(dir $@)
-	$(PROTOC) -I$(proto_srcdir) --go_out=$(proto_outdir) --go_opt=paths=source_relative --go_opt=M$*.proto=$(GOMOD)/$(@D) $<
-
+	$(PROTOC) -I$(proto_srcdir) --go_out=$(proto_outdir) --go_opt=paths=source_relative $(proto_opts) $<
 
 ### Housekeeping targets ###
 .PHONY: clean

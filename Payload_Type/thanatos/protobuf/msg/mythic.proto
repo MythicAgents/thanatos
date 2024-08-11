@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package msg;
+
+import "msg/checkin/checkin.proto";
+import "msg/tasking/tasking.proto";
+
+message MythicSendMessage {
+  oneof message {
+    checkin.CheckinData checkin = 1;
+    tasking.TaskingData tasking = 2;
+  }
+}
+
+message MythicResponseMessage {
+  oneof message {
+    checkin.CheckinResponse checkin = 1;
+    tasking.TaskingResponse tasking = 2;
+  }
+}

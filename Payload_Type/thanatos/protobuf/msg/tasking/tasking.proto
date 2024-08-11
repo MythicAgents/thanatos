@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package msg.tasking;
+
+message TaskingData {
+}
+
+message TaskingResponse {
+}
