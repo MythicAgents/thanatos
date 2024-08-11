@@ -5,74 +5,107 @@
       "label": "make: all",
       "type": "shell",
       "command": "make",
-      "args": ["all"],
+      "problemMatcher": "$go",
+      "args": [
+        "all"
+      ],
       "group": {
         "kind": "build",
         "isDefault": true,
-      }
-    },
-    {
-      "label": "make: protobuf",
-      "type": "shell",
-      "command": "make",
-      "args": ["protobuf"],
-      "group": "build"
-    },
-    {
-      "label": "make: server",
-      "type": "shell",
-      "command": "make",
-      "args": ["server"],
-      "group": "build"
-    },
-    {
-      "label": "make: genconfig",
-      "type": "shell",
-      "command": "make",
-      "args": ["genconfig"],
-      "group": "build"
+      },
     },
     {
       "label": "make: checkformat",
       "type": "shell",
       "command": "make",
-      "args": ["checkformat"],
-      "group": "none"
-    },
-    {
-      "label": "make: format",
-      "type": "shell",
-      "command": "make",
-      "args": ["format"],
-      "group": "none"
-    },
-    {
-      "label": "make: test",
-      "type": "shell",
-      "command": "make",
-      "args": ["test"],
-      "group": "test"
-    },
-    {
-      "label": "make: lint",
-      "type": "shell",
-      "command": "make",
-      "args": ["test"],
-      "group": "none"
-    },
-    {
-      "label": "make: coverage",
-      "type": "shell",
-      "command": "make",
-      "args": ["coverage"],
-      "group": "test"
+      "args": [
+        "checkformat"
+      ],
     },
     {
       "label": "make: ci",
       "type": "shell",
       "command": "make",
-      "args": ["ci"],
-      "group": "test"
+      "args": [
+        "ci"
+      ],
+      "group": {
+        "kind": "test"
+      }
+    },
+    {
+      "label": "make: coverage",
+      "type": "shell",
+      "command": "make",
+      "args": [
+        "coverage"
+      ],
+      "group": {
+        "kind": "test"
+      }
+    },
+    {
+      "label": "make: format",
+      "type": "shell",
+      "command": "make",
+      "args": [
+        "format"
+      ],
+    },
+    {
+      "label": "make: genconfig",
+      "type": "shell",
+      "command": "make",
+      "problemMatcher": "$go",
+      "args": [
+        "genconfig"
+      ],
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "make: lint",
+      "type": "shell",
+      "command": "make",
+      "args": [
+        "test"
+      ]
+    },
+    {
+      "label": "make: protobuf",
+      "type": "shell",
+      "command": "make",
+      "args": [
+        "protobuf"
+      ],
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "make: server",
+      "type": "shell",
+      "command": "make",
+      "problemMatcher": "$go",
+      "args": [
+        "server"
+      ],
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "make: test",
+      "type": "shell",
+      "command": "make",
+      "problemMatcher": "$go",
+      "args": [
+        "test"
+      ],
+      "group": {
+        "kind": "test"
+      }
     },
   ]
 }
