@@ -22,7 +22,11 @@ message WorkingHours {
   sint32 utc_offset = 4;
 }
 
-enum InitAction { NONE = 0; THREAD = 1; FORK = 2; }
+enum InitAction {
+  NONE = 0;
+  THREAD = 1;
+  FORK = 2;
+}
 
 message HttpConfig {
   uint32 callback_port = 1;

@@ -2,9 +2,8 @@ syntax = "proto3";
 
 package msg.checkin;
 
-message CheckinInfo {
-  string uuid = 1;
-  CheckinData data = 2;
+message CheckinResponse {
+  bytes id = 1;
 }
 
 message CheckinData {
@@ -29,7 +28,10 @@ message IpType {
   }
 }
 
-enum Architecture { X86 = 0; X86_64 = 1; }
+enum Architecture {
+  X86 = 0;
+  X86_64 = 1;
+}
 
 message LinuxInfo {
   optional string distro = 1;
@@ -38,7 +40,11 @@ message LinuxInfo {
   ContainerEnv container = 4;
 }
 
-enum ContainerEnv { NONE = 0; DOCKER = 1; CONTAINER = 2; }
+enum ContainerEnv {
+  NONE = 0;
+  DOCKER = 1;
+  CONTAINER = 2;
+}
 
 message WindowsInfo {
   uint32 build = 1;
@@ -49,7 +55,9 @@ message WindowsInfo {
 }
 
 enum WindowsProductType {
-  UNKNOWN = 0; CORE = 0x00000065; PROFESSIONAL = 0x00000030;
+  UNKNOWN = 0;
+  CORE = 0x00000065;
+  PROFESSIONAL = 0x00000030;
   EDUCATION = 0x00000079;
   ENTERPRISE = 0x00000004;
   PRO_WORKSTATION = 0x000000A1;
