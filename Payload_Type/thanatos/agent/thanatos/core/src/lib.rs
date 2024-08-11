@@ -1,6 +1,5 @@
 #![forbid(unsafe_code)]
 
-use agent::Agent;
 use prost::Message;
 use thanatos_protos::config::{self, InitAction};
 
@@ -24,6 +23,17 @@ pub fn entrypoint(config: &[u8]) {
         return;
     }
 
+    let t = system::time::epoch_timestamp();
+    let http_active = agent_config
+        .http
+        .as_ref()
+        .and_then(|profile| (profile.killdate <= t).then_some(()));
+
+    if http_active.is_none() {
+        log!("All profiles are past their killdates");
+        return;
+    }
+
     match agent_config.initaction() {
         InitAction::None => run_agent(agent_config),
         InitAction::Thread => {
@@ -37,7 +47,6 @@ pub fn entrypoint(config: &[u8]) {
                     Ok(fork::ForkProcess::Child) => run_agent(agent_config),
                     Err(e) => {
                         log!("Failed to fork process: {:?}", e);
-                        return;
                     }
                     _ => (),
                 }
@@ -49,12 +58,8 @@ pub fn entrypoint(config: &[u8]) {
     };
 }
 
-fn run_agent(agent_config: config::Config) {
-    let agent = match Agent::initialize(&agent_config) {
-        Ok(a) => a,
-        Err(e) => {
-            log!("Failed to initialize agent: {:?}", e);
-            return;
-        }
-    };
+fn run_agent(_agent_config: config::Config) {
+    std::thread::scope(|_scope| {
+        todo!();
+    });
 }

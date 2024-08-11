@@ -1,3 +1,4 @@
+#![allow(dead_code)] // TODO: Fix
 use std::io::{BufRead, BufReader};
 
 use crate::errors::ThanatosError;
@@ -16,6 +17,7 @@ mod integrity;
 
 mod selinux;
 
+#[allow(dead_code)]
 pub fn container_environment() -> ContainerEnv {
     if let Ok(readdir) = std::fs::read_dir("/") {
         for entry in readdir.flatten() {

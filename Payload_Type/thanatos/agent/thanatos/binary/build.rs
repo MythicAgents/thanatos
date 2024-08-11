@@ -18,7 +18,7 @@ fn main() {
 
         println!(
             "cargo:rerun-if-changed={}",
-            fallback_config.to_string_lossy().to_string()
+            fallback_config.to_string_lossy()
         );
     }
 }

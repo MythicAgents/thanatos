@@ -32,16 +32,16 @@ where
     F: Fn() -> Result<String, ThanatosError>,
 {
     if !list.is_empty() {
-        let check_val = match f().map(|v| {
-            let mut h = Sha256::new();
-            h.update(v.to_lowercase().as_bytes());
-            h.finalize()
-        }) {
-            Ok(v) => v,
-            Err(_) => return false,
+        let check_info = if let Ok(info) = f() {
+            info
+        } else {
+            return false;
         };
 
-        return list.chunks_exact(32).any(|v| v == &check_val);
+        let mut h = Sha256::new();
+        h.update(check_info.to_lowercase().as_bytes());
+        let check_val = h.finalize();
+        return list.chunks_exact(32).any(|v| v == check_val);
     }
 
     true

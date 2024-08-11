@@ -14,7 +14,7 @@ fn main() {
         .unwrap()
         .join("protobuf");
 
-    let proto_srcs: Vec<PathBuf> = PROTO_SRCS.into_iter().map(|s| proto_path.join(s)).collect();
+    let proto_srcs: Vec<PathBuf> = PROTO_SRCS.iter().map(|s| proto_path.join(s)).collect();
 
     proto_build
         .compile_protos(&proto_srcs, &[proto_path])
