@@ -238,6 +238,10 @@ var ThanatosBuildParameters = []ThanatosBuildParameter{
 		ParseFunction: func(name string, c *config.Config, pbm *agentstructs.PayloadBuildMessage) error {
 			domains, err := pbm.BuildParameters.GetArrayArg(name)
 			if err != nil {
+				return thanatoserror.Errorf("could not get domains parameter: %s", err.Error())
+			}
+
+			if len(domains) == 0 {
 				return nil
 			}
 
@@ -258,6 +262,10 @@ var ThanatosBuildParameters = []ThanatosBuildParameter{
 		ParseFunction: func(name string, c *config.Config, pbm *agentstructs.PayloadBuildMessage) error {
 			hostnames, err := pbm.BuildParameters.GetArrayArg(name)
 			if err != nil {
+				return thanatoserror.Errorf("could not get hostnames parameter: %s", err.Error())
+			}
+
+			if len(hostnames) == 0 {
 				return nil
 			}
 
@@ -279,6 +287,10 @@ var ThanatosBuildParameters = []ThanatosBuildParameter{
 		ParseFunction: func(name string, c *config.Config, pbm *agentstructs.PayloadBuildMessage) error {
 			usernames, err := pbm.BuildParameters.GetArrayArg(name)
 			if err != nil {
+				return thanatoserror.Errorf("could not get usernames parameter: %s", err.Error())
+			}
+
+			if len(usernames) == 0 {
 				return nil
 			}
 

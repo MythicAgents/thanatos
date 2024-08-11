@@ -12,8 +12,8 @@ import (
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 )
 
-var httpParameterMap = map[string]func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error{
-	"callback_port": func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error {
+var httpParameterMap = map[string]func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error{
+	"callback_port": func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error {
 		port, err := profile.GetNumberArg(name)
 		if err != nil {
 			return thanatoserror.Errorf("could not get parameter: %s", err.Error())
@@ -23,10 +23,10 @@ var httpParameterMap = map[string]func(name string, c *config.Config, profile *a
 			return thanatoserror.New("callback port is invalid")
 		}
 
-		c.Http.CallbackPort = uint32(port)
+		c.CallbackPort = uint32(port)
 		return nil
 	},
-	"killdate": func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error {
+	"killdate": func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error {
 		killdate, err := profile.GetDateArg(name)
 		if err != nil {
 			return thanatoserror.Errorf("could not get paramter: %s", err.Error())
@@ -37,20 +37,20 @@ var httpParameterMap = map[string]func(name string, c *config.Config, profile *a
 			return thanatoserror.Errorf("failed to parse killdate: %s", err.Error())
 		}
 
-		c.Http.Killdate = uint64(d.Unix())
+		c.Killdate = uint64(d.Unix())
 		return nil
 
 	},
-	"encrypted_exchange_check": func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error {
+	"encrypted_exchange_check": func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error {
 		eke, err := profile.GetBooleanArg(name)
 		if err != nil {
 			return thanatoserror.Errorf("could not get parameter: %s", err.Error())
 		}
 
-		c.Http.Eke = eke
+		c.Eke = eke
 		return nil
 	},
-	"callback_jitter": func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error {
+	"callback_jitter": func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error {
 		jitter, err := profile.GetNumberArg(name)
 		if err != nil {
 			return thanatoserror.Errorf("could not get parameter: %s", err.Error())
@@ -60,19 +60,19 @@ var httpParameterMap = map[string]func(name string, c *config.Config, profile *a
 			return thanatoserror.New("callback jitter is not between 0-99")
 		}
 
-		c.Http.CallbackJitter = uint32(jitter)
+		c.CallbackJitter = uint32(jitter)
 		return nil
 	},
-	"headers": func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error {
+	"headers": func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error {
 		headers, err := profile.GetDictionaryArg(name)
 		if err != nil {
 			return thanatoserror.Errorf("could not get parameter: %s", err.Error())
 		}
 
-		c.Http.Headers = headers
+		c.Headers = headers
 		return nil
 	},
-	"AESPSK": func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error {
+	"AESPSK": func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error {
 		aespsk, err := profile.GetCryptoArg(name)
 		if err != nil {
 			return thanatoserror.Errorf("could not get parameter: %s", err.Error())
@@ -88,64 +88,72 @@ var httpParameterMap = map[string]func(name string, c *config.Config, profile *a
 				return thanatoserror.Errorf("AES key is an invalid size of %d", len(aesKey))
 			}
 
-			c.Http.AesKey = aesKey
+			c.AesKey = aesKey
 		}
 
 		return nil
 	},
-	"callback_host": func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error {
+	"callback_host": func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error {
 		callback_host, err := profile.GetStringArg(name)
 		if err != nil {
 			return thanatoserror.Errorf("could not get parameter: %s", err.Error())
 		}
 
-		c.Http.CallbackHost = callback_host
+		c.CallbackHost = callback_host
 		return nil
 	},
-	"get_uri": func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error {
+	"get_uri": func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error {
 		getUri, err := profile.GetStringArg(name)
 		if err != nil {
 			return thanatoserror.Errorf("could not get parameter: %s", err.Error())
 		}
 
-		c.Http.GetUri = getUri
+		c.GetUri = getUri
 		return nil
 	},
-	"post_uri": func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error {
+	"post_uri": func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error {
 		postUri, err := profile.GetStringArg(name)
 		if err != nil {
 			return thanatoserror.Errorf("could not get parameter: %s", err.Error())
 		}
 
-		c.Http.PostUri = postUri
+		c.PostUri = postUri
 		return nil
 	},
-	"query_path_name": func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error {
+	"query_path_name": func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error {
 		queryPath, err := profile.GetStringArg(name)
 		if err != nil {
 			return thanatoserror.Errorf("could not get parameter: %s", err.Error())
 		}
 
-		c.Http.QueryPathName = queryPath
+		c.QueryPathName = queryPath
 		return nil
 	},
-	"proxy_host": func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error {
+	"proxy_host": func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error {
 		proxyHost, err := profile.GetStringArg(name)
 		if err != nil {
 			return thanatoserror.Errorf("could not get parameter: %s", err.Error())
 		}
 
-		if c.Http.Proxy == nil {
-			c.Http.Proxy = &config.ProxyInfo{}
+		if len(proxyHost) == 0 {
+			return nil
 		}
 
-		c.Http.Proxy.Host = proxyHost
+		if c.Proxy == nil {
+			c.Proxy = &config.ProxyInfo{}
+		}
+
+		c.Proxy.Host = proxyHost
 		return nil
 	},
-	"proxy_port": func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error {
+	"proxy_port": func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error {
 		proxyPort, err := profile.GetStringArg(name)
 		if err != nil {
 			return thanatoserror.Errorf("could not get parameter: %s", err.Error())
+		}
+
+		if len(proxyPort) == 0 {
+			return nil
 		}
 
 		if proxyPort == "" {
@@ -161,39 +169,47 @@ var httpParameterMap = map[string]func(name string, c *config.Config, profile *a
 			return thanatoserror.New("proxy port is not valid")
 		}
 
-		if c.Http.Proxy == nil {
-			c.Http.Proxy = &config.ProxyInfo{}
+		if c.Proxy == nil {
+			c.Proxy = &config.ProxyInfo{}
 		}
 
-		c.Http.Proxy.Port = uint32(portValue)
+		c.Proxy.Port = uint32(portValue)
 		return nil
 	},
-	"proxy_user": func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error {
+	"proxy_user": func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error {
 		proxyUser, err := profile.GetStringArg(name)
 		if err != nil {
 			return thanatoserror.Errorf("could not get parameter: %s", err.Error())
 		}
 
-		if c.Http.Proxy == nil {
-			c.Http.Proxy = &config.ProxyInfo{}
+		if len(proxyUser) == 0 {
+			return nil
 		}
 
-		c.Http.Proxy.User = proxyUser
+		if c.Proxy == nil {
+			c.Proxy = &config.ProxyInfo{}
+		}
+
+		c.Proxy.User = proxyUser
 		return nil
 	},
-	"proxy_pass": func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error {
+	"proxy_pass": func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error {
 		proxyPass, err := profile.GetStringArg(name)
 		if err != nil {
 			return thanatoserror.Errorf("could not get parameter: %s", err.Error())
 		}
 
-		if c.Http.Proxy == nil {
-			c.Http.Proxy = &config.ProxyInfo{}
+		if len(proxyPass) == 0 {
+			return nil
 		}
-		c.Http.Proxy.Pass = proxyPass
+
+		if c.Proxy == nil {
+			c.Proxy = &config.ProxyInfo{}
+		}
+		c.Proxy.Pass = proxyPass
 		return nil
 	},
-	"callback_interval": func(name string, c *config.Config, profile *agentstructs.PayloadBuildC2Profile) error {
+	"callback_interval": func(name string, c *config.HttpConfig, profile *agentstructs.PayloadBuildC2Profile) error {
 		interval, err := profile.GetNumberArg(name)
 		if err != nil {
 			return thanatoserror.Errorf("could not get parameter: %s", err.Error())
@@ -203,21 +219,24 @@ var httpParameterMap = map[string]func(name string, c *config.Config, profile *a
 			return thanatoserror.New("callback interval is not valid")
 		}
 
-		c.Http.CallbackInterval = uint32(interval)
+		c.CallbackInterval = uint32(interval)
 		return nil
 	},
 }
 
 func ParseHttpProfile(resultConfig *config.Config, profile agentstructs.PayloadBuildC2Profile) error {
-	resultConfig.Http = &config.HttpConfig{}
+	httpConfig := config.HttpConfig{}
 
 	for param := range profile.Parameters {
 		if parseFn, ok := httpParameterMap[param]; ok {
-			if err := parseFn(param, resultConfig, &profile); err != nil {
+			if err := parseFn(param, &httpConfig, &profile); err != nil {
 				return errors.Join(thanatoserror.Errorf("failed to parse %s http profile parameter", param), err)
 			}
 		}
 	}
 
+	resultConfig.Profile = &config.Config_Http{
+		Http: &httpConfig,
+	}
 	return nil
 }
