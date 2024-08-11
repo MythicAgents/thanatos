@@ -7,12 +7,14 @@ message Config {
   InitAction initaction = 2;
   sint32 connection_retries = 3;
   WorkingHours working_hours = 4;
-  optional bytes domains = 5;
-  optional bytes hostnames = 6;
-  optional bytes usernames = 7;
+  bytes domains = 5;
+  bytes hostnames = 6;
+  bytes usernames = 7;
   string spawn_to = 8;
   bool tlsuntrusted = 9;
-  optional HttpConfig http = 10;
+  oneof profile {
+    HttpConfig http = 10;
+  }
 }
 
 message WorkingHours {
@@ -34,12 +36,12 @@ message HttpConfig {
   uint32 callback_jitter = 3;
   bool eke = 4;
   map<string, string> headers = 5;
-  optional bytes aes_key = 6;
+  bytes aes_key = 6;
   string callback_host = 7;
   string get_uri = 8;
   string post_uri = 9;
   string query_path_name = 10;
-  optional ProxyInfo proxy = 11;
+  ProxyInfo proxy = 11;
   uint32 callback_interval = 12;
 }
 

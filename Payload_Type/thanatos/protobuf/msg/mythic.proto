@@ -7,14 +7,14 @@ import "msg/tasking/tasking.proto";
 
 message MythicSendMessage {
   oneof message {
-    checkin.CheckinData checkin = 1;
-    tasking.TaskingData tasking = 2;
+    msg.checkin.CheckinData checkin = 1;
+    msg.tasking.TaskingData tasking = 2;
   }
 }
 
 message MythicResponseMessage {
   oneof message {
-    checkin.CheckinResponse checkin = 1;
-    tasking.TaskingResponse tasking = 2;
+    msg.checkin.CheckinResponse checkin = 1;
+    msg.tasking.TaskingResponse tasking = 2;
   }
 }
