@@ -11,6 +11,3 @@ version.workspace = true
 
 [dependencies.thanatos_protos]
 path = "../../protos"
-
-[dependencies.utils]
-path = "../../utils"
