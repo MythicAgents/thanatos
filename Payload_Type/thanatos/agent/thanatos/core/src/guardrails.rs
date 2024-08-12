@@ -3,23 +3,23 @@ use crate::log;
 use crate::system;
 
 use cryptolib::hash::Sha256;
+use thanatos_protos::config;
 
 use crate::errors::ThanatosError;
 
-/*
 #[inline(always)]
 pub fn run_checks(agent_config: &config::Config) -> bool {
-    if !run_check(agent_config.usernames(), system::username) {
+    if !run_check(&agent_config.usernames, system::username) {
         log!("Guardrail check failed for usernames");
         return false;
     }
 
-    if !run_check(agent_config.hostnames(), system::hostname) {
+    if !run_check(&agent_config.hostnames, system::hostname) {
         log!("Guardrail check failed for hostnames");
         return false;
     }
 
-    if !run_check(agent_config.domains(), system::domain) {
+    if !run_check(&agent_config.domains, system::domain) {
         log!("Guardrail check failed for domain names");
         return false;
     }
@@ -46,4 +46,3 @@ where
 
     true
 }
-*/

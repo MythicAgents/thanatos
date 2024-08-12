@@ -1,14 +1,16 @@
 #![forbid(unsafe_code)]
 
+use prost::Message;
+use thanatos_protos::config::{config::Profile, Config, InitAction};
+
 mod errors;
-//mod guardrails;
+mod guardrails;
 mod logging;
-//mod os;
-//mod system;
+mod os;
+mod system;
 
 pub fn entrypoint(config: &[u8]) {
-    /*
-    let agent_config = match config::Config::decode(config) {
+    let agent_config = match thanatos_protos::config::Config::decode(config) {
         Ok(c) => c,
         Err(e) => {
             log!("Failed to decode config: {:?}", e);
@@ -21,12 +23,13 @@ pub fn entrypoint(config: &[u8]) {
     }
 
     let t = system::time::epoch_timestamp();
-    let http_active = agent_config
-        .http
-        .as_ref()
-        .and_then(|profile| (profile.killdate <= t).then_some(()));
+    let http_active = if let Some(Profile::Http(profile)) = agent_config.profile.as_ref() {
+        profile.killdate <= t
+    } else {
+        false
+    };
 
-    if http_active.is_none() {
+    if !http_active {
         log!("All profiles are past their killdates");
         return;
     }
@@ -53,10 +56,9 @@ pub fn entrypoint(config: &[u8]) {
             run_agent(agent_config);
         }
     };
-    */
 }
 
-fn run_agent(_agent_config: ()) {
+fn run_agent(agent_config: Config) {
     std::thread::scope(|_scope| {
         todo!();
     });

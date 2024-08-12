@@ -2,8 +2,8 @@ use std::path::PathBuf;
 
 const PROTO_SRCS: &[&str] = &[
     "config/config.proto",
-    "msg/checkin/checkin.proto",
-    "msg/tasking/tasking.proto",
+    "msg/checkin.proto",
+    "msg/tasking.proto",
     "msg/mythic.proto",
     "commands/exit.proto",
     "commands/sleep.proto",
@@ -29,10 +29,10 @@ fn main() {
         );
     }
 
-    protoc::ProtocLangOut::new()
+    prost_build::Config::new()
         .out_dir(out_dir)
-        .inputs(proto_srcs)
-        .include(proto_path)
-        .run()
+        .include_file("_includes.rs")
+        .bytes(&["."])
+        .compile_protos(&proto_srcs, &[proto_path])
         .expect("Could not compile protobuf files");
 }

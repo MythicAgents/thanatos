@@ -1,4 +1,3 @@
-#![allow(dead_code)] // TODO: Fix
 use std::io::{BufRead, BufReader};
 
 use crate::errors::ThanatosError;
@@ -11,18 +10,17 @@ use ffiwrappers::linux::{
 
 mod dnsname;
 pub use dnsname::{domain, hostname};
+use thanatos_protos::msg::{ip_type, Architecture, ContainerEnv, IpType};
 
 mod integrity;
 
 mod selinux;
 
-/*
-#[allow(dead_code)]
-pub fn container_environment() -> ContainerEnv {
+pub fn container_environment() -> Option<ContainerEnv> {
     if let Ok(readdir) = std::fs::read_dir("/") {
         for entry in readdir.flatten() {
             if entry.file_name() == ".dockerenv" {
-                return ContainerEnv::Docker;
+                return Some(ContainerEnv::Docker);
             }
         }
     }
@@ -30,12 +28,12 @@ pub fn container_environment() -> ContainerEnv {
     if let Ok(readdir) = std::fs::read_dir("/run") {
         for entry in readdir.flatten() {
             if entry.file_name() == ".containerenv" {
-                return ContainerEnv::Container;
+                return Some(ContainerEnv::Container);
             }
         }
     }
 
-    ContainerEnv::None
+    None
 }
 
 pub fn kernel() -> Option<String> {
@@ -113,7 +111,9 @@ pub fn internal_ips() -> Result<Vec<IpType>, ThanatosError> {
                     ip: Some(ip_type::Ip::Ipv4(ipv4addr.sin_addr().s_addr)),
                 },
                 SockAddr::AfInet6(ipv6addr) => IpType {
-                    ip: Some(ip_type::Ip::Ipv6(ipv6addr.sin6_addr().s6_addr.to_vec())),
+                    ip: Some(ip_type::Ip::Ipv6(
+                        ipv6addr.sin6_addr().s6_addr.to_vec().into(),
+                    )),
                 },
             })
         })
@@ -149,4 +149,3 @@ mod tests {
         dbg!(ips);
     }
 }
-*/
