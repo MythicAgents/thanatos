@@ -6,7 +6,6 @@ use thanatos_protos::config::{config::Profile, Config, InitAction};
 mod errors;
 mod guardrails;
 mod logging;
-mod os;
 mod system;
 
 pub fn entrypoint(config: &[u8]) {
