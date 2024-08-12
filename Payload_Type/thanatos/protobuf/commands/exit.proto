@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package commands;
+
+message Exit {
+  enum Action {
+    THREAD = 0;
+    PROCESS = 1;
+  }
+
+  Action action = 1;
+}

@@ -5,8 +5,8 @@ use crate::system;
 use cryptolib::hash::Sha256;
 
 use crate::errors::ThanatosError;
-use thanatos_protos::config;
 
+/*
 #[inline(always)]
 pub fn run_checks(agent_config: &config::Config) -> bool {
     if !run_check(agent_config.usernames(), system::username) {
@@ -46,3 +46,4 @@ where
 
     true
 }
+*/

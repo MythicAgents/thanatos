@@ -14,7 +14,9 @@ proto_srcs := \
 	config/config.proto \
 	msg/mythic.proto \
 	msg/checkin/checkin.proto \
-	msg/tasking/tasking.proto
+	msg/tasking/tasking.proto \
+	commands/exit.proto \
+	commands/sleep.proto \
 
 proto_out := $(proto_srcs:%.proto=$(proto_outdir)/%.pb.go)
 proto_mods := $(patsubst $(proto_srcdir)/%/,$(GOMOD)/$(proto_outdir)/%,$(dir $(proto_srcs:%=$(proto_srcdir)/%)))

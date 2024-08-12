@@ -7,7 +7,7 @@ license.workspace = true
 version.workspace = true
 
 [dependencies]
-prost.workspace = true
+protobuf.workspace = true
 
 [build-dependencies]
-prost-build.workspace = true
+protoc.workspace = true

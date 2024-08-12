@@ -8,7 +8,6 @@ use ffiwrappers::linux::{
     uname::{self, UtsName},
     user::UserInfo,
 };
-use thanatos_protos::msg::checkin::{ip_type, Architecture, ContainerEnv, IpType};
 
 mod dnsname;
 pub use dnsname::{domain, hostname};
@@ -17,6 +16,7 @@ mod integrity;
 
 mod selinux;
 
+/*
 #[allow(dead_code)]
 pub fn container_environment() -> ContainerEnv {
     if let Ok(readdir) = std::fs::read_dir("/") {
@@ -149,3 +149,4 @@ mod tests {
         dbg!(ips);
     }
 }
+*/

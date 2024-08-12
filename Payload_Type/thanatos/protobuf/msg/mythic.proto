@@ -5,16 +5,16 @@ package msg;
 import "msg/checkin/checkin.proto";
 import "msg/tasking/tasking.proto";
 
-message MythicSendMessage {
+message AgentMessage {
   oneof message {
-    msg.checkin.CheckinData checkin = 1;
-    msg.tasking.TaskingData tasking = 2;
+    msg.checkin.AgentCheckinMessage checkin = 1;
+    msg.tasking.AgentTaskingMessage tasking = 2;
   }
 }
 
-message MythicResponseMessage {
+message MythicResponse {
   oneof message {
-    msg.checkin.CheckinResponse checkin = 1;
-    msg.tasking.TaskingResponse tasking = 2;
+    msg.checkin.MythicCheckinResponse checkin = 1;
+    msg.tasking.MythicTaskingResponse tasking = 2;
   }
 }

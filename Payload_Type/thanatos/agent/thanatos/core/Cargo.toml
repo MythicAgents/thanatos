@@ -10,7 +10,6 @@ version.workspace = true
 [dependencies]
 chrono.workspace = true
 crossbeam-channel = "0.5.13"
-prost.workspace = true
 rand.workspace = true
 
 [dependencies.cryptolib]
@@ -21,9 +20,6 @@ path = "../../ffiwrappers"
 
 [dependencies.http_profile]
 path = "../../profiles/http"
-
-[dependencies.thanatos_protos]
-path = "../../protos"
 
 [dev-dependencies]
 hex-literal.workspace = true

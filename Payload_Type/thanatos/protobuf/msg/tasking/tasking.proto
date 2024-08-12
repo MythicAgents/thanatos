@@ -2,8 +2,25 @@ syntax = "proto3";
 
 package msg.tasking;
 
-message TaskingData {
+import "commands/exit.proto";
+import "commands/sleep.proto";
+
+message MythicTaskingResponse {
 }
 
-message TaskingResponse {
+message AgentTaskingMessage {
+  repeated PendingTask tasks = 1;
+  repeated CompletedTask responses = 2;
+}
+
+message PendingTask {
+  bytes id = 1;
+  oneof command {
+    commands.Exit exit = 2;
+    commands.Sleep sleep = 3;
+  }
+}
+
+message CompletedTask {
+  bytes id = 1;
 }

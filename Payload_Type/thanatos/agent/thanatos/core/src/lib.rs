@@ -1,16 +1,13 @@
 #![forbid(unsafe_code)]
 
-use prost::Message;
-use thanatos_protos::config::{self, InitAction};
-
-mod agent;
 mod errors;
-mod guardrails;
+//mod guardrails;
 mod logging;
-mod os;
-mod system;
+//mod os;
+//mod system;
 
 pub fn entrypoint(config: &[u8]) {
+    /*
     let agent_config = match config::Config::decode(config) {
         Ok(c) => c,
         Err(e) => {
@@ -56,9 +53,10 @@ pub fn entrypoint(config: &[u8]) {
             run_agent(agent_config);
         }
     };
+    */
 }
 
-fn run_agent(_agent_config: config::Config) {
+fn run_agent(_agent_config: ()) {
     std::thread::scope(|_scope| {
         todo!();
     });

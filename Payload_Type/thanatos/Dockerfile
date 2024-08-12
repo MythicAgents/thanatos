@@ -61,6 +61,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh \
 RUN rm -f rustup.sh
 
 ENV PATH=$PATH:/root/.cargo/bin
+RUN $HOME/.cargo/bin/cargo install protobuf-codegen3
 
 RUN mkdir /thanatos
 WORKDIR /thanatos

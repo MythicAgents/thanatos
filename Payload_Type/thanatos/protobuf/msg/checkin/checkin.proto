@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package msg.checkin;
 
-message CheckinResponse {
-  bytes id = 1;
+message MythicCheckinResponse {
+  bytes newuuid = 1;
 }
 
-message CheckinData {
+message AgentCheckinMessage {
   optional string user = 1;
   optional string host = 2;
   optional uint32 pid = 3;

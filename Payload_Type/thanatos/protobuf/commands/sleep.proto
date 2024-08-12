@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package commands;
+
+message Sleep {
+  uint32 interval = 1;
+  oneof jittervalue {
+    uint32 jitterseconds = 2;
+    uint32 jitterpercent = 3;
+  }
+
+  enum JitterModifier {
+    BIDIRECTIONAL = 0;
+    POSITIVE = 1;
+    NEGATIVE = 2;
+  }
+
+  JitterModifier modifier = 4;
+}
