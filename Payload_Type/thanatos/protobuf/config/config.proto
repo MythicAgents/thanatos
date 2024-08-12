@@ -11,18 +11,15 @@ message Config {
   bytes domains = 5;
   bytes hostnames = 6;
   bytes usernames = 7;
-  string spawn_to = 8;
-  bool tlsuntrusted = 9;
+  bool tlsuntrusted = 8;
   oneof profile {
-    HttpConfig http = 10;
+    HttpConfig http = 9;
   }
 }
 
 message WorkingHours {
   uint32 start = 1;
   uint32 end = 2;
-  bool use_system_tz = 3;
-  sint32 utc_offset = 4;
 }
 
 enum InitAction {

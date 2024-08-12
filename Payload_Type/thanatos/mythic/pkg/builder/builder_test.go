@@ -3,7 +3,7 @@ package builder
 import (
 	"testing"
 
-	"github.com/MythicAgents/thanatos/proto/config"
+	"github.com/MythicAgents/thanatos/pb/config"
 	agentstructs "github.com/MythicMeta/MythicContainer/agent_structs"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
@@ -29,7 +29,6 @@ func TestCreateConfig(t *testing.T) {
 				"hostnames":          []interface{}{},
 				"usernames":          []interface{}{},
 				"tlsuntrusted":       false,
-				"spawnto":            "",
 				"libexport":          "",
 				"output":             "",
 			},
@@ -63,14 +62,7 @@ func TestCreateConfig(t *testing.T) {
 			expected: &config.Config{
 				Initaction:        config.InitAction_NONE,
 				ConnectionRetries: 10,
-				WorkingHours: &config.WorkingHours{
-					Start:       0,
-					End:         23*60 + 59,
-					UseSystemTz: true,
-					UtcOffset:   0,
-				},
-				SpawnTo:      "",
-				Tlsuntrusted: false,
+				Tlsuntrusted:      false,
 				Profile: &config.Config_Http{
 					Http: &config.HttpConfig{
 						CallbackPort:   80,
@@ -113,7 +105,7 @@ func TestCreateConfig(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if d := cmp.Diff(testCase.expected, result, protocmp.Transform()); d != "" {
+			if d := cmp.Diff(result, testCase.expected, protocmp.Transform()); d != "" {
 				t.Errorf("test case failed: %s", d)
 			}
 		})

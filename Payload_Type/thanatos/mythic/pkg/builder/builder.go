@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -170,9 +169,9 @@ var ThanatosBuildParameters = []ThanatosBuildParameter{
 	// outside of this interval and it will shutdown any active jobs
 	{
 		Name:          "working_hours",
-		Description:   "Working hours for the agent. Use 24 hour time with an optional IANA time zone.",
+		Description:   "Working hours for the agent. Use 24 hour UTC time.",
 		DefaultValue:  "00:00-23:59",
-		VerifierRegex: `^[0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9](\s[a-zA-Z]+([a-zA-Z0-9\/_\-\+]+)?)?`,
+		VerifierRegex: `^[0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9]`,
 		ParameterType: agentstructs.BUILD_PARAMETER_TYPE_STRING,
 		Required:      true,
 		ParseFunction: func(name string, c *config.Config, pbm *agentstructs.PayloadBuildMessage) error {
@@ -181,28 +180,7 @@ var ThanatosBuildParameters = []ThanatosBuildParameter{
 				return thanatoserror.Errorf("could not get parameter: %s", err.Error())
 			}
 
-			tzSplit := strings.Split(workingHoursValue, " ")
-			if len(tzSplit) > 1 {
-				loc, err := time.LoadLocation(tzSplit[1])
-				if err != nil {
-					return thanatoserror.Errorf("failed to find timezone %s: %s", tzSplit[1], err.Error())
-				}
-
-				_, offset := time.Now().UTC().In(loc).Zone()
-
-				c.WorkingHours = &config.WorkingHours{
-					UseSystemTz: false,
-					UtcOffset:   int32(offset),
-				}
-
-			} else {
-				c.WorkingHours = &config.WorkingHours{
-					UseSystemTz: true,
-					UtcOffset:   0,
-				}
-			}
-
-			workingHoursSplit := strings.Split(tzSplit[0], "-")
+			workingHoursSplit := strings.Split(workingHoursValue, "-")
 			if len(workingHoursSplit) == 1 {
 				return thanatoserror.New("working hours value does not contain a '-' delimiter")
 			}
@@ -212,14 +190,23 @@ var ThanatosBuildParameters = []ThanatosBuildParameter{
 				return errors.Join(thanatoserror.New("failed to parse start portion of the working hours"), err)
 			}
 
-			c.WorkingHours.Start = uint32(workingStartTime.Minutes())
+			workingStartMinutes := uint32(workingStartTime.Minutes())
 
 			workingEndTime, err := workingHoursValueToDuration(workingHoursSplit[1])
 			if err != nil {
 				return errors.Join(thanatoserror.New("failed to parse end portion of the working hours"), err)
 			}
 
-			c.WorkingHours.End = uint32(workingEndTime.Minutes())
+			workingEndMinutes := uint32(workingEndTime.Minutes())
+
+			if workingStartMinutes == 0 && workingEndMinutes == (23*60+59) {
+				return nil
+			}
+
+			c.WorkingHours = &config.WorkingHours{
+				Start: workingStartMinutes,
+				End:   workingEndMinutes,
+			}
 
 			return nil
 		},
@@ -314,38 +301,6 @@ var ThanatosBuildParameters = []ThanatosBuildParameter{
 			}
 
 			c.Tlsuntrusted = tlsuntrusted
-			return nil
-		},
-	},
-
-	// An initial value for spawn to
-	{
-		Name:          "spawnto",
-		Description:   "Initial spawnto value",
-		DefaultValue:  "",
-		ParameterType: agentstructs.BUILD_PARAMETER_TYPE_STRING,
-		Required:      false,
-		ParseFunction: func(name string, c *config.Config, pbm *agentstructs.PayloadBuildMessage) error {
-			spawnto, err := pbm.BuildParameters.GetStringArg(name)
-			if err != nil {
-				return thanatoserror.Errorf("could not get parameter: %s", err.Error())
-			}
-
-			if len(spawnto) > 0 {
-				if pbm.SelectedOS == agentstructs.SUPPORTED_OS_WINDOWS {
-					if !regexp.MustCompile(`^[a-zA-Z]:\\.+\.exe$`).MatchString(spawnto) {
-						return thanatoserror.Errorf("spawnto value is not an absolute path to an executable")
-					}
-				} else if pbm.SelectedOS == agentstructs.SUPPORTED_OS_LINUX {
-					if spawnto[0] != '/' {
-						return thanatoserror.Errorf("spawnto value needs to be an absolute path")
-					}
-				} else {
-					return thanatoserror.Errorf("invalid build OS value: %s", pbm.SelectedOS)
-				}
-			}
-
-			c.SpawnTo = spawnto
 			return nil
 		},
 	},
