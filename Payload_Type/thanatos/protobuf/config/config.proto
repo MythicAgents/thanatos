@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package config;
+option go_package = "github.com/MythicAgents/thanatos/pb/config";
 
 message Config {
   bytes uuid = 1;

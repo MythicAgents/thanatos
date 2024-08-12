@@ -1,20 +1,21 @@
 syntax = "proto3";
 
 package msg;
+option go_package = "github.com/MythicAgents/thanatos/pb/msg";
 
-import "msg/checkin/checkin.proto";
-import "msg/tasking/tasking.proto";
+import "msg/checkin.proto";
+import "msg/tasking.proto";
 
 message AgentMessage {
   oneof message {
-    msg.checkin.AgentCheckinMessage checkin = 1;
-    msg.tasking.AgentTaskingMessage tasking = 2;
+    msg.AgentCheckinMessage checkin = 1;
+    msg.AgentTaskingMessage tasking = 2;
   }
 }
 
 message MythicResponse {
   oneof message {
-    msg.checkin.MythicCheckinResponse checkin = 1;
-    msg.tasking.MythicTaskingResponse tasking = 2;
+    msg.MythicCheckinResponse checkin = 1;
+    msg.MythicTaskingResponse tasking = 2;
   }
 }

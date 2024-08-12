@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package msg;
+option go_package = "github.com/MythicAgents/thanatos/pb/msg";
+
+import "commands/exit.proto";
+import "commands/sleep.proto";
+
+message MythicTaskingResponse {
+}
+
+message AgentTaskingMessage {
+  repeated PendingTask tasks = 1;
+  repeated CompletedTask responses = 2;
+}
+
+message PendingTask {
+  bytes id = 1;
+  oneof command {
+    commands.Exit exit = 2;
+    commands.Sleep sleep = 3;
+  }
+}
+
+message CompletedTask {
+  bytes id = 1;
+}

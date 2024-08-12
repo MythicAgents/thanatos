@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package commands;
+option go_package = "github.com/MythicAgents/thanatos/pb/commands";
 
 message Exit {
   enum Action {

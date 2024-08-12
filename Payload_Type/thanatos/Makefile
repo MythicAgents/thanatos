@@ -1,78 +1,35 @@
-### Variable definitions ###
-GO		= go
-GOFMT	= gofmt
-GOLINT	= golangci-lint
-PROTOC	= protoc
-GOMOD	:= github.com/MythicAgents/thanatos
-GOFLAGS	?=
-
-proto_outdir := proto
-proto_srcdir := protobuf
-
-### Protobuf sources ###
-proto_srcs := \
-	config/config.proto \
-	msg/mythic.proto \
-	msg/checkin/checkin.proto \
-	msg/tasking/tasking.proto \
-	commands/exit.proto \
-	commands/sleep.proto \
-
-proto_out := $(proto_srcs:%.proto=$(proto_outdir)/%.pb.go)
-proto_mods := $(patsubst $(proto_srcdir)/%/,$(GOMOD)/$(proto_outdir)/%,$(dir $(proto_srcs:%=$(proto_srcdir)/%)))
-proto_opts := $(join $(patsubst %,--go_opt=M%=,$(proto_srcs)),$(proto_mods))
-
 ### Invoked targets ###
 .PHONY: all
-all: server genconfig ## Build the 'server' and 'genconfig' targets
+all: mythic agent ## Build both the agent and mythic targets
 
-.PHONY: checkformat
-checkformat: ## Check workspace code formatting
-	$(GOFMT) -l -d . | diff -u /dev/null -
+.PHONY: agent
+agent: ## Build the Agent portion of the project
+	@$(MAKE) -C agent
 
-.PHONY: ci
-ci: checkformat lint test ## Run CI workflow
+.PHONY: mythic
+mythic: ## Build the Mythic portion of the project
+	@$(MAKE) -C mythic
 
-.PHONY: coverage
-coverage: ## Generate a code coverage report for tests
-	@mkdir -p coverage/html
-	$(GO) test -coverprofile coverage/tests.gocov
-	$(GO) tool cover -html coverage/tests.gocov -o coverage/html/index.html
+.PHONY: ci agent/ci mythic/ci
+ci: mythic/ci agent/ci ## Run the CI targets for the Agent and Mythic code.
 
-.PHONY: format
-format: ## Format the workspace code
-	$(GOFMT) -w .
+mythic/ci:
+	@$(MAKE) -C mythic ci
 
-.PHONY: genconfig
-genconfig: cmd/genconfig/main.go $(proto_out) ## Build the standalone configuration generator
-	$(GO) build $(GOFLAGS) -o $@ ./cmd/genconfig
-
-.PHONY: lint
-lint: $(proto_out) ## Lint the workspace code
-	$(GOLINT) run
-
-.PHONY: protobuf
-protobuf: $(proto_out) ## Build the protobuf files
-
-.PHONY: server
-server: $(proto_out) ## Build the Mythic server binary
-	$(GO) build $(GOFLAGS) -o $@ ./cmd/server
-
-.PHONY: test
-test: $(proto_out) ## Run tests
-	$(GO) test -v ./...
-
-### Helper targets ###
-# Pattern rule protobuf files
-$(proto_outdir)/%.pb.go: $(proto_srcdir)/%.proto
-	@mkdir -p $(dir $@)
-	$(PROTOC) -I$(proto_srcdir) --go_out=$(proto_outdir) --go_opt=paths=source_relative $(proto_opts) $<
+agent/ci:
+	@$(MAKE) -C agent ci
 
 ### Housekeeping targets ###
-.PHONY: clean
-clean: ## Clean built artifacts
-	$(RM) -rv $(proto_outdir) server genconfig
+.PHONY: clean agent/clean mythic/clean
+clean: agent/clean mythic/clean ## Clean built artifacts
+
+mythic/clean:
+	@$(MAKE) -C mythic clean
+
+agent/clean:
+	@$(MAKE) -C agent clean
 
 .PHONY: help
-help: ## Print this help output
+help: ## Display this help menu
+	@echo -e "Top level Makefile for general housekeeping. All targets support parallelization with \`make -j\`.\n"
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[32m%-15s\033[0m- %s\n", $$1, $$2}'
