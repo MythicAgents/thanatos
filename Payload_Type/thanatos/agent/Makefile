@@ -1,6 +1,6 @@
 ### Variable definitions ###
 CARGO		= cargo
-GENCONFIG	= ../genconfig
+GENCONFIG	= ../mythic/genconfig
 GRCOV		= grcov
 GENHTML		= genhtml
 JSON_CONFIG	?= config.json
