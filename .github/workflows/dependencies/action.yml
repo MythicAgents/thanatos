@@ -8,8 +8,8 @@ runs:
     - name: Setup Golang
       uses: actions/setup-go@v5
       with:
-        go-version-file: Payload_Type/thanatos/go.mod
-        cache-dependency-path: Payload_Type/thanatos/go.sum
+        go-version-file: Payload_Type/thanatos/mythic/go.mod
+        cache-dependency-path: Payload_Type/thanatos/mythic/go.sum
 
     - name: Setup Linux dependencies
       if: ${{ runner.os == 'Linux' }}

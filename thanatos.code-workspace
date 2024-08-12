@@ -2,7 +2,7 @@
     "folders": [
         {
             "name": "Mythic code",
-            "path": "Payload_Type/thanatos"
+            "path": "Payload_Type/thanatos/mythic"
         },
         {
             "name": "Agent code",

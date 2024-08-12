@@ -10,7 +10,7 @@ on:
 
 env:
   AGENT_CODE: Payload_Type/thanatos/agent
-  MYTHIC_CODE: Payload_Type/thanatos
+  MYTHIC_CODE: Payload_Type/thanatos/mythic
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
