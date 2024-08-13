@@ -3,6 +3,7 @@
 use prost::Message;
 use thanatos_protos::config::{config::Profile, Config, InitAction};
 
+mod crypto;
 mod errors;
 mod guardrails;
 mod logging;
@@ -58,6 +59,7 @@ pub fn entrypoint(config: &[u8]) {
 }
 
 fn run_agent(agent_config: Config) {
+    if let Some(working_hours) = agent_config.working_hours.as_ref() {}
     std::thread::scope(|_scope| {
         todo!();
     });

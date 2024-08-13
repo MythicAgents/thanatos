@@ -13,8 +13,8 @@ crossbeam-channel = "0.5.13"
 rand.workspace = true
 prost.workspace = true
 
-[dependencies.cryptolib]
-path = "../../cryptolib"
+[target.'cfg(target_os = "linux")'.dependencies]
+openssl.workspace = true
 
 [dependencies.ffiwrappers]
 path = "../../ffiwrappers"

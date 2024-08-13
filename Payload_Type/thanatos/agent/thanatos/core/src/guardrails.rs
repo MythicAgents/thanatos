@@ -2,7 +2,7 @@ use crate::log;
 
 use crate::system;
 
-use cryptolib::hash::Sha256;
+use crate::crypto::hash::Sha256;
 use thanatos_protos::config;
 
 use crate::errors::ThanatosError;
@@ -40,7 +40,7 @@ where
 
         let mut h = Sha256::new();
         h.update(check_info.to_lowercase().as_bytes());
-        let check_val = h.finalize();
+        let check_val = h.finish();
         return list.chunks_exact(32).any(|v| v == check_val);
     }
 
