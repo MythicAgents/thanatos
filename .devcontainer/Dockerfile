@@ -1,27 +1,18 @@
 FROM ubuntu:latest
 
 ARG locale=en_US.UTF-8
-ARG username=user
-ARG userUid=1000
-ARG userGid=1000
-ARG upgradePackages=false
-ARG goversion=1.22.0
-ARG golangcilintversion=1.56.2
 ARG shell=fish
 ARG extraPackages
-ARG protocversion=25.3
-ARG lcovcommithash=49608c474b8fe7369ad96dff5935b4746a406c09
+
+ARG goversion=1.22.0
+ARG golangcilintversion=1.56.2
+ARG protocversion=27.3
 ARG grcovversion=0.8.19
+
+ENV username ubuntu
 
 # Update apt cache
 RUN apt-get update -y
-
-# Create user
-RUN groupadd -g ${userGid} ${username}
-RUN useradd -m \
-    -u ${userUid} \
-    -g ${userGid} \
-    ${username}
 
 # Install base packages
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -30,16 +21,14 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     git \
     gcc \
     locales \
-    libgd-dev \
-    libgd-perl \
-    libdatetime-perl \
     make \
     gnupg2 \
     mingw-w64 \
     pkg-config \
     llvm \
+    lcov \
     unzip \
-    iproute2 \
+    bzip2 \
     libssl-dev
 
 # Install Golang
@@ -52,17 +41,17 @@ RUN grep -qxF 'export PATH=$PATH:/usr/local/go/bin' /home/${username}/.profile \
     || echo 'export PATH=$PATH:/usr/local/go/bin' >> /home/${username}/.profile
 
 RUN rm -f go${goversion}.linux-amd64.tar.gz
-
-# Install golangci-lint
 USER ${username}
 RUN mkdir -p /home/${username}/go/bin
 
+# Install golangci-lint
 RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
     | sh -s -- -b /home/${username}/go/bin v${golangcilintversion}
 
-# Install go cover
+# Install Go tools
 RUN /usr/local/go/bin/go install golang.org/x/tools/cmd/cover@latest
 RUN /usr/local/go/bin/go install github.com/jandelgado/gcov2lcov@latest
+RUN /usr/local/go/bin/go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 
 RUN grep -qxF 'export PATH=$PATH:/home/${username}/go/bin' /home/${username}/.profile \
     || echo 'export PATH=$PATH:/home/${username}/go/bin' >> /home/${username}/.profile
@@ -83,6 +72,7 @@ RUN grep -qxF '. "$HOME/.cargo/env"' /home/${username}/.profile \
 RUN rm -f rustup.sh
 
 # Install nightly
+RUN $HOME/.cargo/bin/rustup toolchain add nightly
 RUN $HOME/.cargo/bin/rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
 
 # Install rustfmt, clippy and llvm tools
@@ -91,30 +81,18 @@ RUN $HOME/.cargo/bin/rustup component add rustfmt clippy llvm-tools-preview
 USER 0
 
 # Install protoc
-RUN mkdir -p /tmp/protoc
-WORKDIR /tmp/protoc
-RUN curl -L https://github.com/protocolbuffers/protobuf/releases/download/v${protocversion}/protoc-${protocversion}-linux-x86_64.zip \
+RUN curl \
+    -L https://github.com/protocolbuffers/protobuf/releases/download/v${protocversion}/protoc-${protocversion}-linux-x86_64.zip \
     -o protoc.zip
-RUN unzip protoc.zip
-RUN mv bin/protoc /usr/local/bin
-RUN chmod 755 /usr/local/bin/protoc
-WORKDIR /tmp
-RUN rm -rf /tmp/protoc
-
-# Build lcov/genhtml
-RUN yes yes | cpan -T install Date::Parse Capture::Tiny GD
-RUN git clone https://github.com/linux-test-project/lcov.git /tmp/lcov
-WORKDIR /tmp/lcov
-RUN git reset --hard ${lcovcommithash}
-RUN make install
-WORKDIR /
-RUN rm -rf /tmp/lcov
+RUN unzip /tmp/protoc.zip -x readme.txt -d /usr/local
+RUN rm -f /tmp/protoc.zip
 
 # Install grcov
-RUN curl -L https://github.com/mozilla/grcov/releases/download/v${grcovversion}/grcov-x86_64-unknown-linux-gnu.tar.bz2 -o /tmp/grcov.tar.bz2
-RUN tar xvf /tmp/grcov.tar.bz2
-RUN mv grcov /usr/local/bin
-RUN rm /tmp/grcov.tar.bz2
+RUN curl \
+    -L https://github.com/mozilla/grcov/releases/download/v${grcovversion}/grcov-x86_64-unknown-linux-gnu.tar.bz2 \
+    -o /tmp/grcov.tar.bz2
+RUN tar xvf /tmp/grcov.tar.bz2 -C /usr/local/bin
+RUN rm -f /tmp/grcov.tar.bz2
 
 # Set locale
 RUN sed -i "/${locale}/s/^# //g" /etc/locale.gen
@@ -136,7 +114,7 @@ RUN echo "${username} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 # Install any extra packages
 RUN if [ "${extraPackages}" != "" ]; then DEBIAN_FRONTEND=noninteractive apt-get install -y ${extraPackages}; fi
 
-USER ${username}
+USER ${userUid}
 
 # Setup PATH if fish is the shell. This needs to be in the context of the user
 RUN if [ "${shell}" = "fish" ]; then \

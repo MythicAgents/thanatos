@@ -9,12 +9,8 @@
             "path": "Payload_Type/thanatos/agent"
         },
         {
-            "name": "Github",
-            "path": ".github"
-        },
-        {
-            "name": "Devcontainer",
-            "path": ".devcontainer"
+            "name": "Protobuf",
+            "path": "Payload_Type/thanatos/protobuf"
         },
         {
             "name": "Project Root",

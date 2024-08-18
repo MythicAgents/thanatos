@@ -4,7 +4,6 @@
         "premparihar.gotestexplorer",
         "ms-vscode.test-adapter-converter",
         "hbenl.vscode-test-explorer",
-        "ms-vscode.makefile-tools",
         "markis.code-coverage"
     ]
 }

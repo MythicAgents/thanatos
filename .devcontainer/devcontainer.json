@@ -8,19 +8,15 @@
         "vscode": {
             "extensions": [
                 "golang.go",
-                "rust-lang.rust-analyzer",
-                "ms-azuretools.vscode-docker",
-                "serayuzgur.crates",
-                "tamasfe.even-better-toml",
-                "eamodio.gitlens",
-                "GitHub.vscode-pull-request-github",
-                "hbenl.vscode-test-explorer",
-                "ms-vscode.test-adapter-converter",
-                "swellaby.vscode-rust-test-adapter",
                 "premparihar.gotestexplorer",
-                "ms-vscode.makefile-tools",
-                "me-dutour-mathieu.vscode-github-actions",
-                "markis.code-coverage"
+                "ms-vscode.test-adapter-converter",
+                "hbenl.vscode-test-explorer",
+                "markis.code-coverage",
+                "rust-lang.rust-analyzer",
+                "fill-labs.dependi",
+                "tamasfe.even-better-toml",
+                "swellaby.vscode-rust-test-adapter",
+                "eamodio.gitlens"
             ]
         }
     }
