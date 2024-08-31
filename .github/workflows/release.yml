@@ -13,6 +13,8 @@ env:
   CONTAINER_IMAGE_REGISTRY: ghcr.io
   # Name of the container image
   CONTAINER_IMAGE_NAME: ${{ github.repository }}
+  # URL to the repository source code
+  SOURCE_URL: "https://github.com/${{ github.repository }}"
   # Description of the base container image
   CONTAINER_IMAGE_DESCRIPTION: "Base container image for the Thanatos Mythic C2 agent"
   # License for the base container image
@@ -57,7 +59,7 @@ jobs:
           tags: ${{ env.CONTAINER_IMAGE_URL }}
           push: true
           labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.source=${{ env.SOURCE_URL }}
             org.opencontainers.image.description=${{ env.CONTAINER_IMAGE_DESCRIPTION }}
             org.opencontainers.image.licenses=${{ env.CONTAINER_IMAGE_LICENSE }}
 
@@ -96,15 +98,18 @@ jobs:
       - name: Set agent Cargo.toml version number
         working-directory: ${{ env.AGENT_CODE_PATH }}
         env:
-          VERSION: ${{ inputs.version }}
-        run: sed -i "0,/^version = .*$/s//version = \"${VERSION}\"/" Cargo.toml
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: sed -i "0,/^version = .*$/s//version = \"${RELEASE_VERSION}\"/" Cargo.toml
 
-      - name: Set CHANGELOG.md unreleased entry to new release version
+      - name: Update the CHANGELOG.md for the new version
         env:
-          VERSION: ${{ inputs.version }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          SOURCE_URL: ${{ env.SOURCE_URL }}
         run: |
-          sed -i "s/^## \[Unreleased\]$/## [$VERSION] - $(date -I)/" CHANGELOG.md
-          sed -i "s/^\[unreleased\]: \(.\+\)\.\.\.HEAD$/[$VERSION]: \1...$VERSION/" CHANGELOG.md
+          sed -i "s/^## \[Unreleased\]$/## [$RELEASE_VERSION] - $(date -I)/" CHANGELOG.md
+          sed -i "s/^\[unreleased\]: \(.\+\)\.\.\.HEAD$/[$RELEASE_VERSION]: \1...v$RELEASE_VERSION/" CHANGELOG.md
+          sed -i "/^## \[$RELEASE_VERSION\] \- .*/i ## [Unreleased]\n" CHANGELOG.md
+          sed -i "/^\[$RELEASE_VERSION\]: .*/i [unreleased]: $SOURCE_URL/compare/v$RELEASE_VERSION...HEAD" CHANGELOG.md
 
       - name: Commit the updated changes
         uses: EndBug/add-and-commit@v9
