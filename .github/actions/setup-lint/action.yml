@@ -1,8 +1,8 @@
 name: Setup lint environment
-description: Sets up an environment for running checks
+description: Sets up an environment for running various checks
 inputs:
-  python-requirements:
-    description: Path to the requiremets.txt for python packages
+  mythic-code:
+    description: Path to the mythic code
     required: true
 
   agent-code:
@@ -12,17 +12,19 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Install Poetry
+      shell: bash
+      run: pipx install poetry
+
     - name: Install Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
-        cache: 'pip'
+        python-version: "3.11"
+        cache: "poetry"
 
     - name: Install Python packages
       shell: bash
-      run: |
-        pip install -r ${{ inputs.python-requirements }}
-        pip install pylint black
+      run: poetry install -C ${{ inputs.mythic-code }}
 
     - name: Setup cargo cache
       uses: actions/cache@v4
