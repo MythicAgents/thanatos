@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "thanatos"
-version = "0.1.10"
+version = "0.1.9"
 description = "Mythic code for the Thanatos agent"
 authors = ["Matt Ehrnschwender <matthewe2020@gmail.com>"]
 license = "BSD-3-Clause"
