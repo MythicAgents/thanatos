@@ -1,13 +1,20 @@
-name: Build the base container image
+name: Test build the base container image
 
 on:
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - Payload_Type/thanatos/**
+
   pull_request:
     branches:
       - main
+      - dev
 
     paths:
-      - Payload_Type/thanatos/thanatos/agent_code
-      - Payload_Type/thanatos/**.py
+      - Payload_Type/thanatos/**
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

@@ -3,6 +3,7 @@ name: Lint and check code for errors
 on:
   push:
     branches:
+      - main
       - dev
     paths:
       - Payload_Type/thanatos/thanatos/agent_code
