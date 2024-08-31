@@ -5,6 +5,8 @@ Changes to the Thanatos project.
 
 This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
 ## [0.1.9] - 2024-03-17
 
 ### Added
@@ -121,6 +123,7 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 Initial public release
 
+[unreleased]: https://github.com/MythicAgents/thanatos/compare/v0.1.9...HEAD
 [0.1.9]: https://github.com/MythicAgents/thanatos/compare/v0.1.8...v0.1.9
 [0.1.8]: https://github.com/MythicAgents/thanatos/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/MythicAgents/thanatos/compare/v0.1.6...v0.1.7
