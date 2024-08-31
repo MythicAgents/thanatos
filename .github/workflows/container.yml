@@ -32,6 +32,5 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: Payload_Type/thanatos
-          file: Payload_Type/thanatos/.docker/Dockerfile
           tags: testing
           push: false

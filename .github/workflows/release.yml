@@ -55,7 +55,6 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: Payload_Type/thanatos
-          file: Payload_Type/thanatos/.docker/Dockerfile
           tags: ${{ env.CONTAINER_IMAGE_URL }}
           push: true
           labels: |
