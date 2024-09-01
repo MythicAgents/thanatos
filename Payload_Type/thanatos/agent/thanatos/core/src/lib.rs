@@ -2,7 +2,6 @@
 
 use agent::Agent;
 use chrono::{DateTime, TimeDelta};
-use profiles::C2ProfileHandler;
 use prost::Message;
 use thanatos_protos::config::{config::Profile, Config, InitAction};
 use timecheck::{check_working_hours, passed_killdate};
