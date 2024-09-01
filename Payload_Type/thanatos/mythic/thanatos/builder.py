@@ -103,12 +103,8 @@ class Thanatos(PayloadType):
     build_steps = [
         BuildStep("Validating configuration", "Validating payload configuration"),
         BuildStep(
-            "Compiling agent and dependencies",
-            "Building the payload and its dependencies",
-        ),
-        BuildStep(
-            "Compiling agent with built dependencies",
-            "Building the payload with already built dependencies",
+            "Compiling agent",
+            "Building the payload",
         ),
     ]
 
@@ -215,18 +211,6 @@ class Thanatos(PayloadType):
             async with self.copy_lock:
                 shutil.copytree(self.agent_code_path, tmpdir.name)
 
-            dependencies_prebuilt = False
-            if Path(tmpdir.name + "/target/" + triple).exists():
-                SendMythicRPCPayloadUpdatebuildStep(
-                    MythicRPCPayloadUpdateBuildStepMessage(
-                        self.uuid,
-                        StepName="Compiling agent and dependencies",
-                        StepSuccess=True,
-                        StepSkip=True,
-                    )
-                )
-                dependencies_prebuilt = True
-
             proc = await asyncio.create_subprocess_exec(
                 "/usr/local/bin/cargo",
                 "build",
@@ -246,34 +230,15 @@ class Thanatos(PayloadType):
             else:
                 success = True
 
-            if dependencies_prebuilt:
-                SendMythicRPCPayloadUpdatebuildStep(
-                    MythicRPCPayloadUpdateBuildStepMessage(
-                        self.uuid,
-                        StepName="Compiling agent with built dependencies",
-                        StepSuccess=success,
-                        StepStdout=stdout,
-                        StepStderr=stderr,
-                    )
+            SendMythicRPCPayloadUpdatebuildStep(
+                MythicRPCPayloadUpdateBuildStepMessage(
+                    self.uuid,
+                    StepName="Compiling agent",
+                    StepSuccess=success,
+                    StepStdout=stdout,
+                    StepStderr=stderr,
                 )
-            else:
-                SendMythicRPCPayloadUpdatebuildStep(
-                    MythicRPCPayloadUpdateBuildStepMessage(
-                        self.uuid,
-                        StepName="Compiling agent and dependencies",
-                        StepSuccess=success,
-                        StepStdout=stdout,
-                        StepStderr=stderr,
-                    )
-                )
-                SendMythicRPCPayloadUpdatebuildStep(
-                    MythicRPCPayloadUpdateBuildStepMessage(
-                        self.uuid,
-                        StepName="Compiling agent with built dependencies",
-                        StepSuccess=True,
-                        StepSkip=True,
-                    )
-                )
+            )
 
             if not success:
                 return resp
