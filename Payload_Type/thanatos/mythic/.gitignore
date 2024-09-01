@@ -1,4 +1,4 @@
 .env
 pb/
-/server
-/genconfig
+server
+genconfig
