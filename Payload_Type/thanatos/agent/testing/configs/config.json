@@ -65,14 +65,6 @@
       "value": []
     },
     {
-      "name": "tlsuntrusted",
-      "value": false
-    },
-    {
-      "name": "spawnto",
-      "value": ""
-    },
-    {
       "name": "libexport",
       "value": ""
     },
