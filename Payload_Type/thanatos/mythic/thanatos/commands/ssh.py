@@ -1,5 +1,3 @@
-import sys
-
 from mythic_container.MythicCommandBase import (
     TaskArguments,
     CommandBase,
@@ -9,14 +7,15 @@ from mythic_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     SupportedOS,
-    MythicTask,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    PTTaskCreateTaskingMessageResponse,
 )
 from mythic_container.MythicGoRPC import (
     SendMythicRPCFileSearch,
     MythicRPCFileSearchMessage,
 )
+
+# TODO: Refactor implementation
 
 
 class SshArguments(TaskArguments):
@@ -305,7 +304,7 @@ class SshCommand(CommandBase):
         "Use ssh to upload/download/cat files, "
         "get directory listings and execute commands"
     )
-    version = 1
+    version = 2
     is_upload_file = True
     author = "@M_alphaaa"
     attackmapping = ["T1021.004"]
@@ -318,67 +317,74 @@ class SshCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        creds = task.args.get_arg("credentials")
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        creds = task_data.args.get_arg("credentials")
         user = creds["account"]
-        host = task.args.get_arg("host")
+        host = task_data.args.get_arg("host")
         auth_type = creds["type"]
 
-        if task.callback.host == "Windows" and auth_type == "key":
-            raise Exception("Cannot use key auth on Windows hosts")
-
-        if path := task.args.get_arg("download"):
-            task.display_params = f"{user}@{host} -download {path}"
-        elif upload_file_id := task.args.get_arg("upload"):
-            try:
-                mode = str(task.args.get_arg("mode"))
-                mode_int = int(mode, 8)
-                task.args.set_arg("mode", mode_int)
-            except Exception:
-                raise Exception("Mode not in octal format")
-
-            try:
-                resp = await SendMythicRPCFileSearch(
-                    MythicRPCFileSearchMessage(
-                        TaskID=task.id,
-                        AgentFileId=upload_file_id,
-                    )
-                )
-
-                if not resp.Success:
-                    raise Exception(resp.error)
-
-                file_name = resp.Files[0].Filename
-
-                if len(task.args.get_arg("upload_path")) == 0:
-                    task.args.add_arg("upload_path", file_name)
-                elif task.args.get_arg("upload_path")[-1] == "/":
-                    task.args.add_arg(
-                        "upload_path", task.args.get_arg("upload_path") + file_name
-                    )
-
-            except Exception as e:
-                raise Exception(
-                    "Error from Mythic: " + str(sys.exc_info()[-1].tb_lineno) + str(e)
-                )
-
-            task.display_params = (
-                f"{user}@{host} -upload '{file_name}' to"
-                f" {task.args.get_arg('upload_path')}"
+        if task_data.Callback.Host == "Windows" and auth_type == "key":
+            return PTTaskCreateTaskingMessageResponse(
+                TaskID=task_data.Task.ID,
+                Success=False,
+                Error="Cannot use key auth on Windows hosts",
             )
 
-        elif cmd := task.args.get_arg("exec"):
-            task.display_params = f"{user}@{host} -exec {cmd}"
-        elif path := task.args.get_arg("list"):
-            task.display_params = f"{user}@{host} -ls {path}"
-        elif path := task.args.get_arg("cat"):
-            task.display_params = f"{user}@{host} -cat {path}"
-        elif path := task.args.get_arg("rm"):
-            task.display_params = f"{user}@{host} -rm {path}"
+        if path := task_data.args.get_arg("download"):
+            display_params = f"{user}@{host} -download {path}"
+        elif upload_file_id := task_data.args.get_arg("upload"):
+            try:
+                mode = str(task_data.args.get_arg("mode"))
+                mode_int = int(mode, 8)
+                task_data.args.set_arg("mode", mode_int)
+            except ValueError:
+                return PTTaskCreateTaskingMessageResponse(
+                    TaskID=task_data.Task.ID,
+                    Success=False,
+                    Error="Mode not in octal format",
+                )
 
-        return task
+            resp = await SendMythicRPCFileSearch(
+                MythicRPCFileSearchMessage(
+                    TaskID=task_data.Task.ID,
+                    AgentFileId=upload_file_id,
+                )
+            )
 
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+            if not resp.Success:
+                return PTTaskCreateTaskingMessageResponse(
+                    TaskID=task_data.Task.ID,
+                    Success=False,
+                    Error=f"Failed to find file via RPC: {resp.error}",
+                )
+
+            file_name = resp.Files[0].Filename
+
+            if len(task_data.args.get_arg("upload_path")) == 0:
+                task_data.args.add_arg("upload_path", file_name)
+            elif task_data.args.get_arg("upload_path")[-1] == "/":
+                task_data.args.add_arg(
+                    "upload_path", task_data.args.get_arg("upload_path") + file_name
+                )
+
+            display_params = (
+                f"{user}@{host} -upload '{file_name}' to"
+                f" {task_data.args.get_arg('upload_path')}"
+            )
+
+        elif cmd := task_data.args.get_arg("exec"):
+            display_params = f"{user}@{host} -exec {cmd}"
+        elif path := task_data.args.get_arg("list"):
+            display_params = f"{user}@{host} -ls {path}"
+        elif path := task_data.args.get_arg("cat"):
+            display_params = f"{user}@{host} -cat {path}"
+        elif path := task_data.args.get_arg("rm"):
+            display_params = f"{user}@{host} -rm {path}"
+
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID,
+            Success=True,
+            DisplayParams=display_params,
+        )

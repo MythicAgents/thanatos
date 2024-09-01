@@ -6,8 +6,11 @@ from mythic_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     SupportedOS,
-    MythicTask,
+    PTTaskMessageAllData,
+    PTTaskCreateTaskingMessageResponse,
 )
+
+# TODO: Refactor implementation
 
 
 class CatArguments(TaskArguments):
@@ -39,7 +42,7 @@ class CatCommand(CommandBase):
     needs_admin = False
     help_cmd = "cat [file path]"
     description = "Display the contents of a file."
-    version = 1
+    version = 2
     author = "@M_alphaaa"
     supported_ui_features = ["cat"]
     argument_class = CatArguments
@@ -48,6 +51,11 @@ class CatCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.display_params = str(task.args.get_arg("file"))
-        return task
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID,
+            DisplayParams=str(task_data.args.get_arg("file")),
+            Success=True,
+        )

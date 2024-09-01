@@ -6,14 +6,15 @@ from mythic_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     SupportedOS,
-    MythicTask,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    PTTaskCreateTaskingMessageResponse,
 )
 from mythic_container.MythicGoRPC import (
     SendMythicRPCArtifactCreate,
     MythicRPCArtifactCreateMessage,
 )
+
+# TODO: Refactor implementation
 
 
 class ShellArguments(TaskArguments):
@@ -48,7 +49,7 @@ class ShellCommand(CommandBase):
         "Execute a shell command with '/bin/bash -c' on Linux "
         "or 'cmd.exe /c' on Windows in a new thread"
     )
-    version = 1
+    version = 2
     author = "@M_alphaaa"
     argument_class = ShellArguments
     attackmapping = ["T1059"]
@@ -56,24 +57,24 @@ class ShellCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        if task.callback.host == "Linux":
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        if task_data.Callback.Host == "Linux":
             shell = "/bin/bash -c "
         else:
             shell = "cmd.exe /c "
 
         await SendMythicRPCArtifactCreate(
             MythicRPCArtifactCreateMessage(
-                TaskID=task.id,
-                ArtifactMessage=shell + task.args.get_arg("command"),
+                TaskID=task_data.Task.ID,
+                ArtifactMessage=shell + task_data.args.get_arg("command"),
                 BaseArtifactType="Process Create",
             )
         )
 
-        task.display_params = task.args.get_arg("command")
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID,
+            Success=True,
+            DisplayParams=task_data.args.get_arg("command"),
+        )

@@ -6,9 +6,8 @@ from mythic_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     SupportedOS,
-    MythicTask,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    PTTaskCreateTaskingMessageResponse,
 )
 
 
@@ -42,7 +41,7 @@ class UnsetEnvCommand(CommandBase):
     needs_admin = False
     help_cmd = "unsetenv [variable]"
     description = "Unset an environment variable"
-    version = 1
+    version = 2
     author = "@M_alphaaa"
     supported_ui_features = ["unsetenv"]
     argument_class = UnsetEnvArguments
@@ -51,11 +50,11 @@ class UnsetEnvCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.display_params = str(task.args.get_arg("variable"))
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID,
+            Success=True,
+            DisplayParams=str(task_data.args.get_arg("variable")),
+        )

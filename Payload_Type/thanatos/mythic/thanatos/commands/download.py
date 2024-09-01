@@ -7,11 +7,12 @@ from mythic_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     SupportedOS,
-    MythicTask,
     BrowserScript,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    PTTaskCreateTaskingMessageResponse,
 )
+
+# TODO: Refactor implementation
 
 
 class DownloadArguments(TaskArguments):
@@ -51,25 +52,24 @@ class DownloadCommand(CommandBase):
     needs_admin = False
     help_cmd = "download [file]"
     description = "Download a file from the target."
-    version = 1
+    version = 2
     is_download_file = True
     author = "@M_alphaaa"
     argument_class = DownloadArguments
     attackmapping = ["T1020", "T1030", "T1041"]
     supported_ui_features = ["file_browser:download"]
     browser_script = BrowserScript(
-        script_name="download", author="@djhohnstein", for_new_ui=True
+        script_name="download", author="@M_alphaaa", for_new_ui=True
     )
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        file = task.args.get_arg("file")
-        task.display_params = file
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID,
+            DisplayParams=str(task_data.args.get_arg("file")),
+            Success=True,
+        )

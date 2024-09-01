@@ -17,7 +17,6 @@ on:
       - Payload_Type/thanatos/agent
       - Payload_Type/thanatos/mythic
 
-  workflow_call:
 
 env:
   AGENT_CODE: Payload_Type/thanatos/agent
@@ -82,7 +81,6 @@ jobs:
         working-directory: ${{ env.AGENT_CODE }}
         run: cargo fmt -- --color always --check
         env:
-          RUSTFLAGS: "--cfg http"
           UUID: ""
           AESPSK: ""
           callback_host: ""
@@ -121,7 +119,6 @@ jobs:
         working-directory: ${{ env.AGENT_CODE }}
         run: cargo clippy --color always --all-features --all-targets -- -D warnings
         env:
-          RUSTFLAGS: "--cfg http"
           UUID: ""
           AESPSK: ""
           callback_host: ""

@@ -1,5 +1,4 @@
 import json
-import traceback
 from mythic_container.MythicCommandBase import (
     TaskArguments,
     CommandBase,
@@ -8,10 +7,10 @@ from mythic_container.MythicCommandBase import (
     CommandParameter,
     ParameterGroupInfo,
     ParameterType,
-    MythicTask,
-    MythicStatus,
     PTTaskCompletionFunctionMessage,
     PTTaskCompletionFunctionMessageResponse,
+    PTTaskMessageAllData,
+    PTTaskCreateTaskingMessageResponse,
 )
 from mythic_container.MythicGoRPC import (
     SendMythicRPCResponseCreate,
@@ -90,27 +89,8 @@ async def formulate_output(
 async def post_run_actions(
     task: PTTaskCompletionFunctionMessage,
 ) -> PTTaskCompletionFunctionMessageResponse:
-    try:
-        await formulate_output(task)
-        await update_sleep_info(task)
-    except Exception as e:
-        output = "".join(traceback.format_exception(e))
-        output = f"Error during post processing:\n{output}"
-
-        await SendMythicRPCResponseCreate(
-            MythicRPCResponseCreateMessage(
-                TaskID=task.TaskData.Task.ID, Response=output.encode()
-            )
-        )
-
-        return PTTaskCompletionFunctionMessageResponse(
-            TaskID=task.TaskData.Task.ID,
-            ParentTaskId=0,
-            Completed=True,
-            Success=False,
-            Error=output,
-            Stderr=output,
-        )
+    await formulate_output(task)
+    await update_sleep_info(task)
 
     return PTTaskCompletionFunctionMessageResponse(
         TaskID=task.TaskData.Task.ID,
@@ -125,7 +105,7 @@ class SleepCommand(CommandBase):
     needs_admin = False
     help_cmd = "sleep [number][suffix] [jitter]"
     description = "Change the agent's sleep interval. Suffix can either be [s, m, h]"
-    version = 2
+    version = 3
     author = "@M_alphaaa"
     argument_class = SleepArguments
     completion_functions = {"post_run_actions": post_run_actions}
@@ -135,54 +115,68 @@ class SleepCommand(CommandBase):
         builtin=True,
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        interval = task.args.get_arg("interval")
-        jitter = task.args.get_arg("jitter")
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        interval = task_data.args.get_arg("interval")
+        jitter = task_data.args.get_arg("jitter")
 
+        # Try to directly convert this interval to seconds
         try:
-            # Try to directly convert this interval to seconds
+            real_interval = int(interval)
+            units = "s"
+        except ValueError:
+            # Set the units to the last charater in the interval
+            units = interval[-1]
+
+            # Strip out the unit suffix of the interval
+            interval = interval[:-1]
+
+            if units == "s":  # Units are seconds
+                conversion_factor = 1
+            elif units == "m":  # Units are minutes
+                conversion_factor = 60
+            elif units == "h":  # Units are hours
+                conversion_factor = 3600
+            else:
+                return PTTaskCreateTaskingMessageResponse(
+                    TaskID=task_data.Task.ID,
+                    Success=False,
+                    Error="Invalid interval suffix [s, m, h]",
+                )
+
+            # Convert the inputted interval to seconds using the conversion factor
             try:
-                real_interval = int(interval)
-                units = "s"
+                real_interval = int(interval) * conversion_factor
             except ValueError:
-                # Set the units to the last charater in the interval
-                units = interval[-1]
+                return PTTaskCreateTaskingMessageResponse(
+                    TaskID=task_data.Task.ID,
+                    Success=False,
+                    Error="Invalid sleep interval",
+                )
 
-                # Strip out the unit suffix of the interval
-                interval = interval[:-1]
+        # Check that the interval is not negative
+        if real_interval < 0:
+            return PTTaskCreateTaskingMessageResponse(
+                TaskID=task_data.Task.ID,
+                Success=False,
+                Error="Interval cannot be negative",
+            )
 
-                if units == "s":  # Units are seconds
-                    conversion_factor = 1
-                elif units == "m":  # Units are minutes
-                    conversion_factor = 60
-                elif units == "h":  # Units are hours
-                    conversion_factor = 3600
-                else:
-                    raise Exception("Invalid interval suffix [s, m, h]")
-
-                # Convert the inputted interval to seconds using the conversion factor
-                try:
-                    real_interval = int(interval) * conversion_factor
-                except ValueError:
-                    raise Exception("Invalid sleep interval")
-
-            # Check that the interval is not negative
-            if real_interval < 0:
-                raise Exception("Interval cannot be negative")
-
-            # Make sure the jitter is not negative
-            if jitter is not None and jitter < 0:
-                raise Exception("Jitter cannot be negative")
-
-            task.completed_callback_function = "post_run_actions"
-        except Exception as e:
-            output = "".join(traceback.format_exception(e))
-            output = f"Error during command invocation:\n{output}"
-            task.set_status(MythicStatus.Error)
-            task.set_stderr(output)
+        # Make sure the jitter is not negative
+        if jitter is not None and jitter < 0:
+            return PTTaskCreateTaskingMessageResponse(
+                TaskID=task_data.Task.ID,
+                Success=False,
+                Error="Jitter cannot be negative",
+            )
 
         # Set the new interval
-        task.args.remove_arg("interval")
-        task.args.add_arg("interval", real_interval, type=ParameterType.Number)
-        task.display_params = f"interval = {interval}{units}, jitter = {jitter}%"
-        return task
+        task_data.args.remove_arg("interval")
+        task_data.args.add_arg("interval", real_interval, type=ParameterType.Number)
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID,
+            Success=True,
+            DisplayParams=f"interval = {interval}{units}, jitter = {jitter}%",
+            CompletionFunctionName="post_run_actions",
+        )

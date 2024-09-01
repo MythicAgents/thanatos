@@ -8,10 +8,11 @@ from mythic_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     SupportedOS,
-    MythicTask,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    PTTaskCreateTaskingMessageResponse,
 )
+
+# TODO: Refactor implementation
 
 
 class LsArguments(TaskArguments):
@@ -36,7 +37,7 @@ class LsArguments(TaskArguments):
                 tmp_json = json.loads(self.command_line)
                 self.command_line = tmp_json["path"]
                 self.add_arg("file_browser", True, type=ParameterType.Boolean)
-            except Exception:
+            except (json.JSONDecodeError, KeyError):
                 pass
             self.set_arg("path", self.command_line)
         else:
@@ -61,7 +62,7 @@ class LsCommand(CommandBase):
     needs_admin = False
     help_cmd = "ls [directory]"
     description = "List directory."
-    version = 1
+    version = 2
     supported_ui_features = ["file_browser:list"]
     author = "@M_alphaaa"
     argument_class = LsArguments
@@ -71,27 +72,28 @@ class LsCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        if task.args.has_arg("host"):
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        if task_data.args.has_arg("host"):
             if (
-                task.callback.host == "Linux"
-                and task.callback.host != task.args.get_host("host")
+                task_data.Callback.Host == "Linux"
+                and task_data.Callback.Host != task_data.args.get_host("host")
             ):
-                raise Exception(
-                    "Can't get directory listings of remote hosts using ls on Linux. "
-                    "Use `ssh-ls` instead."
+                return PTTaskCreateTaskingMessageResponse(
+                    TaskID=task_data.Task.ID,
+                    Success=False,
+                    Error="Can't get directory listings of remote hosts using ls on Linux. "
+                    "Use `ssh-ls` instead.",
                 )
         else:
-            task.args.add_arg("host", task.callback.host)
+            task_data.args.add_arg("host", task_data.Callback.Host)
 
-        if not task.args.has_arg("file"):
-            task.args.add_arg("file", "")
+        if not task_data.args.has_arg("file"):
+            task_data.args.add_arg("file", "")
 
-        task.display_params = task.args.get_arg("path")
-
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID,
+            DisplayParams=str(task_data.args.get_arg("path")),
+            Success=True,
+        )

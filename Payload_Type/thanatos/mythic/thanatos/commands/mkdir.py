@@ -6,10 +6,11 @@ from mythic_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     SupportedOS,
-    MythicTask,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    PTTaskCreateTaskingMessageResponse,
 )
+
+# TODO: Refactor implementation
 
 
 class MkdirArguments(TaskArguments):
@@ -44,7 +45,7 @@ class MkdirCommand(CommandBase):
     needs_admin = False
     help_cmd = "mkdir [directory]"
     description = "Make a new directory."
-    version = 1
+    version = 2
     author = "@M_alphaaa"
     argument_class = MkdirArguments
     attackmapping = ["T1106"]
@@ -52,12 +53,11 @@ class MkdirCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        directory = task.args.get_arg("directory")
-        task.display_params = directory
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID,
+            DisplayParams=str(task_data.args.get_arg("directory")),
+            Success=True,
+        )

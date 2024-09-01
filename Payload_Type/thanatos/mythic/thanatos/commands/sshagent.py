@@ -6,10 +6,11 @@ from mythic_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     SupportedOS,
-    MythicTask,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    PTTaskCreateTaskingMessageResponse,
 )
+
+# TODO: Refactor implementation
 
 
 class SshAgentArguments(TaskArguments):
@@ -71,7 +72,7 @@ class SshAgentCommand(CommandBase):
     needs_admin = False
     help_cmd = "ssh-agent [-l] [-d] [-c <agent socket path>]"
     description = "List identities and connect to ssh agents"
-    version = 1
+    version = 2
     author = "@M_alphaaa"
     argument_class = SshAgentArguments
     attackmapping = ["T1563.001"]
@@ -79,19 +80,24 @@ class SshAgentCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        if task.args.get_arg("list"):
-            task.display_params = "-l"
-        elif task.args.get_arg("disconnect"):
-            task.display_params = "-d"
-        elif socket := task.args.get_arg("connect"):
-            task.display_params = f"-c {socket}"
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        if task_data.args.get_arg("list"):
+            display_params = "-l"
+        elif task_data.args.get_arg("disconnect"):
+            display_params = "-d"
+        elif socket := task_data.args.get_arg("connect"):
+            display_params = f"-c {socket}"
         else:
-            raise Exception("Invalid arguments")
+            return PTTaskCreateTaskingMessageResponse(
+                TaskID=task_data.Task.ID,
+                Success=False,
+                Error="Invalid arguments",
+            )
 
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID,
+            Success=True,
+            DisplayParams=display_params,
+        )

@@ -23,7 +23,6 @@ pre = "<b>1. </b>"
  * [portscan](/agents/thanatos/commands/portscan/)
  * [ps](/agents/thanatos/commands/ps/)
  * [pwd](/agents/thanatos/commands/pwd/)
- * [redirect](/agents/thanatos/commands/redirect/)
  * [rm](/agents/thanatos/commands/rm/)
  * [setenv](/agents/thanatos/commands/setenv/)
  * [shell](/agents/thanatos/commands/shell/)

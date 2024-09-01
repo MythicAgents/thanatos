@@ -6,14 +6,15 @@ from mythic_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     SupportedOS,
-    MythicTask,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    PTTaskCreateTaskingMessageResponse,
 )
 from mythic_container.MythicGoRPC import (
     SendMythicRPCArtifactCreate,
     MythicRPCArtifactCreateMessage,
 )
+
+# TODO: Refactor implementation
 
 
 class PowershellArguments(TaskArguments):
@@ -45,25 +46,25 @@ class PowershellCommand(CommandBase):
     needs_admin = False
     help_cmd = "powershell [command]"
     description = "Execute a powershell command with 'powershell.exe /c' in a new thread."
-    version = 1
+    version = 2
     author = "@M_alphaaa"
     argument_class = PowershellArguments
     attackmapping = ["T1059"]
     attributes = CommandAttributes(supported_os=[SupportedOS.Windows])
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
         await SendMythicRPCArtifactCreate(
             MythicRPCArtifactCreateMessage(
-                TaskID=task.id,
-                ArtifactMessage=f"powershell.exe /c {task.args.get_arg('command')}",
+                TaskID=task_data.Task.ID,
+                ArtifactMessage=f"powershell.exe /c {task_data.args.get_arg('command')}",
                 BaseArtifactType="Process Create",
             )
         )
 
-        task.display_params = task.args.get_arg("command")
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID,
+            Success=True,
+            DisplayParams=task_data.args.get_arg("command"),
+        )

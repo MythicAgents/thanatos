@@ -1,10 +1,11 @@
-[build]
-dep-info-basedir = "."
-incremental = true
-
 [target.x86_64-pc-windows-gnu]
-linker = "x86_64-w64-mingw32-gcc"
+rustflags = ["-C", "target-feature=+crt-static"]
 
 [target.i686-pc-windows-gnu]
-linker = "i686-w64-mingw32-gcc"
-rustflags = "-C panic=abort"
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.i686-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

@@ -6,10 +6,11 @@ from mythic_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     SupportedOS,
-    MythicTask,
+    PTTaskCreateTaskingMessageResponse,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
 )
+
+# TODO: Refactor implementation
 
 
 class CpArguments(TaskArguments):
@@ -52,7 +53,7 @@ class CpCommand(CommandBase):
     needs_admin = False
     help_cmd = "cp [source] [destination]"
     description = "Copy a file from one location to another."
-    version = 1
+    version = 2
     author = "@M_alphaaa"
     argument_class = CpArguments
     attackmapping = ["T1570"]
@@ -60,13 +61,13 @@ class CpCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        source = task.args.get_arg("source")
-        dest = task.args.get_arg("destination")
-        task.display_params = f"{source} {dest}"
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        source = task_data.args.get_arg("source")
+        dest = task_data.args.get_arg("destination")
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID,
+            DisplayParams=f"{source} {dest}",
+            Success=True,
+        )

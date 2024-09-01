@@ -6,10 +6,11 @@ from mythic_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     SupportedOS,
-    MythicTask,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    PTTaskCreateTaskingMessageResponse,
 )
+
+# TODO: Refactor implementation
 
 
 class JobKillArguments(TaskArguments):
@@ -41,7 +42,7 @@ class JobKillCommand(CommandBase):
     needs_admin = False
     help_cmd = "jobkill [job id]"
     description = "Kill a job with the specified ID."
-    version = 1
+    version = 2
     author = "@M_alphaaa"
     argument_class = JobKillArguments
     attackmapping = []
@@ -49,11 +50,11 @@ class JobKillCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.display_params = str(task.args.get_arg("id"))
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID,
+            DisplayParams=str(task_data.args.get_arg("id")),
+            Success=True,
+        )

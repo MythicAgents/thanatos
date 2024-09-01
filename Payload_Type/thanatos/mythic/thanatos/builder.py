@@ -10,17 +10,11 @@ from pathlib import Path
 
 from mythic_container.MythicGoRPC import (
     MythicRPCPayloadUpdateBuildStepMessage,
-    SendMythicRPCPayloadUpdatebuildStep,
-)
-from mythic_container.PayloadBuilder import (
-    BuildParameter,
-    BuildParameterType,
-    BuildResponse,
-    BuildStatus,
-    BuildStep,
-    PayloadType,
-    SupportedOS,
-)
+    SendMythicRPCPayloadUpdatebuildStep)
+from mythic_container.PayloadBuilder import (BuildParameter,
+                                             BuildParameterType, BuildResponse,
+                                             BuildStatus, BuildStep,
+                                             PayloadType, SupportedOS)
 
 
 # Class defining information about the Thanatos payload
@@ -29,12 +23,14 @@ class Thanatos(PayloadType):
     file_extension = ""  # default file extension to use when creating payloads
     author = "@M_alphaaa"  # authors
 
+    # Platforms that thanatos supports
     supported_os = [
         SupportedOS.Windows,
         SupportedOS.Linux,
     ]
     wrapper = False
     wrapped_payloads = []
+    # Description of the payload in Mythic
     note = "Linux and Windows agent written in Rust"
 
     # Payload does not support dynamic loading
@@ -56,7 +52,9 @@ class Thanatos(PayloadType):
         BuildParameter(
             name="connection_retries",
             parameter_type=BuildParameterType.String,
-            description="Number of times to try and reconnect on failed callbacks",
+            description=(
+                "Number of times to try and reconnect on failed callbacks."
+            ),
             default_value="10",
             verifier_regex="^[0-9]+$",
             required=True,
@@ -79,6 +77,14 @@ class Thanatos(PayloadType):
             verifier_regex=r"^[0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9]",
             required=True,
         ),
+        # System proxy
+        BuildParameter(
+            name="systemproxy",
+            parameter_type=BuildParameterType.Boolean,
+            description="Use the system's configured http proxy settings.",
+            default_value=False,
+            required=True,
+        ),
         # Add a build option for static linking
         BuildParameter(
             name="static",
@@ -93,7 +99,7 @@ class Thanatos(PayloadType):
             parameter_type=BuildParameterType.ChooseOne,
             description="Payload output format",
             default_value="executable",
-            choices=["executable", "shared library"],
+            choices=["executable", "cdylib (.dll/.so)"],
             required=True,
         ),
     ]

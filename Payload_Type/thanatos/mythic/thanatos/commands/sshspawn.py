@@ -1,7 +1,6 @@
 import asyncio
 import base64
 import json
-import sys
 
 from mythic_container.MythicCommandBase import (
     TaskArguments,
@@ -11,9 +10,8 @@ from mythic_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     SupportedOS,
-    MythicTask,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    PTTaskCreateTaskingMessageResponse,
 )
 from mythic_container.MythicGoRPC import (
     SendMythicRPCPayloadCreateFromUUID,
@@ -23,6 +21,8 @@ from mythic_container.MythicGoRPC import (
     SendMythicRPCFileCreate,
     MythicRPCFileCreateMessage,
 )
+
+# TODO: Refactor implementation
 
 
 class SshSpawnArguments(TaskArguments):
@@ -189,7 +189,7 @@ class SshSpawnCommand(CommandBase):
         "Spawn an already existing payload or "
         "upload a new payload and spawn it on a system using SSH"
     )
-    version = 1
+    version = 2
     is_upload_file = True
     author = "@M_alphaaa"
     attackmapping = ["T1021.004", "T1055"]
@@ -198,39 +198,37 @@ class SshSpawnCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        exec_cmd = task.args.get_arg("exec")
-        path = task.args.get_arg("path")
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        exec_cmd = task_data.args.get_arg("exec")
+        path = task_data.args.get_arg("path")
         exec_cmd = exec_cmd.replace("{path}", path)
-        task.args.set_arg("exec", exec_cmd)
+        task_data.args.set_arg("exec", exec_cmd)
 
-        if uuid := task.args.get_arg("payload"):
-            return await self.payload_tasking(task, uuid)
+        if uuid := task_data.args.get_arg("payload"):
+            return await self.payload_tasking(task_data, uuid)
 
-        upload_file = task.args.get_arg("upload")
-        return await self.file_upload_tasking(task, upload_file)
+        upload_file = task_data.args.get_arg("upload")
+        return await self.file_upload_tasking(task_data, upload_file)
 
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
-
-    async def payload_tasking(self, task: MythicTask, payload_uuid) -> MythicTask:
-        task.set_stdout("Sending build task...")
+    async def payload_tasking(
+        self, task_data: PTTaskMessageAllData, payload_uuid: str
+    ) -> PTTaskCreateTaskingMessageResponse:
 
         gen_resp = await SendMythicRPCPayloadCreateFromUUID(
             MythicRPCPayloadCreateFromUUIDMessage(
-                task.id,
+                task_data.Task.ID,
                 PayloadUUID=payload_uuid,
-                RemoteHost=task.args.get_arg("host"),
+                RemoteHost=task_data.args.get_arg("host"),
                 NewDescription=(
-                    f"{task.operator}'s spawned session from task {str(task.id)}"
+                    f"{task_data.Task.OperatorUsername}'s spawned session from task "
+                    f"{str(task_data.Task.ID)}"
                 ),
             )
         )
 
         if gen_resp:
-            task.set_stdout("Building payload...")
             while True:
                 resp = await SendMythicRPCPayloadGetContent(
                     MythicRPCPayloadGetContentMessage(
@@ -240,48 +238,69 @@ class SshSpawnCommand(CommandBase):
 
                 if resp:
                     if resp.response["build_phase"] == "success":
-                        task.args.add_arg(
+                        task_data.args.add_arg(
                             "payload", resp.response["file"]["agent_file_id"]
                         )
                         break
 
                     if resp.response["build_phase"] == "error":
-                        raise Exception(
-                            "Failed to build new payload: "
-                            f"{resp.response['error_message']}"
+                        return PTTaskCreateTaskingMessageResponse(
+                            TaskID=task_data.Task.ID,
+                            Success=False,
+                            Error=f"Failed to build new payload: {resp.response['error_message']}",
                         )
 
                     if resp.response["build_phase"] == "building":
                         await asyncio.sleep(2)
                     else:
-                        raise Exception(resp.response["build_phase"])
+                        return PTTaskCreateTaskingMessageResponse(
+                            TaskID=task_data.Task.ID,
+                            Success=False,
+                            Error=f"Payload build failed at phase: {resp.response['build_phase']}",
+                        )
                 else:
-                    raise Exception(resp.response["error_message"])
+                    return PTTaskCreateTaskingMessageResponse(
+                        TaskID=task_data.Task.ID,
+                        Success=False,
+                        Error=f"Failed to build payload: {resp.response['error_message']}",
+                    )
         else:
-            raise Exception("Failed to start build process")
-        task.set_stdout("Built payload")
+            return PTTaskCreateTaskingMessageResponse(
+                TaskID=task_data.Task.ID,
+                Success=False,
+                Error="Failed to start payload build process",
+            )
 
-        return task
+        return PTTaskCreateTaskingMessageResponse(TaskID=task_data.Task.ID, Success=True)
 
-    async def file_upload_tasking(self, task: MythicTask, file) -> MythicTask:
+    async def file_upload_tasking(
+        self, task_data: PTTaskMessageAllData, file_data: str
+    ) -> PTTaskCreateTaskingMessageResponse:
         try:
-            original_file_name = json.loads(task.original_params)["upload"]
-            file_resp = await SendMythicRPCFileCreate(
-                MythicRPCFileCreateMessage(
-                    task.id,
-                    FileContents=base64.b64encode(file.encode()).decode(),
-                    Filename=original_file_name,
-                    DeleteAfterFetch=True,
-                )
+            original_file_name = json.loads(task_data.args.original_params)["upload"]
+        except json.JSONDecodeError:
+            return PTTaskCreateTaskingMessageResponse(
+                TaskID=task_data.Task.ID,
+                Success=False,
+                Error="Failed to decode upload params",
             )
 
-            if file_resp:
-                task.args.add_arg("payload", file_resp.response["agent_file_id"])
-            else:
-                raise Exception("Error from Mythic: " + str(file_resp.error))
-        except Exception as e:
-            raise Exception(
-                f"Error from Mythic: {str(sys.exc_info()[-1].tb_lineno)} {str(e)}"
+        file_resp = await SendMythicRPCFileCreate(
+            MythicRPCFileCreateMessage(
+                task_data.Task.ID,
+                FileContents=base64.b64encode(file_data.encode()).decode(),
+                Filename=original_file_name,
+                DeleteAfterFetch=True,
+            )
+        )
+
+        if file_resp:
+            task_data.args.add_arg("payload", file_resp.response["agent_file_id"])
+        else:
+            return PTTaskCreateTaskingMessageResponse(
+                TaskID=task_data.Task.ID,
+                Success=False,
+                Error="Error from Mythic: " + str(file_resp.error),
             )
 
-        return task
+        return PTTaskCreateTaskingMessageResponse(TaskID=task_data.Task.ID, Success=True)

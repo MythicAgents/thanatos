@@ -7,9 +7,8 @@ from mythic_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     SupportedOS,
-    MythicTask,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    PTTaskCreateTaskingMessageResponse,
 )
 
 
@@ -49,10 +48,7 @@ class PortScanArguments(TaskArguments):
         ]
 
     async def parse_arguments(self):
-        try:
-            self.load_args_from_json_string(self.command_line)
-        except Exception:
-            raise Exception("Use the popup for supplying parameters")
+        self.load_args_from_json_string(self.command_line)
 
     async def parse_dictionary(self, dictionary_arguments):
         self.load_args_from_dictionary(dictionary_arguments)
@@ -63,7 +59,7 @@ class PortScanCommand(CommandBase):
     needs_admin = False
     help_cmd = "portscan [popup]"
     description = "Scan host(s) for open ports."
-    version = 1
+    version = 2
     author = "@M_alphaaa"
     argument_class = PortScanArguments
     attackmapping = ["T1046"]
@@ -71,26 +67,32 @@ class PortScanCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        ports = task.args.get_arg("ports")
-        task.args.set_arg("ports", ports.replace(" ", ""))
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        ports = task_data.args.get_arg("ports")
+        task_data.args.set_arg("ports", ports.replace(" ", ""))
 
-        ipaddrs = task.args.get_arg("hosts")
+        ipaddrs = task_data.args.get_arg("hosts")
         for ip in ipaddrs:
             if "/" in ip:
                 try:
                     ipaddress.ip_network(ip)
-                except Exception:
-                    raise Exception("Invalid IP subnet")
+                except ValueError:
+                    return PTTaskCreateTaskingMessageResponse(
+                        TaskID=task_data.Task.ID, Success=False, Error="Invalid IP subnet"
+                    )
             else:
                 try:
                     ipaddress.ip_address(ip)
-                except Exception:
-                    raise Exception("Invalid IP address")
+                except ValueError:
+                    return PTTaskCreateTaskingMessageResponse(
+                        TaskID=task_data.Task.ID,
+                        Success=False,
+                        Error="Invalid IP address",
+                    )
 
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID,
+            Success=True,
+        )

@@ -7,10 +7,11 @@ from mythic_container.MythicCommandBase import (
     ParameterType,
     ParameterGroupInfo,
     SupportedOS,
-    MythicTask,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    PTTaskCreateTaskingMessageResponse,
 )
+
+# TODO: Refactor implementation
 
 
 class RmArguments(TaskArguments):
@@ -34,7 +35,7 @@ class RmArguments(TaskArguments):
                 self.set_arg("path", f'{tmp_json["path"]}/{tmp_json["file"]}')
             else:
                 self.set_arg("path", tmp_json["path"])
-        except Exception:
+        except (json.JSONDecodeError, KeyError):
             self.set_arg("path", self.command_line)
 
     async def parse_dictionary(self, dictionary_arguments):
@@ -51,7 +52,7 @@ class RmCommand(CommandBase):
     needs_admin = False
     help_cmd = "rm [path]"
     description = "Delete a file or directory."
-    version = 1
+    version = 2
     supported_ui_features = ["file_browser:remove"]
     author = "@M_alphaaa"
     argument_class = RmArguments
@@ -60,15 +61,14 @@ class RmCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        if not task.args.has_arg("host"):
-            task.args.add_arg("host", task.callback.host)
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        if not task_data.args.has_arg("host"):
+            task_data.args.add_arg("host", task_data.Callback.Host)
 
-        path = task.args.get_arg("path")
-        task.display_params = path
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID,
+            DisplayParams=str(task_data.args.get_arg("path")),
+            Success=True,
+        )

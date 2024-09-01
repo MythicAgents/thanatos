@@ -4,9 +4,8 @@ from mythic_container.MythicCommandBase import (
     CommandBase,
     CommandAttributes,
     SupportedOS,
-    MythicTask,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    PTTaskCreateTaskingMessageResponse,
 )
 
 
@@ -24,7 +23,7 @@ class GetEnvCommand(CommandBase):
     needs_admin = False
     help_cmd = "getenv"
     description = "Get all environment variables."
-    version = 1
+    version = 2
     author = "@M_alphaaa"
     supported_ui_features = ["callback_table:getenv"]
     argument_class = GetEnvArguments
@@ -36,10 +35,7 @@ class GetEnvCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        return PTTaskCreateTaskingMessageResponse(TaskID=task_data.Task.ID, Success=True)

@@ -3,10 +3,11 @@ from mythic_container.MythicCommandBase import (
     CommandBase,
     CommandAttributes,
     SupportedOS,
-    MythicTask,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    PTTaskCreateTaskingMessageResponse,
 )
+
+# TODO: Refactor implementation
 
 
 class JobsArguments(TaskArguments):
@@ -23,7 +24,7 @@ class JobsCommand(CommandBase):
     needs_admin = False
     help_cmd = "jobs"
     description = "List running background jobs."
-    version = 1
+    version = 2
     author = "@M_alphaaa"
     supported_ui_features = ["callback_table:jobs"]
     argument_class = JobsArguments
@@ -32,10 +33,10 @@ class JobsCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID,
+            Success=True,
+        )

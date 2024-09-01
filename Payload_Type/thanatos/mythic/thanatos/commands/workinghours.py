@@ -1,5 +1,4 @@
 import json
-import traceback
 from mythic_container.MythicCommandBase import (
     TaskArguments,
     CommandBase,
@@ -8,9 +7,10 @@ from mythic_container.MythicCommandBase import (
     CommandParameter,
     ParameterGroupInfo,
     ParameterType,
-    MythicTask,
     PTTaskCompletionFunctionMessage,
     PTTaskCompletionFunctionMessageResponse,
+    PTTaskMessageAllData,
+    PTTaskCreateTaskingMessageResponse,
 )
 from mythic_container.MythicGoRPC import (
     SendMythicRPCResponseCreate,
@@ -50,10 +50,10 @@ class WorkingHoursArguments(TaskArguments):
                     try:
                         start = args[0]
                         end = args[1]
-                    except Exception:
-                        raise Exception(
-                            "Working hours not provided (usage: workinghours HH:MM HH:MM"
-                        )
+                    except Exception as exc:
+                        raise RuntimeError(
+                            "Working hours not provided (usage: workinghours HH:MM HH:MM)"
+                        ) from exc
 
                     self.set_arg("start", start)
                     self.set_arg("end", end)
@@ -103,27 +103,7 @@ async def formulate_output(task: PTTaskCompletionFunctionMessage):
 async def post_run_actions(
     task: PTTaskCompletionFunctionMessage,
 ) -> PTTaskCompletionFunctionMessageResponse:
-    try:
-        await formulate_output(task)
-    except Exception as e:
-        output = "".join(traceback.format_exception(e))
-        output = f"Error during post processing:\n{output}"
-
-        await SendMythicRPCResponseCreate(
-            MythicRPCResponseCreateMessage(
-                TaskID=task.TaskData.Task.ID, Response=output.encode()
-            )
-        )
-
-        return PTTaskCompletionFunctionMessageResponse(
-            TaskID=task.TaskData.Task.ID,
-            ParentTaskId=0,
-            Completed=True,
-            Success=False,
-            Error=output,
-            Stderr=output,
-        )
-
+    await formulate_output(task)
     return PTTaskCompletionFunctionMessageResponse(
         TaskID=task.TaskData.Task.ID,
         ParentTaskId=0,
@@ -132,12 +112,63 @@ async def post_run_actions(
     )
 
 
+def parse_working_start(start: str) -> (int, int, int):
+    working_start = start.split(":")
+    try:
+        working_start_hours = int(working_start[0])
+    except IndexError as exc:
+        raise ValueError("Hour portion of the start working hours not provided") from exc
+    except ValueError as exc:
+        raise ValueError(
+            "Hour portion of the start working hours is not an integer"
+        ) from exc
+
+    try:
+        working_start_minutes = int(working_start[1])
+    except IndexError as exc:
+        raise ValueError(
+            "Minute portion of the start working hours not provided"
+        ) from exc
+    except ValueError:
+        raise ValueError(
+            "Minute portion of the start working hours is not an integer"
+        ) from exc
+
+    working_start = (int(working_start_hours) * 3600) + (int(working_start_minutes) * 60)
+    return working_start_hours, working_start_minutes, working_start
+
+
+def parse_working_end(end: str) -> (int, int, int):
+    # Parse the end portion of the working hours
+    working_end = end.split(":")
+    try:
+        working_end_hours = int(working_end[0])
+    except IndexError as exc:
+        raise ValueError("Hour portion of the end working hours not provided") from exc
+    except ValueError as exc:
+        raise ValueError(
+            "Hour portion of the end working hours is not an integer"
+        ) from exc
+
+    try:
+        working_end_minutes = int(working_end[1])
+    except IndexError as exc:
+        raise ValueError("Minute portion of the end working hours not provided") from exc
+    except ValueError as exc:
+        raise ValueError(
+            "Minute portion of the end working hours is not an integer"
+        ) from exc
+
+    working_end = (int(working_end_hours) * 3600) + (int(working_end_minutes) * 60) + 60
+    return working_end_hours, working_end_minutes, working_end
+
+
 class WorkingHoursCommand(CommandBase):
     cmd = "workinghours"
     needs_admin = False
     help_cmd = "workinghours HH:MM HH:MM"
     description = "Set the agent's working hours"
-    version = 2
+    version = 3
     author = "@M_alphaaa"
     argument_class = WorkingHoursArguments
     completion_functions = {"post_run_actions": post_run_actions}
@@ -147,65 +178,48 @@ class WorkingHoursCommand(CommandBase):
         builtin=True,
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        working_start = task.args.get_arg("start")
-        working_end = task.args.get_arg("end")
-
-        # Parse the start portion of the working hours
-        working_start = working_start.split(":")
-        try:
-            working_start_hours = int(working_start[0])
-        except IndexError:
-            raise Exception("Hour portion of the start working hours not provided")
-        except ValueError:
-            raise Exception("Hour portion of the start working hours is not an integer")
-
-        try:
-            working_start_minutes = int(working_start[1])
-        except IndexError:
-            raise Exception("Minute portion of the start working hours not provided")
-        except ValueError:
-            raise Exception("Minute portion of the start working hours is not an integer")
-
-        working_start = (int(working_start_hours) * 3600) + (
-            int(working_start_minutes) * 60
+    async def create_go_tasking(
+        self, task_data: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=task_data.Task.ID, Success=False
         )
-        # Parse the end portion of the working hours
-        working_end = working_end.split(":")
-        try:
-            working_end_hours = int(working_end[0])
-        except IndexError:
-            raise Exception("Hour portion of the end working hours not provided")
-        except ValueError:
-            raise Exception("Hour portion of the end working hours is not an integer")
 
         try:
-            working_end_minutes = int(working_end[1])
-        except IndexError:
-            raise Exception("Minute portion of the end working hours not provided")
-        except ValueError:
-            raise Exception("Minute portion of the end working hours is not an integer")
+            working_start_hours, working_start_minutes, working_start = (
+                parse_working_start(task_data.args.get_arg("start"))
+            )
+        except ValueError as exc:
+            response.Error = exc
+            return response
 
-        working_end = (
-            (int(working_end_hours) * 3600) + (int(working_end_minutes) * 60) + 60
-        )
+        try:
+            working_end_hours, working_end_minutes, working_end = parse_working_end(
+                task_data.args.get_arg("end")
+            )
+        except ValueError as exc:
+            response.Error = exc
+            return response
 
         if working_start >= working_end:
-            raise Exception(
-                "Invalid working hours. Start time is greater than or equal to end time"
+            return PTTaskCreateTaskingMessageResponse(
+                TaskID=task_data.Task.ID,
+                Success=False,
+                Error="Invalid working hours. Start time is greater than or equal to end time",
             )
 
         # Add the start portion of the working hours as an integer
-        task.args.remove_arg("start")
-        task.args.add_arg("start", working_start, type=ParameterType.Number)
+        task_data.args.remove_arg("start")
+        task_data.args.add_arg("start", working_start, type=ParameterType.Number)
 
-        task.args.remove_arg("end")
-        task.args.add_arg("end", working_end, type=ParameterType.Number)
+        task_data.args.remove_arg("end")
+        task_data.args.add_arg("end", working_end, type=ParameterType.Number)
 
-        task.completed_callback_function = "post_run_actions"
+        response.CompletionFunctionName = "post_run_actions"
 
-        task.display_params = (
+        response.DisplayParams = (
             f"start = {working_start_hours:02d}:{working_start_minutes:02d}, "
             f"end = {working_end_hours:02d}:{working_end_minutes:02d}"
         )
-        return task
+        response.Success = True
+        return response
