@@ -101,7 +101,7 @@ func GenerateConfig(inputFile string, outputFile string) error {
 		PayloadType: configData.PayloadType,
 		Filename:    configData.Filename,
 		CommandList: configData.Commands,
-		BuildParameters: agentstructs.PayloadBuildArguments{
+		BuildParameters: agentstructs.BuildParameters{
 			Parameters: paramMap,
 		},
 		C2Profiles:         profiles,

@@ -286,25 +286,6 @@ var ThanatosBuildParameters = []ThanatosBuildParameter{
 		},
 	},
 
-	// This option determines whether the agent should connect to Mythic via a
-	// self-signed TLS certificate
-	{
-		Name:          "tlsuntrusted",
-		Description:   "Allow HTTPs connections to untrusted TLS certificates.",
-		DefaultValue:  false,
-		ParameterType: agentstructs.BUILD_PARAMETER_TYPE_BOOLEAN,
-		Required:      false,
-		ParseFunction: func(name string, c *config.Config, pbm *agentstructs.PayloadBuildMessage) error {
-			tlsuntrusted, err := pbm.BuildParameters.GetBooleanArg(name)
-			if err != nil {
-				return thanatoserror.Errorf("could not get parameter: %s", err.Error())
-			}
-
-			c.Tlsuntrusted = tlsuntrusted
-			return nil
-		},
-	},
-
 	// Name of the shared library export if building as a shared library
 	{
 		Name:          "libexport",
@@ -339,7 +320,7 @@ var BuiltinCommands = []string{
 // Type for the handler routines when being built by Mythic
 type MythicPayloadHandler struct{}
 
-const AGENT_CODE_PATH = "agent"
+const AGENT_CODE_PATH = "../agent"
 
 // Secondary entrypoint for the payload builder. This takes in the payload build message
 // and a handler which consists of a set of routines for doing long-running tasks and
@@ -449,14 +430,14 @@ func (handler MythicPayloadHandler) RunBuildCommand(command string, target strin
 		case types.PayloadBuildParameterOutputFormatExecutable:
 			filename = "thanatos_binary"
 		default:
-			filename = "libthanatos_cdylib.so"
+			filename = "libthanatos_library.so"
 		}
 	} else if strings.Contains(target, "-pc-windows-gnu") {
 		switch output {
 		case types.PayloadBuildParameterOutputFormatExecutable:
 			filename = "thanatos_binary.exe"
 		default:
-			filename = "thanatos_cdylib.dll"
+			filename = "thanatos_library.dll"
 		}
 	} else {
 		return []byte{}, thanatoserror.New("invalid target")

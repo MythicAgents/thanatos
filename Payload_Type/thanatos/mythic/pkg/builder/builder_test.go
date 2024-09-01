@@ -28,7 +28,6 @@ func TestCreateConfig(t *testing.T) {
 				"domains":            []interface{}{},
 				"hostnames":          []interface{}{},
 				"usernames":          []interface{}{},
-				"tlsuntrusted":       false,
 				"libexport":          "",
 				"output":             "",
 			},
@@ -62,7 +61,6 @@ func TestCreateConfig(t *testing.T) {
 			expected: &config.Config{
 				Initaction:        config.InitAction_NONE,
 				ConnectionRetries: 10,
-				Tlsuntrusted:      false,
 				Profile: &config.Config_Http{
 					Http: &config.HttpConfig{
 						CallbackPort:   80,
@@ -93,7 +91,7 @@ func TestCreateConfig(t *testing.T) {
 				PayloadType: "thanatos",
 				Filename:    "thanatos",
 				CommandList: []string{},
-				BuildParameters: agentstructs.PayloadBuildArguments{
+				BuildParameters: agentstructs.BuildParameters{
 					Parameters: testCase.buildParameters,
 				},
 				C2Profiles:  testCase.profiles,

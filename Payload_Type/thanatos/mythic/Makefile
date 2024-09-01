@@ -62,7 +62,7 @@ $(PROTO_OUT)/%.pb.go: %.proto
 ### Housekeeping targets ###
 .PHONY: clean
 clean: ## Clean built artifacts
-	$(RM) -rv $(PROTO_OUT) server genconfig libgenconfig.a
+	$(RM) -rv $(PROTO_OUT) server genconfig
 
 .PHONY: help
 help: ## Display this help menu
