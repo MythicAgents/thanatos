@@ -113,7 +113,8 @@ class Thanatos(PayloadType):
     ]
 
     payload_base = Path(os.path.dirname(__file__)) / ".." / ".."
-    agent_code_path = payload_base / "agent"
+    agent_path = payload_base / "agent"
+    agent_code_path = agent_path
     agent_browserscript_path = payload_base / "mythic" / "browserscripts"
     agent_icon_path = payload_base / "mythic" / "icon" / "thanatos.svg"
     copy_lock = asyncio.Lock()
