@@ -38,16 +38,15 @@ RUN chown -R thanatos:thanatos /thanatos
 USER thanatos
 
 # Install Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup.sh \
-    && sh /tmp/rustup.sh -y \
-        --profile minimal \
-        --default-toolchain stable \
-        -t x86_64-unknown-linux-gnu \
-        -t i686-unknown-linux-gnu \
-        -t x86_64-unknown-linux-musl \
-        -t x86_64-pc-windows-gnu \
-        -t i686-pc-windows-gnu \
-        && rm -f /tmp/rustup.sh
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s - \
+    -y \
+    --profile minimal \
+    --default-toolchain stable \
+    -t x86_64-unknown-linux-gnu \
+    -t i686-unknown-linux-gnu \
+    -t x86_64-unknown-linux-musl \
+    -t x86_64-pc-windows-gnu \
+    -t i686-pc-windows-gnu
 
 ENV PATH=$PATH:/thanatos/.cargo/bin
 
