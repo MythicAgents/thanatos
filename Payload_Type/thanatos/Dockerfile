@@ -30,8 +30,7 @@ RUN useradd \
 WORKDIR /thanatos
 
 # Copy files
-COPY agent/Cargo.toml agent/Cargo.toml
-COPY agent/src agent/src
+COPY agent agent
 COPY mythic mythic
 RUN chown -R thanatos:thanatos /thanatos
 
