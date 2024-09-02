@@ -11,9 +11,7 @@ message Config {
   bytes domains = 5;
   bytes hostnames = 6;
   bytes usernames = 7;
-  oneof profile {
-    HttpConfig http = 8;
-  }
+  HttpConfig http = 8;
 }
 
 message WorkingHours {

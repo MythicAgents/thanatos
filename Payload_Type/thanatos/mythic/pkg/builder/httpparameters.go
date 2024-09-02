@@ -235,8 +235,6 @@ func ParseHttpProfile(resultConfig *config.Config, profile agentstructs.PayloadB
 		}
 	}
 
-	resultConfig.Profile = &config.Config_Http{
-		Http: &httpConfig,
-	}
+	resultConfig.Http = &httpConfig
 	return nil
 }

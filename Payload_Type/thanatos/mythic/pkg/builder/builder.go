@@ -62,7 +62,7 @@ var ThanatosPayload = agentstructs.PayloadType{
 
 	// Has support for the HTTP and TCP C2 profiles
 	SupportedC2Profiles: []string{
-		"http", "tcp",
+		"http", "tcp", "smb", "websocket",
 	},
 
 	// Specify that Mythic handles encryption
@@ -465,23 +465,19 @@ func CreateConfig(buildMsg agentstructs.PayloadBuildMessage) (*config.Config, er
 		return nil, errors.Join(thanatoserror.New("failed to parse payload build parameters"), err)
 	}
 
-	egressEnabled := false
-	p2pEnabled := false
-
 	for _, profile := range buildMsg.C2Profiles {
 		switch profile.Name {
 		case "http":
-			egressEnabled = true
 			if err := ParseHttpProfile(resultConfig, profile); err != nil {
 				return nil, errors.Join(thanatoserror.New("failed to parse http profile parameters"), err)
 			}
+		case "websocket":
+			return nil, thanatoserror.New("websocket profile unimplemented")
 		case "tcp":
 			return nil, thanatoserror.New("tcp profile unimplemented")
+		case "smb":
+			return nil, thanatoserror.New("smb profile unimplemented")
 		}
-	}
-
-	if egressEnabled && p2pEnabled {
-		return nil, thanatoserror.Errorf("cannot mix egress and p2p C2 profiles")
 	}
 
 	return resultConfig, nil
