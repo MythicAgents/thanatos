@@ -2,3 +2,4 @@
 pb/
 server
 genconfig
+.dep*
