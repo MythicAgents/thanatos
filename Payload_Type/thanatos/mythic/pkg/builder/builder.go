@@ -60,7 +60,7 @@ var ThanatosPayload = agentstructs.PayloadType{
 	// Description for the payload in Mythic
 	Description: "Linux and Windows agent written in Rust",
 
-	// Has support for the HTTP and TCP C2 profiles
+	// Supported C2 profiles
 	SupportedC2Profiles: []string{
 		"http", "tcp", "smb", "websocket",
 	},
