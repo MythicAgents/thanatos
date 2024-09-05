@@ -61,22 +61,20 @@ func TestCreateConfig(t *testing.T) {
 			expected: &config.Config{
 				Initaction:        config.InitAction_NONE,
 				ConnectionRetries: 10,
-				Profile: &config.Config_Http{
-					Http: &config.HttpConfig{
-						CallbackPort:   80,
-						Killdate:       4070908800,
-						CallbackJitter: 20,
-						Eke:            true,
-						Headers: map[string]string{
-							"User-Agent": "user-agent",
-						},
-						CallbackHost:     "http://test",
-						GetUri:           "/",
-						PostUri:          "/post",
-						QueryPathName:    "q",
-						Proxy:            nil,
-						CallbackInterval: 10,
+				Http: &config.HttpConfig{
+					CallbackPort:   80,
+					Killdate:       4070908800,
+					CallbackJitter: 20,
+					Eke:            true,
+					Headers: map[string]string{
+						"User-Agent": "user-agent",
 					},
+					CallbackHost:     "http://test",
+					GetUri:           "/",
+					PostUri:          "/post",
+					QueryPathName:    "q",
+					Proxy:            nil,
+					CallbackInterval: 10,
 				},
 			},
 		},
