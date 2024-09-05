@@ -310,10 +310,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "http_profile"
-version = "0.2.0"
-
-[[package]]
 name = "iana-time-zone"
 version = "0.1.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -527,6 +523,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "profiles"
+version = "0.2.0"
+dependencies = [
+ "thanatos_protos",
+]
+
+[[package]]
 name = "prost"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -721,8 +724,8 @@ dependencies = [
  "crossbeam-channel",
  "ffiwrappers",
  "hex-literal",
- "http_profile",
  "openssl",
+ "profiles",
  "prost",
  "rand",
  "thanatos_protos",

@@ -19,8 +19,8 @@ openssl.workspace = true
 [dependencies.ffiwrappers]
 path = "../../ffiwrappers"
 
-[dependencies.http_profile]
-path = "../../profiles/http"
+[dependencies.profiles]
+path = "../../profiles"
 
 [dependencies.thanatos_protos]
 path = "../../protos"
