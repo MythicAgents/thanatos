@@ -1,0 +1,116 @@
+name: Run CI Pipeline
+
+on:
+  push:
+    branches:
+      - rewrite
+    paths:
+      - "Payload_Type/thanatos/**"
+      - ".github/workflows/**"
+
+env:
+  AGENT_CODE: Payload_Type/thanatos/agent
+  MYTHIC_CODE: Payload_Type/thanatos/mythic
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  agent-build:
+    name: Build Agent Code
+    runs-on: ubuntu-latest
+
+    env:
+      JSON_CONFIG: testing/configs/config.json
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          export GOPATH="${GOPATH:-$HOME/go}"
+          ./.github/scripts/ci-dependencies.sh agent-dev
+          eval $(./.github/scripts/ci-dependencies.sh env)
+          echo "$PATH" >> $GITHUB_PATH
+
+      - name: Build agent code
+        run: make
+        working-directory: ${{ env.AGENT_CODE }}
+
+  agent-ci:
+    name: Agent Code CI Tests
+    runs-on: ubuntu-latest
+    needs: agent-build
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [test, sanitizers]
+
+    env:
+      JSON_CONFIG: testing/configs/config.json
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          export GOPATH="${GOPATH:-$HOME/go}"
+          ./.github/scripts/ci-dependencies.sh agent-all
+          eval $(./.github/scripts/ci-dependencies.sh env)
+          echo "$PATH" >> $GITHUB_PATH
+
+      - name: Run CI test
+        run: make $MAKE_TARGET
+        working-directory: ${{ env.AGENT_CODE }}
+        env:
+          MAKE_TARGET: ${{ matrix.target }}
+
+  mythic-build:
+    name: Build Mythic Code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          export GOPATH="${GOPATH:-$HOME/go}"
+          ./.github/scripts/ci-dependencies.sh mythic-dev
+          eval $(./.github/scripts/ci-dependencies.sh env)
+          echo "$PATH" >> $GITHUB_PATH
+
+      - name: Build mythic code
+        run: make
+        working-directory: ${{ env.MYTHIC_CODE }}
+
+  mythic-ci:
+    name: Mythic Code CI Tests
+    runs-on: ubuntu-latest
+    needs: mythic-build
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [checkformat, lint, test]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          export GOPATH="${GOPATH:-$HOME/go}"
+          ./.github/scripts/ci-dependencies.sh mythic-all
+          eval $(./.github/scripts/ci-dependencies.sh env)
+          echo "$PATH" >> $GITHUB_PATH
+
+      - name: Run CI test
+        run: make $MAKE_TARGET
+        working-directory: ${{ env.MYTHIC_CODE }}
+        env:
+          MAKE_TARGET: ${{ matrix.target }}
