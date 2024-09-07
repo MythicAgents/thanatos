@@ -32,7 +32,7 @@ fn main() {
     prost_build::Config::new()
         .out_dir(out_dir)
         .include_file("_includes.rs")
-        .bytes(&["."])
+        .bytes(["."])
         .compile_protos(&proto_srcs, &[proto_path])
         .expect("Could not compile protobuf files");
 }
