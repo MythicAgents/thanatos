@@ -87,7 +87,7 @@ $(GENCONFIG):
 
 .PHONY: sanitizer
 sanitizer: .config
-	RUSTFLAGS='-Zsanitizer=$(SANITIZER)' $(CARGO) +nightly test -Zbuild-std --color always -p ffiwrappers --target x86_64-unknown-linux-gnu -- --all-features
+	RUSTFLAGS='-Zsanitizer=$(SANITIZER)' $(CARGO) +nightly test -Zbuild-std --color always -p ffiwrappers --target x86_64-unknown-linux-gnu --all-features
 
 ### Housekeeping targets ###
 .PHONY: clean
