@@ -2,32 +2,28 @@
 GO		= go
 GOFMT	= gofmt
 GOLINT	= golangci-lint
-GOFLAGS	?=
+GOFLAGS	=
 PROTOC	= protoc
 
-
-depdir := .deps
-
 protobuf_srcdir := ../protobuf
-protobuf_gendir := pb
-protobuf_subdirs := commands config msg
-protobuf_depdir := $(depdir)/$(protobuf_gendir)
-protobuf_depdirs := $(protobuf_depdir) $(addprefix $(protobuf_depdir)/,$(protobuf_subdirs))
+protobuf_outdir := pb
+protobuf_srcs := commands/exit.proto \
+				 commands/sleep.proto \
+				 config/config.proto \
+				 msg/checkin.proto \
+				 msg/mythic.proto \
+				 msg/tasking.proto
 
-protobuf_srcs := $(foreach subdir,$(protobuf_subdirs),$(wildcard $(protobuf_srcdir)/$(subdir)/*.proto))
-protobuf_gen := $(protobuf_srcs:$(protobuf_srcdir)/%.proto=$(protobuf_gendir)/%.pb.go)
-protobuf_mkdeps := $(protobuf_gen:$(protobuf_gendir)/%=$(protobuf_depdir)/%.d)
+protobuf_out := $(protobuf_srcs:%.proto=$(protobuf_outdir)/%.pb.go)
+protobuf_deps := $(addsuffix .d,$(protobuf_out))
 
-gomod := $(shell sed -nr 's/^module (.*)$$/\1/p' go.mod)
+gomod != sed -nr 's/^module (.*)$$/\1/p' go.mod
 gopkgdeps = $(patsubst $(gomod)/%,%,$(filter $(gomod)/%,$(shell $(GO) list -f '{{join .Deps " "}}' ./$(1))))
-goprotodeps = $(filter $(filter $(protobuf_gendir)/%,$(call gopkgdeps,$(1)))/%,$(protobuf_gen))
+gosrcdeps = $(sort $(filter-out %_test.go,$(foreach pkg,$(call gopkgdeps,$(1)),$(wildcard $(pkg)/*.go))))
 
 targets := server genconfig
-targets_depdir := $(depdir)/cmd
-targets_mkdeps := $(targets:%=$(targets_depdir)/%.mk)
-
-depdirs := $(depdir) $(targets_depdir) $(protobuf_depdirs)
-mkdeps := $(targets_mkdeps) $(protobuf_mkdeps)
+godeps := $(targets:%=cmd/%/main.go.d)
+deps := $(godeps) $(protobuf_deps)
 
 ### Invoked targets ###
 .PHONY: all
@@ -41,7 +37,7 @@ checkformat: ## Check workspace code formatting
 ci: checkformat lint test ## Run CI workflow. Supports parallelization
 
 .PHONY: coverage
-coverage: $(protobuf_gen) ## Generate a code coverage report for tests
+coverage: | $(protobuf_out) ## Generate a code coverage report for tests
 	@mkdir -p coverage/html
 	$(GO) test -coverprofile coverage/tests.gocov
 	$(GO) tool cover -html coverage/tests.gocov -o coverage/html/index.html
@@ -50,49 +46,45 @@ coverage: $(protobuf_gen) ## Generate a code coverage report for tests
 format: ## Format the workspace code
 	$(GOFMT) -w .
 
-genconfig: cmd/genconfig/main.go ## Build the configuration generator cli
+genconfig: cmd/genconfig/main.go $(protobuf_out) ## Build the configuration generator cli
 
 .PHONY: lint
-lint: $(protobuf_gen) ## Lint the workspace code
+lint: $(protobuf_out) ## Lint the workspace code
 	$(GOLINT) run
 
 .PHONY: protobuf
-protobuf: $(protobuf_gen) ## Build all protobuf files. Supports parallelization
+protobuf: $(protobuf_out) ## Build all protobuf files. Supports parallelization
 
-server: cmd/server/main.go ## Build the Mythic server binary
+server: cmd/server/main.go | $(protobuf_out) ## Build the Mythic server binary
 
 .PHONY: test
-test: $(protobuf_gen) ## Run tests
+test: $(protobuf_out) ## Run tests
 	$(GO) test -v ./...
 
 ### Helper targets ###
-$(protobuf_gendir)/%.pb.go: $(protobuf_srcdir)/%.proto $(protobuf_depdir)/%.pb.go.d | $(protobuf_gendir)
-	@mkdir -p $(protobuf_depdir)/$(*D)
-	$(PROTOC) -I$(protobuf_srcdir) --dependency_out=$(protobuf_depdir)/$*.pb.go.d --go_out=$(protobuf_gendir) --go_opt=paths=source_relative $<
+$(protobuf_outdir)/%.pb.go: $(protobuf_srcdir)/%.proto $(protobuf_outdir)/%.pb.go.d | $(protobuf_outdir)
+	$(PROTOC) -I$(protobuf_srcdir) --dependency_out=$(protobuf_outdir)/$*.pb.go.d --go_out=$(protobuf_outdir) --go_opt=paths=source_relative $<
 
-%: cmd/%/main.go $(targets_depdir)/%.mk | $(targets_depdir)
-	@printf "$@ $(targets_depdir)/$*.mk : $(call goprotodeps,$(<D)) $(<D) $(call gopkgdeps,$(<D))" > $(targets_depdir)/$*.mk
+%: cmd/%/main.go cmd/%/main.go.d
+	@printf "$@: $(wildcard cmd/$*/*.go) $(call gosrcdeps,cmd/$*)\n" > cmd/$*/main.go.d ; \
+		printf "$(wildcard cmd/$*/*.go) $(call gosrcdeps,cmd/$*) " | sed 's, ,:\n,g' >> cmd/$*/main.go.d
 	$(GO) build $(GOFLAGS) -o $@ ./$(<D)
 
-$(protobuf_gendir) $(targets_depdir): ; @mkdir -p $@
+$(protobuf_outdir): ; @mkdir -p $@
 
-$(mkdeps):
-$(protobuf_gen):
+$(deps):
 
-include $(mkdeps)
+#include $(wildcard $(deps))
 
 .PHONY: debug
 debug:
-	@printf "$(call goprotodeps,cmd/server)"
+	@printf "$(call goprotodeps,cmd/server)\n"
+	@printf "$(call gosrcdeps,cmd/server)\n"
 
 ### Housekeeping targets ###
 .PHONY: clean
 clean: ## Clean built artifacts
-	$(RM) $(targets) $(mkdeps) $(protobuf_gen)
-
-.PHONY: distclean
-distclean:
-	$(RM) -r $(targets) $(depdir) $(protobuf_gendir)
+	$(RM) -r $(targets) $(protobuf_outdir) $(godeps)
 
 .PHONY: help
 help: ## Display this help menu
