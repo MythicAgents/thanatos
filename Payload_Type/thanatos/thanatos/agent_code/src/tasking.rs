@@ -9,7 +9,7 @@ use std::sync::{
 
 // Import all of the commands
 use crate::{
-    cat, cd, cp, download, exit, getenv, getprivs, jobs, ls, mkdir, mv, portscan, ps, pwd,
+    cat, cd, cp, download, exit, getenv, getprivs, jobs, ls, mkdir, mv, netstat, portscan, ps, pwd,
     redirect, rm, setenv, shell, sleep, ssh, unsetenv, upload, workinghours,
 };
 
@@ -360,6 +360,11 @@ fn process_task(task: &agent::AgentTask) -> serde_json::Value {
         },
 
         "mv" => match mv::move_file(task) {
+            Ok(res) => res,
+            Err(e) => mythic_error!(task.id, e.to_string()),
+        },
+
+        "netstat" => match netstat::netstat(task) {
             Ok(res) => res,
             Err(e) => mythic_error!(task.id, e.to_string()),
         },

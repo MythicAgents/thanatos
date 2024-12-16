@@ -17,6 +17,7 @@ mod jobs;
 mod ls;
 mod mkdir;
 mod mv;
+mod netstat;
 mod payloadvars;
 mod portscan;
 mod profiles;
