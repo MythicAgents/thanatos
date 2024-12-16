@@ -6,7 +6,7 @@ hidden = true
 +++
 
 ## Description
-Report on all active network connections. Note that this requires the agent to be running in a `root` context.
+Report on all active network connections. Note that this may require the agent to be running in a `root` context for complete enumeration.
 
 ## Usage
 ```
