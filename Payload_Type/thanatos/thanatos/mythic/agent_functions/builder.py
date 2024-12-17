@@ -269,6 +269,11 @@ class Thanatos(PayloadType):
                 payload_path = (
                     f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
                 )
+            else:
+                resp.set_build_stderr(
+                    "Unknown output parameter value: {self.get_parameter('output')}"
+                )
+                return resp
 
             with open(payload_path, "rb") as f:
                 resp.payload = f.read()
