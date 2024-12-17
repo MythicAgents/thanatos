@@ -133,9 +133,6 @@ class Thanatos(PayloadType):
             # Start formulating the rust flags
             rustflags = []
 
-            # Add the C2 profile to the compile flags
-            rustflags.append(f"--cfg {profile}")
-
             # Check for static linking
             abi = "gnu"
             if self.selected_os == SupportedOS.Linux:

