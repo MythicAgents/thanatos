@@ -23,13 +23,13 @@ pub struct Credentials {
     pub account: String,
 
     /// Comment in the Mythic credentials
-    pub comment: String,
+    pub _comment: String,
 
     /// Credential for authentication
     pub credential: String,
 
     /// Realm this credential is from
-    pub realm: String,
+    pub _realm: String,
 
     /// Credential type
     #[serde(alias = "type")]

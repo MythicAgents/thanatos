@@ -5,11 +5,11 @@ use std::error::Error;
 use aes::Aes256;
 use block_modes::{block_padding::Pkcs7, BlockMode, Cbc};
 use hmac::{Hmac, Mac, NewMac};
+use http::{profilevars, HTTPProfile};
 use openssl::rsa;
 use serde::Deserialize;
 use serde_json::json;
 use sha2::Sha256;
-use http::{profilevars, HTTPProfile};
 
 // Import the http profile
 mod http;
@@ -35,13 +35,13 @@ struct KeyExchangeReponse {
 #[derive(Debug, Deserialize)]
 pub struct CheckinResponse {
     /// Status of the checkin (success, error)
-    pub status: String,
+    pub _status: String,
 
     /// New agent UUID
     pub id: String,
 
     /// Action field
-    pub action: String,
+    pub _action: String,
 }
 
 /// Trait which C2 profiles implement in order to connect to Mythic
