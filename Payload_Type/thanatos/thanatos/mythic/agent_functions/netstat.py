@@ -1,5 +1,4 @@
 from mythic_container.MythicCommandBase import (
-    BrowserScript,
     TaskArguments,
     CommandBase,
     CommandAttributes,
