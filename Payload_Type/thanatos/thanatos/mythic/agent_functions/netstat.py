@@ -1,4 +1,5 @@
 from mythic_container.MythicCommandBase import (
+    BrowserScript,
     TaskArguments,
     CommandBase,
     CommandAttributes,
@@ -27,6 +28,9 @@ class NetstatCommand(CommandBase):
     author = "@maclarel"
     argument_class = NetstatArguments
     attackmapping = ["T1049"]
+    browser_script = BrowserScript(
+        script_name="netstat", author="@M_alphaaa", for_new_ui=True
+    )
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
