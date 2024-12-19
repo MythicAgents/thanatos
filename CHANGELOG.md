@@ -7,6 +7,10 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixes netstat command to include the browser script [7ef0969](https://github.com/MythicAgents/thanatos/commit/7ef09696abc939a773d49bef28a8dabb6dd7d9d2).
+
 ## [0.1.10] - 2024-12-19
 
 ### Added
