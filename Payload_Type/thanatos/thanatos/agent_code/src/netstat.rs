@@ -59,6 +59,6 @@ pub fn netstat(task: &AgentTask) -> Result<serde_json::Value, Box<dyn std::error
     }
 
     let user_output = serde_json::to_string(&conn)?;
-    /// Return the output to Mythic
+    // Return the output to Mythic
     Ok(mythic_success!(task.id, user_output))
 }
