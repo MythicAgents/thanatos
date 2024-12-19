@@ -112,7 +112,7 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
         // Grab the SELinux policy
         if let Ok(f) = std::fs::File::open("/etc/selinux/config") {
             let reader = std::io::BufReader::new(f);
-            for line in reader.lines().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 if line.starts_with("SELINUXTYPE=") {
                     let policy = line.split('=').last().unwrap();
                     output.push_str(format!("policy: {}\n", policy).as_str());
