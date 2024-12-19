@@ -1,5 +1,4 @@
 use serde::Serialize;
-use itertools::Itertools;
 use crate::agent::AgentTask;
 use crate::mythic_success;
 use netstat2::{get_sockets_info, AddressFamilyFlags, ProtocolFlags, ProtocolSocketInfo};
@@ -23,7 +22,7 @@ pub struct NetworkListingEntry {
     pub remote_port: Option<u16>,
 
     /// Associated PIDs
-    pub associated_pids: String,
+    pub associated_pids: Vec<u32>,
 
     /// State
     pub state: Option<String>,
@@ -44,7 +43,7 @@ pub fn netstat(task: &AgentTask) -> Result<(serde_json::Value), Box<dyn std::err
                 local_port: tcp_si.local_port,
                 remote_addr: Some(tcp_si.remote_addr.to_string()),
                 remote_port: Some(tcp_si.remote_port),
-                associated_pids: Itertools::join(&mut si.associated_pids.iter(), ","),
+                associated_pids: si.associated_pids,
                 state: Some(tcp_si.state.to_string()),
             }),
             ProtocolSocketInfo::Udp(udp_si) => conn.push(NetworkListingEntry {
@@ -53,7 +52,7 @@ pub fn netstat(task: &AgentTask) -> Result<(serde_json::Value), Box<dyn std::err
                 local_port: udp_si.local_port,
                 remote_addr: None,
                 remote_port: None,
-                associated_pids: Itertools::join(&mut si.associated_pids.iter(), ","),
+                associated_pids: si.associated_pids,
                 state: None,
             }),
         }

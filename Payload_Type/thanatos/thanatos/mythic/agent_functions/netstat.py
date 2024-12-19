@@ -27,7 +27,7 @@ class NetstatCommand(CommandBase):
     version = 1
     author = "@maclarel"
     argument_class = NetstatArguments
-    attackmapping = [""]
+    attackmapping = ["T1049"]
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )

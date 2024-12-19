@@ -31,7 +31,6 @@ rand = "0.8"
 serde_json = "1.0"
 sha2 = "0.9.8"
 netstat2 = "0.9.1"
-itertools = "0.13.0"
 
 [dependencies.minreq]
 version = "2.4.2"
