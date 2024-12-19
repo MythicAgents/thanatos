@@ -7,6 +7,8 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 ## [Unreleased]
 
+## [0.1.11] - 2024-12-19
+
 ### Fixed
 
 - Fixes netstat command to include the browser script [7ef0969](https://github.com/MythicAgents/thanatos/commit/7ef09696abc939a773d49bef28a8dabb6dd7d9d2).
@@ -138,7 +140,8 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 Initial public release
 
-[unreleased]: https://github.com/MythicAgents/thanatos/compare/v0.1.10...HEAD
+[unreleased]: https://github.com/MythicAgents/thanatos/compare/v0.1.11...HEAD
+[0.1.11]: https://github.com/MythicAgents/thanatos/compare/v0.1.10...v0.1.11
 [0.1.10]: https://github.com/MythicAgents/thanatos/compare/v0.1.9...v0.1.10
 [0.1.9]: https://github.com/MythicAgents/thanatos/compare/v0.1.8...v0.1.9
 [0.1.8]: https://github.com/MythicAgents/thanatos/compare/v0.1.7...v0.1.8
