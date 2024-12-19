@@ -7,6 +7,8 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 ## [Unreleased]
 
+## [0.1.10] - 2024-12-19
+
 ### Added
 
 - `netstat` command for returning active network connections authored by [@maclarel](https://github.com/maclarel) added in [#40](https://github.com/MythicAgents/thanatos/pull/40).
@@ -132,7 +134,8 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 Initial public release
 
-[unreleased]: https://github.com/MythicAgents/thanatos/compare/v0.1.9...HEAD
+[unreleased]: https://github.com/MythicAgents/thanatos/compare/v0.1.10...HEAD
+[0.1.10]: https://github.com/MythicAgents/thanatos/compare/v0.1.9...v0.1.10
 [0.1.9]: https://github.com/MythicAgents/thanatos/compare/v0.1.8...v0.1.9
 [0.1.8]: https://github.com/MythicAgents/thanatos/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/MythicAgents/thanatos/compare/v0.1.6...v0.1.7
