@@ -9,12 +9,12 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 ### Added
 
-- `netstat` command for returning active network connections authored by @maclarel added in #40.
+- `netstat` command for returning active network connections authored by [@maclarel](https://github.com/maclarel) added in [#40](https://github.com/MythicAgents/thanatos/pull/40).
 
 ### Changed
 
-- Deprecated functions from the [chrono](https://crates.io/crates/chrono) crate were removed and replaced with supported versions #42.
-- Miscellaneous project source refactoring to cleanup compile and lint warnings #43.
+- Deprecated functions from the [chrono](https://crates.io/crates/chrono) crate were removed and replaced with supported versions [#42](https://github.com/MythicAgents/thanatos/pull/42).
+- Miscellaneous project source refactoring to cleanup compile and lint warnings [#43](https://github.com/MythicAgents/thanatos/pull/43).
 
 ## [0.1.9] - 2024-03-17
 
