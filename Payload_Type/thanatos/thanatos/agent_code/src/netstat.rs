@@ -1,7 +1,7 @@
-use serde::Serialize;
 use crate::agent::AgentTask;
 use crate::mythic_success;
 use netstat2::{get_sockets_info, AddressFamilyFlags, ProtocolFlags, ProtocolSocketInfo};
+use serde::Serialize;
 
 /// Struct holding the information for network connections
 #[derive(Default, Serialize)]
@@ -28,7 +28,7 @@ pub struct NetworkListingEntry {
     pub state: Option<String>,
 }
 
-pub fn netstat(task: &AgentTask) -> Result<(serde_json::Value), Box<dyn std::error::Error>> { 
+pub fn netstat(task: &AgentTask) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
     let af_flags = AddressFamilyFlags::IPV4 | AddressFamilyFlags::IPV6;
     let proto_flags = ProtocolFlags::TCP | ProtocolFlags::UDP;
     let sockets_info = get_sockets_info(af_flags, proto_flags)?;
