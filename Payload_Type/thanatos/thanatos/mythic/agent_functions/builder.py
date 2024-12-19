@@ -133,9 +133,6 @@ class Thanatos(PayloadType):
             # Start formulating the rust flags
             rustflags = []
 
-            # Add the C2 profile to the compile flags
-            rustflags.append(f"--cfg {profile}")
-
             # Check for static linking
             abi = "gnu"
             if self.selected_os == SupportedOS.Linux:
@@ -269,6 +266,11 @@ class Thanatos(PayloadType):
                 payload_path = (
                     f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
                 )
+            else:
+                resp.set_build_stderr(
+                    "Unknown output parameter value: {self.get_parameter('output')}"
+                )
+                return resp
 
             with open(payload_path, "rb") as f:
                 resp.payload = f.read()

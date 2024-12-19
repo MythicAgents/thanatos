@@ -5,13 +5,13 @@ use std::error::Error;
 use aes::Aes256;
 use block_modes::{block_padding::Pkcs7, BlockMode, Cbc};
 use hmac::{Hmac, Mac, NewMac};
+use http::{profilevars, HTTPProfile};
 use openssl::rsa;
 use serde::Deserialize;
 use serde_json::json;
 use sha2::Sha256;
 
 // Import the http profile
-#[cfg(http)]
 mod http;
 
 /// Struct holding the response for a key exchange
@@ -35,13 +35,13 @@ struct KeyExchangeReponse {
 #[derive(Debug, Deserialize)]
 pub struct CheckinResponse {
     /// Status of the checkin (success, error)
-    pub status: String,
+    pub _status: String,
 
     /// New agent UUID
     pub id: String,
 
     /// Action field
-    pub action: String,
+    pub _action: String,
 }
 
 /// Trait which C2 profiles implement in order to connect to Mythic
@@ -72,22 +72,10 @@ impl Profile {
     /// Generate a new C2 profile for the agent
     /// * `uuid` - Initial configured UUID
     pub fn new(uuid: String) -> Self {
-        // Create a list of configured profiles
-        let mut profiles: Vec<Box<dyn C2Profile>> = Vec::new();
-
-        // HTTP profile specified
-        #[cfg(http)]
-        {
-            use http::{profilevars, HTTPProfile};
-
-            // Append the HTTP profile information
-            profiles.push(Box::new(HTTPProfile::new(&profilevars::cb_host())));
-        }
-
         // Return a new `Profile` object
         Self {
             callback_uuid: uuid,
-            profiles,
+            profiles: vec![Box::new(HTTPProfile::new(&profilevars::cb_host()))],
             active: 0,
         }
     }
