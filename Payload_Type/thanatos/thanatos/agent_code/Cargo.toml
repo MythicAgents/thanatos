@@ -30,6 +30,7 @@ path-clean = "0.1.0"
 rand = "0.8"
 serde_json = "1.0"
 sha2 = "0.9.8"
+netstat2 = "0.11.1"
 
 [dependencies.minreq]
 version = "2.4.2"
