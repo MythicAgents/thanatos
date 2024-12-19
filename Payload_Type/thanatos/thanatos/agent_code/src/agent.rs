@@ -239,13 +239,16 @@ impl Agent {
             if now < working_start {
                 // Calculate the sleep interval if the current time is before
                 // the working hours
-                let delta = Duration::seconds(working_start.timestamp() - now.timestamp());
+                let delta = Duration::seconds(
+                    working_start.and_utc().timestamp() - now.and_utc().timestamp(),
+                );
                 sleep_time = delta.to_std().unwrap();
             } else if now > working_end {
                 // Calculate the sleep interval if the current time as after the
                 // working hours
                 let next_start = working_start.checked_add_signed(Duration::days(1)).unwrap();
-                let delta = Duration::seconds(next_start.timestamp() - now.timestamp());
+                let delta =
+                    Duration::seconds(next_start.and_utc().timestamp() - now.and_utc().timestamp());
                 sleep_time = delta.to_std().unwrap();
             }
 
