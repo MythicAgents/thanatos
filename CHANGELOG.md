@@ -7,6 +7,15 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 ## [Unreleased]
 
+### Added
+
+- `netstat` command for returning active network connections authored by @maclarel added in #40.
+
+### Changed
+
+- Deprecated functions from the [chrono](https://crates.io/crates/chrono) crate were removed and replaced with supported versions #42.
+- Miscellaneous project source refactoring to cleanup compile and lint warnings #43.
+
 ## [0.1.9] - 2024-03-17
 
 ### Added
