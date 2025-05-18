@@ -49,7 +49,7 @@ pub fn scan_ports(
             let end = range[1];
 
             // Add the range of ports to the port list
-            ports.append(&mut (start..=end).map(u16::from).collect());
+            ports.append(&mut (start..=end).collect());
 
             continue;
         }
