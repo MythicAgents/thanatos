@@ -35,13 +35,15 @@ struct KeyExchangeReponse {
 #[derive(Debug, Deserialize)]
 pub struct CheckinResponse {
     /// Status of the checkin (success, error)
-    pub _status: String,
+    #[allow(unused)]
+    pub status: String,
 
     /// New agent UUID
     pub id: String,
 
     /// Action field
-    pub _action: String,
+    #[allow(unused)]
+    pub action: String,
 }
 
 /// Trait which C2 profiles implement in order to connect to Mythic
