@@ -7,6 +7,8 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 ## [Unreleased]
 
+## [0.1.13] - 2025-05-18
+
 ### Added
 
 - Configuration options for building the shared library which modify how it can be loaded [1cd04aa](https://github.com/MythicAgents/thanatos/commit/1cd04aa22203dad47ff3c02eee12b049cd2d0d1d).
@@ -155,7 +157,8 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 Initial public release
 
-[unreleased]: https://github.com/MythicAgents/thanatos/compare/v0.1.12...HEAD
+[unreleased]: https://github.com/MythicAgents/thanatos/compare/v0.1.13...HEAD
+[0.1.13]: https://github.com/MythicAgents/thanatos/compare/v0.1.12...v0.1.13
 [0.1.12]: https://github.com/MythicAgents/thanatos/compare/v0.1.11...v0.1.12
 [0.1.11]: https://github.com/MythicAgents/thanatos/compare/v0.1.10...v0.1.11
 [0.1.10]: https://github.com/MythicAgents/thanatos/compare/v0.1.9...v0.1.10
