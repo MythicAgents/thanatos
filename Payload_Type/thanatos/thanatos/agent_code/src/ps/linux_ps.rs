@@ -32,7 +32,7 @@ pub fn get_process_ids() -> Result<Vec<u32>, Box<dyn Error>> {
         }
 
         // Try to grab the last element of the path
-        if let Some(ending) = path.components().last() {
+        if let Some(ending) = path.components().next_back() {
             // Convert the last element of the path to a string
             if let Some(ending) = ending.as_os_str().to_str() {
                 // Try to parse the path into an integer and add it to the list of pids

@@ -25,8 +25,8 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
     use crate::utils::linux;
 
     // Get the current user
-    let mut user = whoami::username()
-        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "Failed to get username"))?;
+    let mut user =
+        whoami::username().ok_or_else(|| std::io::Error::other("Failed to get username"))?;
 
     // Start formulating the response output
     let mut output = format!(
@@ -114,7 +114,7 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
             let reader = std::io::BufReader::new(f);
             for line in reader.lines().map_while(Result::ok) {
                 if line.starts_with("SELINUXTYPE=") {
-                    let policy = line.split('=').last().unwrap();
+                    let policy = line.split('=').next_back().unwrap();
                     output.push_str(format!("policy: {}\n", policy).as_str());
                 }
             }
@@ -158,9 +158,7 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
     // Get a handle to the current process
     let mut t_handle = std::ptr::null_mut();
     if unsafe { OpenProcessToken(GetCurrentProcess() as _, TOKEN_QUERY, &mut t_handle) } == 0 {
-        return Err(
-            std::io::Error::new(std::io::ErrorKind::Other, "Failed to open token handle").into(),
-        );
+        return Err(std::io::Error::other("Failed to open token handle").into());
     }
     let t_handle = Handle::from(t_handle);
 
@@ -176,17 +174,15 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
         )
     } != 0
     {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("Failed to get token information {}", unsafe {
+        return Err(
+            std::io::Error::other(format!("Failed to get token information {}", unsafe {
                 GetLastError()
-            }),
-        )
-        .into());
+            }))
+            .into(),
+        );
     };
 
-    let mut privs: Vec<u8> = Vec::new();
-    privs.resize(priv_len as usize, 0);
+    let mut privs = vec![0; priv_len as usize];
 
     // Get the token information
     if unsafe {
@@ -199,11 +195,12 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
         )
     } == 0
     {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("Failed to query privileges {}", unsafe { GetLastError() }),
-        )
-        .into());
+        return Err(
+            std::io::Error::other(format!("Failed to query privileges {}", unsafe {
+                GetLastError()
+            }))
+            .into(),
+        );
     }
 
     let privileges: &mut TOKEN_PRIVILEGES = unsafe { &mut *privs.as_mut_ptr().cast() };

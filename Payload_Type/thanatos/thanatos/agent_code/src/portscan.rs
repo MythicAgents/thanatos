@@ -2,7 +2,6 @@ use crate::agent::AgentTask;
 use crate::{mythic_continued, mythic_success};
 use serde::Deserialize;
 use std::error::Error;
-use std::io::ErrorKind;
 use std::net::{Ipv4Addr, SocketAddr, TcpStream};
 use std::result::Result;
 use std::str::FromStr;
@@ -120,16 +119,18 @@ pub fn scan_ports(
 /// * `subnet` - Subnet to parse
 fn parse_subnet(subnet: String) -> Result<Vec<Ipv4Addr>, Box<dyn Error>> {
     // Get the cidr of the subnet
-    let cidr =
-        u32::from_str(subnet.split('/').last().ok_or_else(|| {
-            std::io::Error::new(ErrorKind::Other, "Failed to parse subnet mask")
-        })?)?;
+    let cidr = u32::from_str(
+        subnet
+            .split('/')
+            .next_back()
+            .ok_or_else(|| std::io::Error::other("Failed to parse subnet mask"))?,
+    )?;
 
     // Get the subnet IP
     let ipaddr = subnet
         .split('/')
         .next()
-        .ok_or_else(|| std::io::Error::new(ErrorKind::Other, "Failed to parse ip address"))?;
+        .ok_or_else(|| std::io::Error::other("Failed to parse ip address"))?;
 
     // Convert the string IP into an integer
     let raw_ip: u32 = Ipv4Addr::from_str(ipaddr)?.into();

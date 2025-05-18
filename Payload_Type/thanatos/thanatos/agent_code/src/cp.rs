@@ -3,7 +3,6 @@ use crate::mythic_success;
 use crate::utils::unverbatim;
 use serde::Deserialize;
 use std::error::Error;
-use std::io::ErrorKind;
 use std::path::Path;
 use std::result::Result;
 
@@ -30,8 +29,7 @@ pub fn copy_file(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Error>> 
 
     // Check if the source path exists
     if !s_path.exists() {
-        return Err(Box::new(std::io::Error::new(
-            ErrorKind::Other,
+        return Err(Box::new(std::io::Error::other(
             "Source path does not exist.",
         )));
     }

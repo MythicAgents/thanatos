@@ -98,7 +98,7 @@ pub fn get_process_list(task: &AgentTask) -> Result<serde_json::Value, Box<dyn E
         s.get(start..end)
             .unwrap_or("btime 0")
             .split(' ')
-            .last()
+            .next_back()
             .unwrap_or("0")
             .parse()
             .unwrap_or(0)

@@ -112,11 +112,8 @@ fn get_username_from_sid(sid: PSID) -> Option<String> {
     }
 
     // Create new buffers to hold the account and domain information
-    let mut acct_name: Vec<u8> = Vec::new();
-    acct_name.resize(dw_acct_name as usize, 0);
-
-    let mut domain_name: Vec<u8> = Vec::new();
-    domain_name.resize(dw_domain_name as usize, 0);
+    let mut acct_name = vec![0; dw_acct_name as usize];
+    let mut domain_name = vec![0; dw_domain_name as usize];
 
     // Grab the domain and owner attached to the file
     if unsafe {
@@ -199,7 +196,7 @@ pub fn get_file_owner(fname: &path::Path) -> String {
     }
 
     // Convert the SID to a username
-    get_username_from_sid(psid_owner).unwrap_or_else(|| "".to_string())
+    get_username_from_sid(psid_owner).unwrap_or_default()
 }
 
 impl FilePermissions {
@@ -223,16 +220,12 @@ impl FilePermissions {
         };
 
         // Get the creation date timestamp
-        let creation_date = fpath
-            .metadata()
-            .ok()
-            .map(|meta| {
-                meta.created().ok().and_then(|created| {
-                    (created >= std::time::UNIX_EPOCH)
-                        .then(|| DateTime::<Local>::from(created).timestamp())
-                })
+        let creation_date = fpath.metadata().ok().and_then(|meta| {
+            meta.created().ok().and_then(|created| {
+                (created >= std::time::UNIX_EPOCH)
+                    .then(|| DateTime::<Local>::from(created).timestamp())
             })
-            .flatten();
+        });
 
         // Return the file permissions
         FilePermissions {

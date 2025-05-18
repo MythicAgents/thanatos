@@ -86,6 +86,6 @@ pub fn working_start() -> NaiveTime {
 
 /// Helper function to get the working hours end time
 pub fn working_end() -> NaiveTime {
-    let endtime = env!("working_hours").split('-').last().unwrap();
+    let endtime = env!("working_hours").split('-').next_back().unwrap();
     NaiveTime::parse_from_str(endtime, "%H:%M").unwrap()
 }

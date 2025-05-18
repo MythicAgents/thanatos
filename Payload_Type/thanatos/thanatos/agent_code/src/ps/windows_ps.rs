@@ -39,12 +39,9 @@ pub fn process_info() -> Result<Vec<ProcessListingEntry>, Box<dyn Error>> {
     let h_snapshot_process =
         Handle::new(unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) }).ok_or_else(
             || {
-                std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to open process snapshot {:?}", unsafe {
-                        GetLastError()
-                    }),
-                )
+                std::io::Error::other(format!("Failed to open process snapshot {:?}", unsafe {
+                    GetLastError()
+                }))
             },
         )?;
 
@@ -75,7 +72,7 @@ pub fn process_info() -> Result<Vec<ProcessListingEntry>, Box<dyn Error>> {
             OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe_entry.th32ProcessID)
         }) {
             // Populate the `ProcessListingEntry` with the process information
-            first_entry.architecture = get_architecture(*handle).unwrap_or_else(|| "".to_string());
+            first_entry.architecture = get_architecture(*handle).unwrap_or_default();
             first_entry.name = get_proc_name(&pe_entry);
             first_entry.start_time = get_start_time(*handle);
 
@@ -130,7 +127,7 @@ pub fn process_info() -> Result<Vec<ProcessListingEntry>, Box<dyn Error>> {
         if let Some(handle) = Handle::new(unsafe {
             OpenProcess(PROCESS_QUERY_INFORMATION, TRUE, pe_entry.th32ProcessID)
         }) {
-            entry.architecture = get_architecture(*handle).unwrap_or_else(|| "".to_string());
+            entry.architecture = get_architecture(*handle).unwrap_or_default();
             entry.name = get_proc_name(&pe_entry);
             entry.start_time = get_start_time(*handle);
 
@@ -256,7 +253,7 @@ pub fn get_proc_user(token: *mut c_void) -> Option<String> {
     // Lookup the SID
     if unsafe {
         LookupAccountSidA(
-            std::ptr::null() as *const i8,
+            std::ptr::null(),
             user_sid,
             lp_name.as_mut_ptr(),
             &mut dw_len,

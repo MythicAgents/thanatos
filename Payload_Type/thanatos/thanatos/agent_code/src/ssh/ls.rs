@@ -124,7 +124,7 @@ impl File {
         } else {
             String::from(
                 path.components()
-                    .last()
+                    .next_back()
                     .ok_or("")?
                     .as_os_str()
                     .to_string_lossy(),
@@ -156,7 +156,7 @@ impl FileBrowser {
         let path = Path::new(&path);
         let mut name = String::from(
             path.components()
-                .last()
+                .next_back()
                 .ok_or("")?
                 .as_os_str()
                 .to_string_lossy(),

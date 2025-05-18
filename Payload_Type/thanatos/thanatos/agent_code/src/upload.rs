@@ -5,7 +5,6 @@ use serde::Deserialize;
 use serde_json::json;
 use std::error::Error;
 use std::io::prelude::*;
-use std::io::ErrorKind;
 use std::path::Path;
 use std::result::Result;
 use std::sync::mpsc;
@@ -63,10 +62,11 @@ pub fn upload_file(
     let continued_args: ContinuedData = serde_json::from_str(&task.parameters)?;
 
     // Store the upload file chunk data
-    let mut file_data: Vec<u8> =
-        base64::decode(continued_args.chunk_data.ok_or_else(|| {
-            std::io::Error::new(ErrorKind::Other, "Failed to get file chunk data")
-        })?)?;
+    let mut file_data: Vec<u8> = base64::decode(
+        continued_args
+            .chunk_data
+            .ok_or_else(|| std::io::Error::other("Failed to get file chunk data"))?,
+    )?;
 
     // Get the total chunks
     let total_chunks = continued_args.total_chunks.unwrap();

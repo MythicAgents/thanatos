@@ -125,7 +125,7 @@ pub fn download_file(
     let params: ContinuedData = serde_json::from_str(&task.parameters)?;
     let file_id: String = params
         .file_id
-        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "No file id"))?;
+        .ok_or_else(|| std::io::Error::other("No file id"))?;
 
     // Iterate over the file data sending up the chunks
     for num in 0..total_chunks {

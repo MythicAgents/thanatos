@@ -108,7 +108,7 @@ pub fn download_file(
     let params: ContinuedData = serde_json::from_str(&task.parameters)?;
     let file_id = params
         .file_id
-        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "No file id"))?;
+        .ok_or_else(|| std::io::Error::other("No file id"))?;
 
     // Continue sending chunks of the file to Mythic
     for num in 0..total_chunks {
