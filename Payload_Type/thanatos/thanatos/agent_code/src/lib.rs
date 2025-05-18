@@ -155,10 +155,3 @@ fn run_beacon() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-
-/// Run the agent in a new thread (if loading from a shared library)
-#[ctor::ctor]
-#[cfg(crate_type = "cdylib")]
-fn run() {
-    std::thread::spawn(|| real_main().unwrap());
-}
