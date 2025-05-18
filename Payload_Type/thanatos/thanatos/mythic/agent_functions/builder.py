@@ -97,6 +97,23 @@ class Thanatos(PayloadType):
             choices=["executable", "shared library (.dll/.so)"],
             required=True,
         ),
+        # Configuration for the shared library execution
+        BuildParameter(
+            name="shared_config",
+            parameter_type=BuildParameterType.ChooseOne,
+            description="Shared library entrypoint configuration",
+            default_value="library export",
+            choices=["library export", "run on load"],
+            required=True,
+        ),
+        # Shared library export name
+        BuildParameter(
+            name="shared_export",
+            parameter_type=BuildParameterType.String,
+            description="Shared library entrypoint export name",
+            default_value="entrypoint",
+            required=False,
+        ),
     ]
     # Supported C2 profiles for thanatos
     c2_profiles = ["http"]
@@ -199,8 +216,28 @@ class Thanatos(PayloadType):
                     v = json.dumps(val)
                     command += f"{key}='{v}' "
 
+            features = []
+            build_shared = self.get_parameter("output").startswith("shared library")
+
+            # Configuration for the shared library output
+            if build_shared:
+                export_name = self.get_parameter("shared_export")
+                onload = self.get_parameter("shared_config") == "run on load"
+
+                if onload:
+                    features.append("onload")
+                elif export_name != "entrypoint":
+                    features.append("user")
+                    command += f"THANATOS_SHARED_ENTRYPOINT='{export_name}' "
+
             # Finish off the cargo command used for building the agent
             command += f"cargo build --target {target_os} --release"
+
+            if build_shared:
+                command += " -p thanatos_shared"
+
+            if len(features) > 0:
+                command += f" --features {','.join(features)}"
 
             # Copy any prebuilt dependencies if they exist
             deps_suffix = "_static" if self.get_parameter("static") == "yes" else ""
@@ -245,33 +282,27 @@ class Thanatos(PayloadType):
             if stderr:
                 resp.set_build_stderr(stdout.decode())
 
+            target_name = ""
+
             # Parse the output format for the payload
-            if "executable" in self.get_parameter("output"):
+            if build_shared:
+                # Set the payload output to the built shared library
+                target_name = (
+                    "libthanatos_shared.so"
+                    if self.selected_os == SupportedOS.Linux
+                    else "thanatos_shared.dll"
+                )
+            else:
                 # Set the payload output to the built executable
                 target_name = (
                     "thanatos"
                     if self.selected_os == SupportedOS.Linux
                     else "thanatos.exe"
                 )
-                payload_path = (
-                    f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
-                )
-            elif "shared library" in self.get_parameter("output"):
-                # Set the payload output to the build shared library
-                target_name = (
-                    "libthanatos.so"
-                    if self.selected_os == SupportedOS.Linux
-                    else "thanatos.dll"
-                )
-                payload_path = (
-                    f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
-                )
-            else:
-                resp.set_build_stderr(
-                    "Unknown output parameter value: {self.get_parameter('output')}"
-                )
-                return resp
 
+            payload_path = (
+                f"{agent_build_path.name}/target/{target_os}/release/{target_name}"
+            )
             with open(payload_path, "rb") as f:
                 resp.payload = f.read()
 
