@@ -7,6 +7,15 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 ## [Unreleased]
 
+### Added
+
+- Configuration options for building the shared library which modify how it can be loaded [1cd04aa](https://github.com/MythicAgents/thanatos/commit/1cd04aa22203dad47ff3c02eee12b049cd2d0d1d).
+
+#### Changed
+
+- Update `mythic-container` python dependency to 0.4.19 [4dc6582](https://github.com/MythicAgents/thanatos/commit/4dc6582b671e9072cc1f0b07e0163a55ffb3602c).
+- Refactor `portscan.rs` to satisfy clippy lints [e1a16d0](https://github.com/MythicAgents/thanatos/commit/e1a16d0fe2c2596df819f7020e80c52cb0bf94db).
+
 ## [0.1.12] - 2025-05-18
 
 ### Fixed
