@@ -7,6 +7,8 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 ## [Unreleased]
 
+## [0.1.12] - 2025-05-18
+
 ### Fixed
 
 - Issue where the agent will exit after performing the initial checkin [51e1554](https://github.com/MythicAgents/thanatos/commit/51e1554e7e6b9c96daf5a3bc44e44f5c714e17b0).
@@ -144,7 +146,8 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 Initial public release
 
-[unreleased]: https://github.com/MythicAgents/thanatos/compare/v0.1.11...HEAD
+[unreleased]: https://github.com/MythicAgents/thanatos/compare/v0.1.12...HEAD
+[0.1.12]: https://github.com/MythicAgents/thanatos/compare/v0.1.11...v0.1.12
 [0.1.11]: https://github.com/MythicAgents/thanatos/compare/v0.1.10...v0.1.11
 [0.1.10]: https://github.com/MythicAgents/thanatos/compare/v0.1.9...v0.1.10
 [0.1.9]: https://github.com/MythicAgents/thanatos/compare/v0.1.8...v0.1.9
