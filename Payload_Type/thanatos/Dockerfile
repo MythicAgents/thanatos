@@ -8,32 +8,32 @@ ENV SCCACHE_VERSION v0.7.6
 
 # Install packages
 RUN dnf install -y \
-        python3.11 \
-        python3-pip \
-        python3.11-devel \
-        mingw64-gcc \
-        mingw32-gcc \
-        mingw64-gcc-c++ \
-        mingw32-gcc-c++ \
-        mingw64-winpthreads-static.noarch \
-        mingw32-winpthreads-static.noarch \
-        libgcc.i686 \
-        libatomic-static.i686 \
-        libatomic.i686 \
-        glibc-devel.i686 \
-        openssl-devel \
-        openssl-devel.i686 \
-        perl-FindBin \
-        perl-File-Compare \
-        perl-IPC-Cmd \
-        perl-File-Copy \
-        perl-lib \
-        clang \
-        curl \
-        make \
-        musl-gcc \
-        musl-libc-static \
-        && dnf clean all
+    python3.11 \
+    python3-pip \
+    python3.11-devel \
+    mingw64-gcc \
+    mingw32-gcc \
+    mingw64-gcc-c++ \
+    mingw32-gcc-c++ \
+    mingw64-winpthreads-static.noarch \
+    mingw32-winpthreads-static.noarch \
+    libgcc.i686 \
+    libatomic-static.i686 \
+    libatomic.i686 \
+    glibc-devel.i686 \
+    openssl-devel \
+    openssl-devel.i686 \
+    perl-FindBin \
+    perl-File-Compare \
+    perl-IPC-Cmd \
+    perl-File-Copy \
+    perl-lib \
+    clang \
+    curl \
+    make \
+    musl-gcc \
+    musl-libc-static \
+    && dnf clean all
 
 RUN python3.11 -m ensurepip
 
@@ -48,13 +48,13 @@ RUN rm requirements.txt
 # Install rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh \
     && sh rustup.sh -y \
-        --profile minimal \
-        --default-toolchain stable \
-        -t x86_64-unknown-linux-gnu \
-        -t i686-unknown-linux-gnu \
-        -t x86_64-unknown-linux-musl \
-        -t x86_64-pc-windows-gnu \
-        -t i686-pc-windows-gnu
+    --profile minimal \
+    --default-toolchain stable \
+    -t x86_64-unknown-linux-gnu \
+    -t i686-unknown-linux-gnu \
+    -t x86_64-unknown-linux-musl \
+    -t x86_64-pc-windows-gnu \
+    -t i686-pc-windows-gnu
 
 RUN rm -f rustup.sh
 
