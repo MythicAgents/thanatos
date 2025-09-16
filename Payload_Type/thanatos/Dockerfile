@@ -77,15 +77,6 @@ COPY thanatos thanatos
 # Fetch dependencies
 WORKDIR /Mythic/thanatos/agent_code
 
-# Linux builds (no static linking)
-RUN cargo check --target x86_64-unknown-linux-gnu --release --all-features || true
-RUN cargo check --target i686-unknown-linux-gnu --release --all-features || true  
-# Linux builds (static)
-RUN RUSTFLAGS="-C target-feature=+crt-static" cargo check --target x86_64-unknown-linux-musl --release --all-features || true
-#  Windows builds (always use crt-static)
-RUN RUSTFLAGS="-C target-feature=+crt-static" cargo check --target x86_64-pc-windows-gnu --release --all-features || true
-RUN RUSTFLAGS="-C target-feature=+crt-static" cargo check --target i686-pc-windows-gnu --release --all-features || true
-
 RUN cargo vendor /vendor
 
 WORKDIR /Mythic
