@@ -36,6 +36,6 @@
     "http"
   ],
   "mythic_version": "3.2",
-  "agent_version": "0.1.13",
+  "agent_version": "0.1.14",
   "supported_wrappers": []
 }

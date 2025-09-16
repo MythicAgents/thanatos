@@ -7,6 +7,8 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 ## [Unreleased]
 
+## [0.1.14] - 2025-09-16
+
 ### Added
 
 - Support for building the payload on offline build servers [#47](https://github.com/MythicAgents/thanatos/pull/47).
@@ -161,7 +163,8 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 Initial public release
 
-[unreleased]: https://github.com/MythicAgents/thanatos/compare/v0.1.13...HEAD
+[unreleased]: https://github.com/MythicAgents/thanatos/compare/v0.1.14...HEAD
+[0.1.14]: https://github.com/MythicAgents/thanatos/compare/v0.1.13...v0.1.14
 [0.1.13]: https://github.com/MythicAgents/thanatos/compare/v0.1.12...v0.1.13
 [0.1.12]: https://github.com/MythicAgents/thanatos/compare/v0.1.11...v0.1.12
 [0.1.11]: https://github.com/MythicAgents/thanatos/compare/v0.1.10...v0.1.11
