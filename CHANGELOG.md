@@ -7,6 +7,10 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 ## [Unreleased]
 
+### Added
+
+- Support for building the payload on offline build servers [#47](https://github.com/MythicAgents/thanatos/pull/47).
+
 ## [0.1.13] - 2025-05-18
 
 ### Added
