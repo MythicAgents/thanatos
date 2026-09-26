@@ -1,15 +1,14 @@
 from mythic_container.MythicCommandBase import (
-    TaskArguments,
-    CommandBase,
     CommandAttributes,
+    CommandBase,
     CommandParameter,
-    ParameterType,
-    ParameterGroupInfo,
-    SupportedOS,
-    MythicTask,
     MythicStatus,
+    ParameterGroupInfo,
+    ParameterType,
+    PTTaskCreateTaskingMessageResponse,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    SupportedOS,
+    TaskArguments,
 )
 
 
@@ -55,23 +54,22 @@ class SetEnvCommand(CommandBase):
     version = 1
     author = "@M_alphaaa"
     argument_class = SetEnvArguments
-    attackmapping = []
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        name = task.args.get_arg("name")
-        value = task.args.get_arg("value")
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        name = taskData.args.get_arg("name")
+        value = taskData.args.get_arg("value")
 
-        task.display_params = f"{name} {value}"
+        resp = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID, DisplayParams=f"{name} {value}"
+        )
         if "=" in name or "=" in value:
-            task.set_stderr("Cannot have '=' in environment variables.")
-            task.status = MythicStatus.Error
+            resp.Stderr = "Cannot have '=' in environment variables."
+            resp.Success = False
+            resp.TaskStatus = MythicStatus.Error
 
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+        return resp

@@ -1,14 +1,13 @@
 from mythic_container.MythicCommandBase import (
-    TaskArguments,
-    CommandBase,
     CommandAttributes,
+    CommandBase,
     CommandParameter,
-    ParameterType,
     ParameterGroupInfo,
-    SupportedOS,
-    MythicTask,
+    ParameterType,
+    PTTaskCreateTaskingMessageResponse,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    SupportedOS,
+    TaskArguments,
 )
 
 
@@ -52,12 +51,10 @@ class MkdirCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        directory = task.args.get_arg("directory")
-        task.display_params = directory
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            DisplayParams=str(taskData.args.get_arg("directory")),
+        )

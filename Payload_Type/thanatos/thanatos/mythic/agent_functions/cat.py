@@ -1,12 +1,13 @@
 from mythic_container.MythicCommandBase import (
-    TaskArguments,
-    CommandBase,
     CommandAttributes,
+    CommandBase,
     CommandParameter,
-    ParameterType,
     ParameterGroupInfo,
+    ParameterType,
+    PTTaskCreateTaskingMessageResponse,
+    PTTaskMessageAllData,
     SupportedOS,
-    MythicTask,
+    TaskArguments,
 )
 
 
@@ -48,6 +49,9 @@ class CatCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.display_params = str(task.args.get_arg("file"))
-        return task
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID, DisplayParams=str(taskData.args.get_arg("file"))
+        )

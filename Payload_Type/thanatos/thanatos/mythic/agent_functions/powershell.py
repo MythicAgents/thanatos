@@ -1,18 +1,17 @@
 from mythic_container.MythicCommandBase import (
-    TaskArguments,
-    CommandBase,
     CommandAttributes,
+    CommandBase,
     CommandParameter,
-    ParameterType,
     ParameterGroupInfo,
-    SupportedOS,
-    MythicTask,
+    ParameterType,
+    PTTaskCreateTaskingMessageResponse,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    SupportedOS,
+    TaskArguments,
 )
 from mythic_container.MythicGoRPC import (
-    SendMythicRPCArtifactCreate,
     MythicRPCArtifactCreateMessage,
+    SendMythicRPCArtifactCreate,
 )
 
 
@@ -51,19 +50,17 @@ class PowershellCommand(CommandBase):
     attackmapping = ["T1059"]
     attributes = CommandAttributes(supported_os=[SupportedOS.Windows])
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
         await SendMythicRPCArtifactCreate(
             MythicRPCArtifactCreateMessage(
-                TaskID=task.id,
-                ArtifactMessage=f"powershell.exe /c {task.args.get_arg('command')}",
+                TaskID=taskData.id,
+                ArtifactMessage=f"powershell.exe /c {taskData.args.get_arg('command')}",
                 BaseArtifactType="Process Create",
             )
         )
 
-        task.display_params = task.args.get_arg("command")
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID, DisplayParams=str(taskData.args.get_arg("command"))
+        )

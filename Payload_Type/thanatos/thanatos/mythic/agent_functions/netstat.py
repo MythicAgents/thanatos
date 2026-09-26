@@ -1,12 +1,9 @@
 from mythic_container.MythicCommandBase import (
     BrowserScript,
-    TaskArguments,
-    CommandBase,
     CommandAttributes,
+    CommandBase,
     SupportedOS,
-    MythicTask,
-    PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    TaskArguments,
 )
 
 
@@ -34,11 +31,3 @@ class NetstatCommand(CommandBase):
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
-
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass

@@ -1,20 +1,22 @@
 import json
 import traceback
+
 from mythic_container.MythicCommandBase import (
-    TaskArguments,
-    CommandBase,
     CommandAttributes,
-    SupportedOS,
+    CommandBase,
     CommandParameter,
     ParameterGroupInfo,
     ParameterType,
-    MythicTask,
     PTTaskCompletionFunctionMessage,
     PTTaskCompletionFunctionMessageResponse,
+    PTTaskCreateTaskingMessageResponse,
+    PTTaskMessageAllData,
+    SupportedOS,
+    TaskArguments,
 )
 from mythic_container.MythicGoRPC import (
-    SendMythicRPCResponseCreate,
     MythicRPCResponseCreateMessage,
+    SendMythicRPCResponseCreate,
 )
 
 
@@ -75,8 +77,9 @@ async def formulate_output(task: PTTaskCompletionFunctionMessage):
     working_start_hours = int(int(params["start"]) / 3600)
     working_start_minutes = int(((params["start"] / 3600) - working_start_hours) * 60)
 
-    working_start_hours, working_start_minutes = int(working_start_hours), int(
-        working_start_minutes
+    working_start_hours, working_start_minutes = (
+        int(working_start_hours),
+        int(working_start_minutes),
     )
 
     start_time_format = format_time(working_start_hours, working_start_minutes)
@@ -147,9 +150,11 @@ class WorkingHoursCommand(CommandBase):
         builtin=True,
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        working_start = task.args.get_arg("start")
-        working_end = task.args.get_arg("end")
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        working_start = taskData.args.get_arg("start")
+        working_end = taskData.args.get_arg("end")
 
         # Parse the start portion of the working hours
         working_start = working_start.split(":")
@@ -196,16 +201,17 @@ class WorkingHoursCommand(CommandBase):
             )
 
         # Add the start portion of the working hours as an integer
-        task.args.remove_arg("start")
-        task.args.add_arg("start", working_start, type=ParameterType.Number)
+        taskData.args.remove_arg("start")
+        taskData.args.add_arg("start", working_start, type=ParameterType.Number)
 
-        task.args.remove_arg("end")
-        task.args.add_arg("end", working_end, type=ParameterType.Number)
+        taskData.args.remove_arg("end")
+        taskData.args.add_arg("end", working_end, type=ParameterType.Number)
 
-        task.completed_callback_function = "post_run_actions"
-
-        task.display_params = (
-            f"start = {working_start_hours:02d}:{working_start_minutes:02d}, "
-            f"end = {working_end_hours:02d}:{working_end_minutes:02d}"
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            DisplayParams=(
+                f"start = {working_start_hours:02d}:{working_start_minutes:02d}, "
+                f"end = {working_end_hours:02d}:{working_end_minutes:02d}"
+            ),
+            CompletionFunctionName="post_run_actions",
         )
-        return task

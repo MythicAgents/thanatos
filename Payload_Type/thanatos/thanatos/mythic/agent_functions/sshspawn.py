@@ -1,27 +1,25 @@
 import asyncio
 import base64
 import json
-import sys
 
 from mythic_container.MythicCommandBase import (
-    TaskArguments,
-    CommandBase,
     CommandAttributes,
+    CommandBase,
     CommandParameter,
-    ParameterType,
     ParameterGroupInfo,
-    SupportedOS,
-    MythicTask,
+    ParameterType,
+    PTTaskCreateTaskingMessageResponse,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    SupportedOS,
+    TaskArguments,
 )
 from mythic_container.MythicGoRPC import (
-    SendMythicRPCPayloadCreateFromUUID,
+    MythicRPCFileCreateMessage,
     MythicRPCPayloadCreateFromUUIDMessage,
-    SendMythicRPCPayloadGetContent,
     MythicRPCPayloadGetContentMessage,
     SendMythicRPCFileCreate,
-    MythicRPCFileCreateMessage,
+    SendMythicRPCPayloadCreateFromUUID,
+    SendMythicRPCPayloadGetContent,
 )
 
 
@@ -198,90 +196,81 @@ class SshSpawnCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        exec_cmd = task.args.get_arg("exec")
-        path = task.args.get_arg("path")
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        exec_cmd = taskData.args.get_arg("exec")
+        path = taskData.args.get_arg("path")
         exec_cmd = exec_cmd.replace("{path}", path)
-        task.args.set_arg("exec", exec_cmd)
+        taskData.args.set_arg("exec", exec_cmd)
 
-        if uuid := task.args.get_arg("payload"):
-            return await self.payload_tasking(task, uuid)
+        if payload_uuid := taskData.args.get_arg("payload"):
+            return await self.payload_tasking(taskData, payload_uuid)
 
-        upload_file = task.args.get_arg("upload")
-        return await self.file_upload_tasking(task, upload_file)
+        upload_file = taskData.args.get_arg("upload")
+        return await self.file_upload_tasking(taskData, upload_file)
 
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
-
-    async def payload_tasking(self, task: MythicTask, payload_uuid) -> MythicTask:
-        task.set_stdout("Sending build task...")
-
+    async def payload_tasking(
+        self, task_data: PTTaskMessageAllData, payload_uuid: str
+    ) -> PTTaskCreateTaskingMessageResponse:
         gen_resp = await SendMythicRPCPayloadCreateFromUUID(
             MythicRPCPayloadCreateFromUUIDMessage(
-                task.id,
+                task_data.Task.ID,
                 PayloadUUID=payload_uuid,
-                RemoteHost=task.args.get_arg("host"),
+                RemoteHost=task_data.args.get_arg("host"),
                 NewDescription=(
-                    f"{task.operator}'s spawned session from task {str(task.id)}"
+                    f"{task_data.Task.OperatorUsername}'s "
+                    "spawned session from task {str(task_data.Task.ID)}"
                 ),
             )
         )
 
         if gen_resp:
-            task.set_stdout("Building payload...")
             while True:
-                resp = await SendMythicRPCPayloadGetContent(
+                get_resp = await SendMythicRPCPayloadGetContent(
                     MythicRPCPayloadGetContentMessage(
                         PayloadUUID=gen_resp.response["uuid"],
                     )
                 )
 
-                if resp:
-                    if resp.response["build_phase"] == "success":
-                        task.args.add_arg(
-                            "payload", resp.response["file"]["agent_file_id"]
+                if get_resp:
+                    if get_resp.response["build_phase"] == "success":
+                        task_data.args.add_arg(
+                            "payload", get_resp.response["file"]["agent_file_id"]
                         )
                         break
 
-                    if resp.response["build_phase"] == "error":
+                    if get_resp.response["build_phase"] == "error":
                         raise Exception(
                             "Failed to build new payload: "
-                            f"{resp.response['error_message']}"
+                            f"{get_resp.response['error_message']}"
                         )
 
-                    if resp.response["build_phase"] == "building":
+                    if get_resp.response["build_phase"] == "building":
                         await asyncio.sleep(2)
                     else:
-                        raise Exception(resp.response["build_phase"])
+                        raise Exception(get_resp.response["build_phase"])
                 else:
-                    raise Exception(resp.response["error_message"])
+                    raise Exception(get_resp.response["error_message"])
         else:
             raise Exception("Failed to start build process")
-        task.set_stdout("Built payload")
+        return PTTaskCreateTaskingMessageResponse(TaskID=task_data.Task.ID)
 
-        return task
-
-    async def file_upload_tasking(self, task: MythicTask, file) -> MythicTask:
-        try:
-            original_file_name = json.loads(task.original_params)["upload"]
-            file_resp = await SendMythicRPCFileCreate(
-                MythicRPCFileCreateMessage(
-                    task.id,
-                    FileContents=base64.b64encode(file.encode()).decode(),
-                    Filename=original_file_name,
-                    DeleteAfterFetch=True,
-                )
+    async def file_upload_tasking(
+        self, task_data: PTTaskMessageAllData, file_data: str
+    ) -> PTTaskCreateTaskingMessageResponse:
+        original_file_name = json.loads(task_data.original_params)["upload"]
+        file_resp = await SendMythicRPCFileCreate(
+            MythicRPCFileCreateMessage(
+                task_data.id,
+                FileContents=base64.b64encode(file_data.encode()).decode(),
+                Filename=original_file_name,
+                DeleteAfterFetch=True,
             )
+        )
 
-            if file_resp:
-                task.args.add_arg("payload", file_resp.response["agent_file_id"])
-            else:
-                raise Exception("Error from Mythic: " + str(file_resp.error))
-        except Exception as e:
-            raise Exception(
-                f"Error from Mythic: {str(sys.exc_info()[-1].tb_lineno)} {str(e)}"
-            )
-
-        return task
+        if file_resp:
+            task_data.args.add_arg("payload", file_resp.response["agent_file_id"])
+        else:
+            raise Exception("Error from Mythic: " + str(file_resp.error))
+        return PTTaskCreateTaskingMessageResponse(TaskID=task_data.Task.ID)

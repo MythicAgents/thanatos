@@ -1,16 +1,16 @@
 import json
+
 from mythic_container.MythicCommandBase import (
     BrowserScript,
-    TaskArguments,
-    CommandBase,
     CommandAttributes,
+    CommandBase,
     CommandParameter,
-    ParameterType,
     ParameterGroupInfo,
-    SupportedOS,
-    MythicTask,
+    ParameterType,
+    PTTaskCreateTaskingMessageResponse,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    SupportedOS,
+    TaskArguments,
 )
 
 
@@ -61,7 +61,7 @@ class LsCommand(CommandBase):
     needs_admin = False
     help_cmd = "ls [directory]"
     description = "List directory."
-    version = 1
+    version = 2
     supported_ui_features = ["file_browser:list"]
     author = "@M_alphaaa"
     argument_class = LsArguments
@@ -71,27 +71,28 @@ class LsCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        if task.args.has_arg("host"):
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        if host := taskData.args.get_arg("host"):
             if (
-                task.callback.host == "Linux"
-                and task.callback.host != task.args.get_host("host")
+                taskData.Callback.OS.lower().startswith("linux")
+                and taskData.Callback.Host != host.upper()
             ):
                 raise Exception(
-                    "Can't get directory listings of remote hosts using ls on Linux. "
-                    "Use `ssh-ls` instead."
+                    "Cannot get directory listings of remote hosts using ls on Linux. "
+                    "Use the `ssh` command for listing remote files."
                 )
         else:
-            task.args.add_arg("host", task.callback.host)
+            taskData.args.add_arg("host", taskData.Callback.Host)
 
-        if not task.args.has_arg("file"):
-            task.args.add_arg("file", "")
+        if not taskData.args.has_arg("file"):
+            taskData.args.add_arg("file", "")
 
-        task.display_params = task.args.get_arg("path")
-
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+        path = taskData.args.get_arg("path")
+        resp = PTTaskCreateTaskingMessageResponse(TaskID=taskData.Task.ID)
+        if (host := taskData.args.get_arg("host")) and host != taskData.Callback.Host:
+            resp.DisplayParams = f"\\\\{host}\\{path}"
+        else:
+            resp.DisplayParams = path
+        return resp
