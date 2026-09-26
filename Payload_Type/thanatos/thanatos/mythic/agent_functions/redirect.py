@@ -1,14 +1,13 @@
 from mythic_container.MythicCommandBase import (
-    TaskArguments,
-    CommandBase,
     CommandAttributes,
+    CommandBase,
     CommandParameter,
-    ParameterType,
     ParameterGroupInfo,
-    SupportedOS,
-    MythicTask,
+    ParameterType,
+    PTTaskCreateTaskingMessageResponse,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    SupportedOS,
+    TaskArguments,
 )
 
 
@@ -129,16 +128,15 @@ class RedirectCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        bindhost = task.args.get_arg("bindhost")
-        bindport = task.args.get_arg("bindport")
-        connecthost = task.args.get_arg("connecthost")
-        connectport = task.args.get_arg("connectport")
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        bindhost = taskData.args.get_arg("bindhost")
+        bindport = taskData.args.get_arg("bindport")
+        connecthost = taskData.args.get_arg("connecthost")
+        connectport = taskData.args.get_arg("connectport")
 
-        task.display_params = f"{bindhost}:{bindport} => {connecthost}:{connectport}"
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            DisplayParams=f"{bindhost}:{bindport} => {connecthost}:{connectport}",
+        )

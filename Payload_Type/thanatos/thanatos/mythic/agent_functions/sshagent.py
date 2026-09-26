@@ -1,14 +1,13 @@
 from mythic_container.MythicCommandBase import (
-    TaskArguments,
-    CommandBase,
     CommandAttributes,
+    CommandBase,
     CommandParameter,
-    ParameterType,
     ParameterGroupInfo,
-    SupportedOS,
-    MythicTask,
+    ParameterType,
+    PTTaskCreateTaskingMessageResponse,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    SupportedOS,
+    TaskArguments,
 )
 
 
@@ -79,19 +78,17 @@ class SshAgentCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        if task.args.get_arg("list"):
-            task.display_params = "-l"
-        elif task.args.get_arg("disconnect"):
-            task.display_params = "-d"
-        elif socket := task.args.get_arg("connect"):
-            task.display_params = f"-c {socket}"
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        resp = PTTaskCreateTaskingMessageResponse(TaskID=taskData.Task.ID)
+        if taskData.args.get_arg("list"):
+            resp.DisplayParams = "-l"
+        elif taskData.args.get_arg("disconnect"):
+            resp.DisplayParams = "-d"
+        elif socket := taskData.args.get_arg("connect"):
+            resp.DisplayParams = f"-c {socket}"
         else:
             raise Exception("Invalid arguments")
 
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+        return resp

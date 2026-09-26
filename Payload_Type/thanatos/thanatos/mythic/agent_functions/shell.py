@@ -1,18 +1,17 @@
 from mythic_container.MythicCommandBase import (
-    TaskArguments,
-    CommandBase,
     CommandAttributes,
+    CommandBase,
     CommandParameter,
-    ParameterType,
     ParameterGroupInfo,
-    SupportedOS,
-    MythicTask,
+    ParameterType,
+    PTTaskCreateTaskingMessageResponse,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    SupportedOS,
+    TaskArguments,
 )
 from mythic_container.MythicGoRPC import (
-    SendMythicRPCArtifactCreate,
     MythicRPCArtifactCreateMessage,
+    SendMythicRPCArtifactCreate,
 )
 
 
@@ -56,24 +55,22 @@ class ShellCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        if task.callback.host == "Linux":
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        if taskData.Callback.OS.lower().startswith("linux"):
             shell = "/bin/bash -c "
         else:
             shell = "cmd.exe /c "
 
         await SendMythicRPCArtifactCreate(
             MythicRPCArtifactCreateMessage(
-                TaskID=task.id,
-                ArtifactMessage=shell + task.args.get_arg("command"),
+                TaskID=taskData.id,
+                ArtifactMessage=shell + taskData.args.get_arg("command"),
                 BaseArtifactType="Process Create",
             )
         )
 
-        task.display_params = task.args.get_arg("command")
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID, DisplayParams=str(taskData.args.get_arg("command"))
+        )

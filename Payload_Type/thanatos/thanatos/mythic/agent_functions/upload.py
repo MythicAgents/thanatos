@@ -1,19 +1,17 @@
-import sys
 from mythic_container.MythicCommandBase import (
-    TaskArguments,
-    CommandBase,
     CommandAttributes,
+    CommandBase,
     CommandParameter,
-    ParameterType,
     ParameterGroupInfo,
-    SupportedOS,
-    MythicTask,
+    ParameterType,
+    PTTaskCreateTaskingMessageResponse,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    SupportedOS,
+    TaskArguments,
 )
 from mythic_container.MythicGoRPC import (
-    SendMythicRPCFileSearch,
     MythicRPCFileSearchMessage,
+    SendMythicRPCFileSearch,
 )
 
 
@@ -72,34 +70,28 @@ class UploadCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        try:
-            file_id = task.args.get_arg("file")
-            resp = await SendMythicRPCFileSearch(
-                MythicRPCFileSearchMessage(
-                    TaskID=task.id,
-                    AgentFileId=file_id,
-                )
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        file_id = taskData.args.get_arg("file")
+        search_resp = await SendMythicRPCFileSearch(
+            MythicRPCFileSearchMessage(
+                TaskID=taskData.id,
+                AgentFileId=file_id,
             )
+        )
 
-            if not resp.Success:
-                raise Exception(resp.error)
+        if not search_resp.Success:
+            raise Exception(search_resp.error)
 
-            file_name = resp.Files[0].Filename
+        file_name = search_resp.Files[0].Filename
 
-            if len(task.args.get_arg("path")) == 0:
-                task.args.add_arg("path", file_name)
-            elif task.args.get_arg("path")[-1] == "/":
-                task.args.add_arg("path", task.args.get_arg("path") + file_name)
+        if len(taskData.args.get_arg("path")) == 0:
+            taskData.args.add_arg("path", file_name)
+        elif taskData.args.get_arg("path")[-1] == "/":
+            taskData.args.add_arg("path", taskData.args.get_arg("path") + file_name)
 
-            task.display_params = f"{file_name} to {task.args.get_arg('path')}"
-            return task
-        except Exception as e:
-            raise Exception(
-                f"Error from line {str(sys.exc_info()[-1].tb_lineno)}: {str(e)}"
-            )
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+        return PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            DisplayParams=f"{file_name} to {taskData.args.get_arg('path')}",
+        )

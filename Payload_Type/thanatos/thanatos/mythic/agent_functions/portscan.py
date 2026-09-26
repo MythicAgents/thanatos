@@ -1,15 +1,15 @@
 import ipaddress
+
 from mythic_container.MythicCommandBase import (
-    TaskArguments,
-    CommandBase,
     CommandAttributes,
+    CommandBase,
     CommandParameter,
-    ParameterType,
     ParameterGroupInfo,
-    SupportedOS,
-    MythicTask,
+    ParameterType,
+    PTTaskCreateTaskingMessageResponse,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    SupportedOS,
+    TaskArguments,
 )
 
 
@@ -71,11 +71,13 @@ class PortScanCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        ports = task.args.get_arg("ports")
-        task.args.set_arg("ports", ports.replace(" ", ""))
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        ports = taskData.args.get_arg("ports")
+        taskData.args.set_arg("ports", ports.replace(" ", ""))
 
-        ipaddrs = task.args.get_arg("hosts")
+        ipaddrs = taskData.args.get_arg("hosts")
         for ip in ipaddrs:
             if "/" in ip:
                 try:
@@ -88,9 +90,4 @@ class PortScanCommand(CommandBase):
                 except Exception:
                     raise Exception("Invalid IP address")
 
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+        return PTTaskCreateTaskingMessageResponse(TaskID=taskData.Task.ID)

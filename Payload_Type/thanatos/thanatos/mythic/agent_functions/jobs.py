@@ -1,11 +1,8 @@
 from mythic_container.MythicCommandBase import (
-    TaskArguments,
-    CommandBase,
     CommandAttributes,
+    CommandBase,
     SupportedOS,
-    MythicTask,
-    PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    TaskArguments,
 )
 
 
@@ -27,15 +24,6 @@ class JobsCommand(CommandBase):
     author = "@M_alphaaa"
     supported_ui_features = ["callback_table:jobs"]
     argument_class = JobsArguments
-    attackmapping = []
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
-
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass

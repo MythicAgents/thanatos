@@ -1,15 +1,15 @@
 import json
+
 from mythic_container.MythicCommandBase import (
-    TaskArguments,
-    CommandBase,
     CommandAttributes,
+    CommandBase,
     CommandParameter,
-    ParameterType,
     ParameterGroupInfo,
-    SupportedOS,
-    MythicTask,
+    ParameterType,
+    PTTaskCreateTaskingMessageResponse,
     PTTaskMessageAllData,
-    PTTaskProcessResponseMessageResponse,
+    SupportedOS,
+    TaskArguments,
 )
 
 
@@ -31,7 +31,7 @@ class RmArguments(TaskArguments):
             tmp_json = json.loads(self.command_line)
             if "file" in tmp_json.keys() and "host" in tmp_json.keys():
                 self.add_arg("host", tmp_json["host"])
-                self.set_arg("path", f'{tmp_json["path"]}/{tmp_json["file"]}')
+                self.set_arg("path", f"{tmp_json['path']}/{tmp_json['file']}")
             else:
                 self.set_arg("path", tmp_json["path"])
         except Exception:
@@ -60,15 +60,23 @@ class RmCommand(CommandBase):
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        if not task.args.has_arg("host"):
-            task.args.add_arg("host", task.callback.host)
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
+        if host := taskData.args.get_arg("host"):
+            if (
+                taskData.Callback.OS.lower().startswith("linux")
+                and taskData.Callback.Host != host.upper()
+            ):
+                raise Exception(
+                    "Cannot get directory listings of remote hosts using ls on Linux. "
+                    "Use the `ssh` command for listing remote files."
+                )
+        else:
+            taskData.args.add_arg("host", taskData.Callback.Host)
 
-        path = task.args.get_arg("path")
-        task.display_params = path
-        return task
-
-    async def process_response(
-        self, task: PTTaskMessageAllData, response: str
-    ) -> PTTaskProcessResponseMessageResponse:
-        pass
+        path = taskData.args.get_arg("path")
+        resp = PTTaskCreateTaskingMessageResponse(TaskID=taskData.Task.ID)
+        if (host := taskData.args.get_arg("host")) and host != taskData.Callback.Host:
+            resp.DisplayParams = f"\\\\{host}\\{path}"
+        return resp
