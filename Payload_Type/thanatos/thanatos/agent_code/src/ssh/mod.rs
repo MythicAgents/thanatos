@@ -95,7 +95,7 @@ impl From<self::spawn::SshSpawnArgs> for SshArgs {
 /// * `args` - Arguments for the command
 pub fn ssh_authenticate(args: &SshArgs) -> Result<Session, Box<dyn Error>> {
     // Connect to the ssh server
-    let conn_addr = format!("{}:{}", &args.host, &args.port);
+    let conn_addr = format!("{}:{}", args.host, args.port);
     let tcp = TcpStream::connect(conn_addr)?;
 
     // Create a new ssh session from a TCP connection
