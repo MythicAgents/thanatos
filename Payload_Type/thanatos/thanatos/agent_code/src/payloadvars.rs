@@ -2,36 +2,6 @@
 //! It should be noted that the `env!()` macro will be set during agent compile time instead
 //! of run time.
 use chrono::{Duration, Local, NaiveTime};
-use serde::{Deserialize, Serialize};
-
-/// Structure to hold the http header information
-#[derive(Deserialize, Serialize)]
-struct Header {
-    /// Name for the header
-    name: String,
-
-    /// Key of the header json
-    key: String,
-
-    /// Value for the header
-    value: String,
-
-    /// If this is a custom header
-    custom: bool,
-}
-
-/// Structure to hold static AES key information
-#[derive(Deserialize, Serialize)]
-struct Aespsk {
-    /// If the PSK is AES or none
-    value: String,
-
-    /// Encryption key if it exists
-    enc_key: Option<String>,
-
-    /// Decryption key if it exists (should be the same as `enc_key`)
-    dec_key: Option<String>,
-}
 
 /// Helper function to get the payload UUID
 pub fn payload_uuid() -> String {

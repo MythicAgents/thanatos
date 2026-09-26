@@ -84,15 +84,6 @@ pub mod profilevars {
     use serde::{Deserialize, Serialize};
     use std::collections::HashMap;
 
-    // Structure to hold the http header information
-    #[derive(Deserialize, Serialize)]
-    struct Header {
-        name: String,
-        key: String,
-        value: String,
-        custom: Option<bool>,
-    }
-
     // Structure to hold static AES key information
     #[derive(Deserialize, Serialize)]
     struct Aespsk {
