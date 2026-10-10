@@ -54,6 +54,7 @@ class SetEnvCommand(CommandBase):
     version = 1
     author = "@M_alphaaa"
     argument_class = SetEnvArguments
+    attackmapping = []
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )

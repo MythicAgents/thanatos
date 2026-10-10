@@ -43,6 +43,7 @@ class JobKillCommand(CommandBase):
     version = 1
     author = "@M_alphaaa"
     argument_class = JobKillArguments
+    attackmapping = []
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
