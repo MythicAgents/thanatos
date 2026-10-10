@@ -24,6 +24,7 @@ class JobsCommand(CommandBase):
     author = "@M_alphaaa"
     supported_ui_features = ["callback_table:jobs"]
     argument_class = JobsArguments
+    attackmapping = []
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
