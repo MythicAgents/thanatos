@@ -25,6 +25,7 @@ class ExitCommand(CommandBase):
     author = "@M_alphaaa"
     supported_ui_features = ["callback_table:exit"]
     argument_class = ExitArguments
+    attackmapping = []
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )

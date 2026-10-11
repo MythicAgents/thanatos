@@ -45,6 +45,7 @@ class UnsetEnvCommand(CommandBase):
     author = "@M_alphaaa"
     supported_ui_features = ["unsetenv"]
     argument_class = UnsetEnvArguments
+    attackmapping = []
     attributes = CommandAttributes(
         supported_os=[SupportedOS.Linux, SupportedOS.Windows],
     )
