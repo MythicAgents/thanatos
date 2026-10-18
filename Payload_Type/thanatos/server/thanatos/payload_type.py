@@ -1,19 +1,22 @@
 import asyncio
 import json
 import os
-import pathlib
 import sys
 import tempfile
 import traceback
 from shutil import copytree
+
 from mythic_container.PayloadBuilder import (
-    PayloadType,
-    SupportedOS,
     BuildParameter,
     BuildParameterType,
     BuildResponse,
     BuildStatus,
+    PayloadType,
+    SupportedOS,
 )
+
+from thanatos import config
+from thanatos.commands import *  # noqa # pylint: disable=unused-wildcard-import, wildcard-import
 
 # pylint: disable=too-many-locals,too-many-branches,too-many-statements
 
@@ -30,7 +33,7 @@ class Thanatos(PayloadType):
         SupportedOS.Linux,
     ]
     wrapper = False
-    wrapped_payloads = []
+    wrapped_payloads: list[str] = []
     # Description of the payload in Mythic
     note = "Linux and Windows agent written in Rust"
 
@@ -118,9 +121,10 @@ class Thanatos(PayloadType):
     # Supported C2 profiles for thanatos
     c2_profiles = ["http"]
 
-    agent_path = pathlib.Path(".") / "thanatos" / "mythic"
-    agent_code_path = pathlib.Path(".") / "thanatos" / "agent_code"
-    agent_icon_path = agent_path / "agent_icon" / "thanatos.svg"
+    agent_path = config.AGENT_PATH
+    agent_code_path = config.AGENT_CODE_PATH
+    agent_icon_path = config.AGENT_ICON_PATH
+    agent_browserscript_path = config.AGENT_BROWSERSCRIPT_PATH
 
     # This function is called to build a new payload
     async def build(self) -> BuildResponse:
@@ -312,7 +316,6 @@ class Thanatos(PayloadType):
             resp.build_message += str(command)
             resp.status = BuildStatus.Success
         except Exception as e:
-
             # Return the python exception to the Mythic build message
             exc_type, exc_value, exc_traceback = sys.exc_info()
             resp.build_stderr += f"Error building payload: {e} traceback: " + repr(

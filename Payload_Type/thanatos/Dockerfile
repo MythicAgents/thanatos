@@ -1,6 +1,3 @@
-### Real Dockerfile for the thanatos payload
-# Note: Invoke this Dockerfile from the `Payload_Type/thanatos` directory using the command
-#   `docker build -t docker.io/mehrn00/thanatos:v0.1.3 -f .docker/Dockerfile .`
 FROM docker.io/library/fedora:39
 
 # Version of sccache to install
@@ -37,13 +34,15 @@ RUN dnf install -y \
 
 RUN python3.11 -m ensurepip
 
-WORKDIR /tmp
-
-# Install the python dependencies
-COPY requirements.txt .
-RUN python3.11 -m pip install -r requirements.txt
-
-RUN rm requirements.txt
+# Install sccache
+RUN curl -L \
+    "https://github.com/mozilla/sccache/releases/download/${SCCACHE_VERSION}/sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+    -o sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
+RUN tar xf sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
+RUN mv sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl/sccache /usr/bin/sccache
+RUN chmod +x /usr/bin/sccache
+RUN rm -rf sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl
+RUN rm -f sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
 
 # Install rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh \
@@ -60,27 +59,20 @@ RUN rm -f rustup.sh
 
 ENV PATH=$PATH:/root/.cargo/bin
 
-# Install sccache
-RUN curl -L \
-    "https://github.com/mozilla/sccache/releases/download/${SCCACHE_VERSION}/sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
-    -o sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
-RUN tar xf sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
-RUN mv sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl/sccache /usr/bin/sccache
-RUN chmod +x /usr/bin/sccache
-RUN rm -rf sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl
-RUN rm -f sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
+RUN mkdir -p /tmp
+WORKDIR /tmp
 
-WORKDIR /Mythic
-COPY main.py main.py
-COPY thanatos thanatos
+# Download Rust dependencies
+RUN --mount=type=bind,source=agent,target=. \
+    cd agent && cargo vendor /vendor
 
-# Fetch dependencies
-WORKDIR /Mythic/thanatos/agent_code
-
-RUN cargo vendor /vendor
-
-WORKDIR /Mythic
+# Install python dependencies
+RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=server,target=server \
+    python3.11 -m pip install .
 
 COPY .docker/config.toml /root/.cargo/config.toml
+
+WORKDIR /Mythic
 ENV SCCACHE_DIR /Mythic/.cache/sccache
-CMD ["python3.11", "main.py"]
+CMD ["thanatos-server"]
