@@ -1,0 +1,125 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - Payload_Type/thanatos
+  pull_request:
+    branches:
+      - main
+    paths:
+      - Payload_Type/thanatos
+jobs:
+  build-image:
+    name: Build container base image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Build base container image
+        uses: docker/build-push-action@v7
+        with:
+          context: Payload_Type/thanatos
+          push: false
+          tags: testing
+  server-formatting:
+    name: Check server code formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+      - name: Install Python dependencies
+        working-directory: Payload_Type/thanatos
+        run: pip install -e --group dev .
+      - name: Check formatting with Black
+        working-directory: Payload_Type/thanatos
+        run: black --check --diff server
+  server-lint:
+    name: Lint server code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+      - name: Install Python dependencies
+        working-directory: Payload_Type/thanatos
+        run: pip install -e --group dev .
+      - name: Lint code with pylint
+        working-directory: Payload_Type/thanatos
+        run: pylint
+  agent-formatting:
+    name: Check agent code formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Setup Rust dependency cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git
+            Payload_Type/thanatos/agent/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Check agent code formatting
+        working-directory: Payload_Type/thanatos/agent
+        run: cargo fmt -- --check
+        env:
+          UUID: ""
+          AESPSK: ""
+          callback_host: ""
+          callback_interval: ""
+          callback_jitter: ""
+          callback_port: ""
+          connection_retries: ""
+          encrypted_exchange_check: ""
+          get_uri: ""
+          headers: ""
+          post_uri: ""
+          working_hours: ""
+  agent-lint:
+    name: Lint agent code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Setup Rust dependency cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git
+            Payload_Type/thanatos/agent/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Install clippy
+        run: rustup component add clippy
+      - name: Lint agent code with clippy
+        working-directory: Payload_Type/thanatos/agent
+        run: cargo clippy --all-features --all-targets -- -D warnings
+        env:
+          UUID: ""
+          AESPSK: ""
+          callback_host: ""
+          callback_interval: ""
+          callback_jitter: ""
+          callback_port: ""
+          connection_retries: ""
+          encrypted_exchange_check: ""
+          get_uri: ""
+          headers: ""
+          post_uri: ""
+          working_hours: ""

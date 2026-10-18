@@ -1,13 +1,8 @@
-name: Create Release
-
+name: Release
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Release version (eg: 1.0.1)"
-        required: true
-        type: string
-
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
 env:
   # Registry for the container image
   CONTAINER_IMAGE_REGISTRY: ghcr.io
@@ -19,129 +14,52 @@ env:
   CONTAINER_IMAGE_DESCRIPTION: "Base container image for the Thanatos Mythic C2 agent"
   # License for the base container image
   CONTAINER_IMAGE_LICENSE: BSD-3-Clause
-  # Path to the agent code
-  AGENT_CODE_PATH: Payload_Type/thanatos/thanatos/agent_code
-
 concurrency:
   group: "release"
   cancel-in-progress: true
-
 jobs:
-  image:
+  build-image:
     name: Build and push the base container image
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
       packages: write
-
     steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v4
-
       - name: Set the container image fully qualified url
         run: echo "CONTAINER_IMAGE_URL=${CONTAINER_IMAGE_URL,,}" >> ${GITHUB_ENV}
         env:
           CONTAINER_IMAGE_URL: ${{ env.CONTAINER_IMAGE_REGISTRY }}/${{ env.CONTAINER_IMAGE_NAME }}:v${{ inputs.version }}
-
-      - name: Log in to the container registry
-        uses: docker/login-action@v3
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Log into the container registry
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.CONTAINER_IMAGE_REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build and push the container image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: Payload_Type/thanatos
-          tags: ${{ env.CONTAINER_IMAGE_URL }}
           push: true
+          tags: ${{ env.CONTAINER_IMAGE_URL }}
           labels: |
             org.opencontainers.image.source=${{ env.SOURCE_URL }}
             org.opencontainers.image.description=${{ env.CONTAINER_IMAGE_DESCRIPTION }}
             org.opencontainers.image.licenses=${{ env.CONTAINER_IMAGE_LICENSE }}
-
   release:
-    name: Create new repository release
+    name: Create release
     runs-on: ubuntu-latest
-
     needs:
-      - image
-
+      - build-image
     permissions:
       contents: write
       packages: read
-
     steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v4
-
-      - name: Lowercase the container image name
-        run: echo "CONTAINER_IMAGE_NAME=${CONTAINER_IMAGE_NAME,,}" >> ${GITHUB_ENV}
-
-      - name: Set config.json version number
-        uses: jossef/action-set-json-field@v2.1
-        with:
-          file: config.json
-          field: remote_images.thanatos
-          value: ${{ env.CONTAINER_IMAGE_REGISTRY }}/${{ env.CONTAINER_IMAGE_NAME }}:v${{ inputs.version }}
-
-      - name: Set agent_capabilities.json version number
-        uses: jossef/action-set-json-field@v2.1
-        with:
-          file: agent_capabilities.json
-          field: agent_version
-          value: ${{ inputs.version }}
-
-      - name: Set agent Cargo.toml version number
-        working-directory: ${{ env.AGENT_CODE_PATH }}
-        env:
-          RELEASE_VERSION: ${{ inputs.version }}
-        run: sed -i "0,/^version = .*$/s//version = \"${RELEASE_VERSION}\"/" Cargo.toml
-
-      - name: Update the CHANGELOG.md for the new version
-        env:
-          RELEASE_VERSION: ${{ inputs.version }}
-          SOURCE_URL: ${{ env.SOURCE_URL }}
-        run: |
-          sed -i "s/^## \[Unreleased\]$/## [$RELEASE_VERSION] - $(date -I)/" CHANGELOG.md
-          sed -i "s/^\[unreleased\]: \(.\+\)\.\.\.HEAD$/[$RELEASE_VERSION]: \1...v$RELEASE_VERSION/" CHANGELOG.md
-          sed -i "/^## \[$RELEASE_VERSION\] \- .*/i ## [Unreleased]\n" CHANGELOG.md
-          sed -i "/^\[$RELEASE_VERSION\]: .*/i [unreleased]: $SOURCE_URL/compare/v$RELEASE_VERSION...HEAD" CHANGELOG.md
-
-      - name: Commit the updated changes
-        uses: EndBug/add-and-commit@v9
-        with:
-          add: "['CHANGELOG.md', 'config.json', 'agent_capabilities.json', 'Payload_Type/thanatos/Dockerfile', '${{ format('{0}/Cargo.toml', env.AGENT_CODE_PATH) }}']"
-          default_author: github_actions
-          committer_email: github-actions[bot]@users.noreply.github.com
-          message: "chore(release): Thanatos release 'v${{ inputs.version }}'"
-          pathspec_error_handling: exitImmediately
-
-      - name: Create a new tag for the release
-        uses: EndBug/add-and-commit@v9
-        with:
-          message: "chore(release): Thanatos v${{ inputs.version }}"
-          push: true
-          tag: "v${{ inputs.version }}"
-          pathspec_error_handling: exitImmediately
-
+      - name: Checkout code
+        uses: actions/checkout@v7
       - name: Create a new Github release
         env:
-          GIT_TAG: "v${{ inputs.version }}"
+          GIT_TAG: ${{ github.ref_name }}
           GH_TOKEN: ${{ github.token }}
-        run: |
-          RELEASE_BODY=$(python .github/scripts/changelogtool.py extract ${GIT_TAG})
-          gh api \
-            --method POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-Github-Api-Version: 2022-11-28" \
-            /repos/${{ github.repository }}/releases \
-            -f tag_name="${GIT_TAG}" \
-            -f target_commitish="$GITHUB_REF_NAME" \
-            -f name="Thanatos ${GIT_TAG}" \
-            -f body="$RELEASE_BODY" \
-            -F draft=false \
-            -F prerelease=false \
-            -F generate_release_notes=false
+        run: gh release create $GIT_TAG -d -t "Thanatos $GIT_TAG" -n "" --verify-tag
