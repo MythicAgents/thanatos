@@ -71,7 +71,7 @@ RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=server,target=server \
     python3.11 -m pip install .
 
-COPY .docker/config.toml /root/.cargo/config.toml
+COPY docker/config.toml /root/.cargo/config.toml
 
 WORKDIR /Mythic
 ENV SCCACHE_DIR /Mythic/.cache/sccache
