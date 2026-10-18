@@ -1,3 +1,47 @@
+[project]
+name = "thanatos"
+version = "0.1.14"
+requires-python = ">=3.11"
+dependencies = [
+  "mythic-container==0.6.16"
+]
+
+[project.optional-dependencies]
+dotenv = [
+  "python-dotenv>=1.2.4"
+]
+
+[dependency-groups]
+dev = [
+  "black>=26.10.1",
+  "pylint>=4.1.3"
+]
+
+[project.scripts]
+thanatos-server = "thanatos.main:main"
+
+[build-system]
+requires = ["uv_build >= 0.12.17, <0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = "server"
+
 [tool.black]
 line-length = 90
 target-version = ['py311']
+
+[tool.pylint]
+files = ["server"]
+max-line-length = 90
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = [
+  "broad-exception-caught",
+  "broad-exception-raised",
+  "duplicate-code",
+  "missing-module-docstring",
+  "missing-function-docstring",
+  "missing-class-docstring",
+  "raise-missing-from"
+]
