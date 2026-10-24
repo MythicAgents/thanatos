@@ -28,7 +28,7 @@ jobs:
       - name: Set the container image fully qualified url
         run: echo "CONTAINER_IMAGE_URL=${CONTAINER_IMAGE_URL,,}" >> ${GITHUB_ENV}
         env:
-          CONTAINER_IMAGE_URL: ${{ env.CONTAINER_IMAGE_REGISTRY }}/${{ env.CONTAINER_IMAGE_NAME }}:v${{ inputs.version }}
+          CONTAINER_IMAGE_URL: ${{ env.CONTAINER_IMAGE_REGISTRY }}/${{ env.CONTAINER_IMAGE_NAME }}:${{ github.ref_name }}
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Log into the container registry
