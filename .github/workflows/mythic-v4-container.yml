@@ -5,6 +5,7 @@ on:
       - "Mythic-v4.0.0"
     paths:
       - "Payload_Type/thanatos"
+      - ".github/workflows/mythic-v4-container.yml"
 env:
   # Registry for the container image
   CONTAINER_IMAGE_REGISTRY: ghcr.io
