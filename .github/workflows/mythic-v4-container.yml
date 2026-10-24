@@ -1,0 +1,51 @@
+name: Mythic-v4.0.0 pre-release container
+on:
+  push:
+    branches:
+      - "Mythic-v4.0.0"
+    paths:
+      - "Payload_Type/thanatos"
+env:
+  # Registry for the container image
+  CONTAINER_IMAGE_REGISTRY: ghcr.io
+  # Name of the container image
+  CONTAINER_IMAGE_NAME: ${{ github.repository }}
+  # URL to the repository source code
+  SOURCE_URL: "https://github.com/${{ github.repository }}"
+  # Description of the base container image
+  CONTAINER_IMAGE_DESCRIPTION: "Base container image for the Thanatos Mythic C2 agent"
+  # License for the base container image
+  CONTAINER_IMAGE_LICENSE: BSD-3-Clause
+concurrency:
+  group: "mythic-v4"
+  cancel-in-progress: true
+jobs:
+  build-image:
+    name: Build and push the base container image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Set the container image fully qualified url
+        run: echo "CONTAINER_IMAGE_URL=${CONTAINER_IMAGE_URL,,}" >> ${GITHUB_ENV}
+        env:
+          CONTAINER_IMAGE_URL: ${{ env.CONTAINER_IMAGE_REGISTRY }}/${{ env.CONTAINER_IMAGE_NAME }}:mythic-v4-testing
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Log into the container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.CONTAINER_IMAGE_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push the container image
+        uses: docker/build-push-action@v7
+        with:
+          context: Payload_Type/thanatos
+          push: true
+          tags: ${{ env.CONTAINER_IMAGE_URL }}
+          labels: |
+            org.opencontainers.image.source=${{ env.SOURCE_URL }}
+            org.opencontainers.image.description=${{ env.CONTAINER_IMAGE_DESCRIPTION }}
+            org.opencontainers.image.licenses=${{ env.CONTAINER_IMAGE_LICENSE }}
