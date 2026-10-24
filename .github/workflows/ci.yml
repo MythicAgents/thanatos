@@ -2,14 +2,15 @@ name: CI
 on:
   push:
     branches:
-      - main
+      - "main"
     paths:
-      - Payload_Type/thanatos
+      - "Payload_Type/thanatos"
+      - ".github/**"
   pull_request:
     branches:
-      - main
+      - "main"
     paths:
-      - Payload_Type/thanatos
+      - "Payload_Type/thanatos"
 jobs:
   build-image:
     name: Build container base image
