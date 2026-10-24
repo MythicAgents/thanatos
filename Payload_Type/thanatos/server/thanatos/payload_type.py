@@ -188,24 +188,6 @@ class Thanatos(PayloadType):
             # Start formulating the command to build the agent
             command = "env "
 
-            # Manually specify the C compiler for 32 bit Linux builds.
-            # The native library (libz, libssl, libssh2) build scripts
-            # try to use `i686-unknown-linux-gcc` as a compiler even though
-            # it doesn't exist and fails to find clang.
-            if arch == "i686" and self.selected_os == SupportedOS.Linux:
-                command += "CC_i686-unknown-linux-gnu=clang "
-
-            # Set up openssl environment variables
-            openssl_env = "OPENSSL_STATIC=yes "
-            if arch == "x64":
-                openssl_env += "OPENSSL_LIB_DIR=/usr/lib64 "
-            else:
-                openssl_env += "OPENSSL_LIB_DIR=/usr/lib "
-
-            openssl_env += "OPENSSL_INCLUDE_DIR=/usr/include "
-
-            command += openssl_env
-
             # Add any rustflags if they exist
             if rustflags:
                 rustflags = " ".join(rustflags)

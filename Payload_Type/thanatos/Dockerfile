@@ -1,78 +1,84 @@
-FROM docker.io/library/fedora:39
+# Base image for all other multi-stage images
+FROM docker.io/library/debian:13 AS base
 
-# Version of sccache to install
-ENV SCCACHE_VERSION v0.7.6
+# Base image with updated apt cache
+FROM base AS base-apt
+RUN apt-get update -y
 
-# Install packages
-RUN dnf install -y \
-    python3.11 \
-    python3-pip \
-    python3.11-devel \
-    mingw64-gcc \
-    mingw32-gcc \
-    mingw64-gcc-c++ \
-    mingw32-gcc-c++ \
-    mingw64-winpthreads-static.noarch \
-    mingw32-winpthreads-static.noarch \
-    libgcc.i686 \
-    libatomic-static.i686 \
-    libatomic.i686 \
-    glibc-devel.i686 \
-    openssl-devel \
-    openssl-devel.i686 \
-    perl-FindBin \
-    perl-File-Compare \
-    perl-IPC-Cmd \
-    perl-File-Copy \
-    perl-lib \
-    clang \
-    curl \
-    make \
-    musl-gcc \
-    musl-libc-static \
-    && dnf clean all
-
-RUN python3.11 -m ensurepip
-
-# Install sccache
-RUN curl -L \
-    "https://github.com/mozilla/sccache/releases/download/${SCCACHE_VERSION}/sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
-    -o sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
-RUN tar xf sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
-RUN mv sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl/sccache /usr/bin/sccache
-RUN chmod +x /usr/bin/sccache
-RUN rm -rf sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl
-RUN rm -f sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
-
-# Install rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh \
-    && sh rustup.sh -y \
+# Rustup image
+FROM base-apt AS rustup
+RUN apt-get install -y curl
+ADD https://sh.rustup.rs /tmp/rustup.sh
+RUN <<EOF
+sh /tmp/rustup.sh \
+    -y \
+    --no-modify-path \
+    --no-update-default-toolchain \
     --profile minimal \
-    --default-toolchain stable \
-    -t x86_64-unknown-linux-gnu \
-    -t i686-unknown-linux-gnu \
-    -t x86_64-unknown-linux-musl \
-    -t x86_64-pc-windows-gnu \
-    -t i686-pc-windows-gnu
+    --default-toolchain stable
+EOF
+ENV PATH="$PATH:/root/.cargo/bin"
 
-RUN rm -f rustup.sh
+# Rust toolchains
+FROM rustup AS thanatos-rust-toolchains
+COPY --from=rustup /root/.cargo /root/.cargo
+COPY --from=rustup /root/.rustup /root/.rustup
+RUN rustup target add \
+    x86_64-unknown-linux-gnu \
+    x86_64-unknown-linux-musl \
+    x86_64-pc-windows-gnu \
+    i686-unknown-linux-gnu \
+    i686-pc-windows-gnu
 
-ENV PATH=$PATH:/root/.cargo/bin
-
-RUN mkdir -p /tmp
-WORKDIR /tmp
-
-# Download Rust dependencies
-RUN --mount=type=bind,source=agent,target=. \
+# Vendored Rust dependencies
+FROM thanatos-rust-toolchains AS thanatos-rust-vendored
+RUN mkdir -p /Mythic
+WORKDIR /Mythic
+RUN --mount=type=bind,source=agent,target=agent \
     cd agent && cargo vendor /vendor
 
-# Install python dependencies
-RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    --mount=type=bind,source=server,target=server \
-    python3.11 -m pip install .
+# Sccache image
+FROM base AS sccache
+ARG SCCACHE_VERSION=v0.19.0
+ADD https://github.com/mozilla/sccache/releases/download/${SCCACHE_VERSION}/sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz /tmp/sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
+RUN tar xf /tmp/sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz
+RUN mv sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl/sccache /usr/bin/sccache
 
-COPY docker/config.toml /root/.cargo/config.toml
-
+# Thanatos server builder
+FROM base-apt AS thanatos-server-builder
+RUN apt-get install -y python3 python3-venv python3-dev gcc g++
+RUN mkdir -p /Mythic
 WORKDIR /Mythic
-ENV SCCACHE_DIR /Mythic/.cache/sccache
+RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=server,target=server <<EOF
+python3 -m venv /thanatos-venv
+/thanatos-venv/bin/pip install .
+EOF
+
+# Runtime dependencies
+FROM base-apt AS thanatos-runtime-deps
+RUN apt-get install -y \
+    python3 \
+    make \
+    gcc \
+    gcc-i686-linux-gnu \
+    musl-tools \
+    libc6-dev \
+    gcc-mingw-w64-x86-64-win32 \
+    mingw-w64-x86-64-dev \
+    gcc-mingw-w64-i686-win32 \
+    mingw-w64-i686-dev \
+    perl
+
+# Main server image
+FROM thanatos-runtime-deps AS runner
+COPY --link --from=thanatos-server-builder /thanatos-venv /thanatos-venv
+COPY --link --from=thanatos-rust-toolchains /root/.cargo /root/.cargo
+COPY --link --from=thanatos-rust-toolchains /root/.rustup /root/.rustup
+COPY --link --from=thanatos-rust-vendored /vendor /vendor
+COPY --from=sccache /usr/bin/sccache /usr/bin/sccache
+RUN mkdir -p /Mythic
+WORKDIR /Mythic
+ENV PATH="/thanatos-venv/bin:/root/.cargo/bin:$PATH"
+COPY docker/config.toml /root/.cargo/config.toml
 CMD ["thanatos-server"]
