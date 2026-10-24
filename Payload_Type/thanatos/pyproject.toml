@@ -3,7 +3,7 @@ name = "thanatos"
 version = "0.1.15"
 requires-python = ">=3.11"
 dependencies = [
-  "mythic-container=0.7.0rc10"
+  "mythic-container==0.7.0rc10"
 ]
 
 [project.optional-dependencies]
