@@ -7,6 +7,19 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 ## [Unreleased]
 
+## [0.1.15] - 2026-10-24
+
+### Fixed
+
+- Commands missing `attackmapping` attributes authored by [@je4yfc](https://github.com/je4yfc) fixed in [4d97d94](https://github.com/MythicAgents/thanatos/commit/4d97d949b77ed6db0100fe9bb26dba35b787d00f).
+
+### Changed
+
+- Bumped `mythic-container` dependency to 0.6.16. [8f17a40](https://github.com/MythicAgents/thanatos/commit/8f17a40ecb943f2b5b1824c2de6510c0018706e6)
+- Migrated server commands to use `create_go_tasking()`. [51a8bd0](https://github.com/MythicAgents/thanatos/commit/51a8bd0431cd69efe72beb7ef073b85955dee02f)
+- Refactored server-side code to use `pyproject.toml` for dependencies. [c84e54f](https://github.com/MythicAgents/thanatos/commit/c84e54fd17d0851b93195d561a05f94dd34ac0f4)
+- Switched to Debian 13 for server Docker image. [bc4e161](https://github.com/MythicAgents/thanatos/commit/bc4e161553dfc02524d5eef3f9a20c7d10b3aba5)
+
 ## [0.1.14] - 2025-09-16
 
 ### Added
@@ -163,7 +176,8 @@ This changelog file adheres to [keepachangelog](https://keepachangelog.com/en/1.
 
 Initial public release
 
-[unreleased]: https://github.com/MythicAgents/thanatos/compare/v0.1.14...HEAD
+[unreleased]: https://github.com/MythicAgents/thanatos/compare/v0.1.15...HEAD
+[0.1.15]: https://github.com/MythicAgents/thanatos/compare/v0.1.14...v0.1.15
 [0.1.14]: https://github.com/MythicAgents/thanatos/compare/v0.1.13...v0.1.14
 [0.1.13]: https://github.com/MythicAgents/thanatos/compare/v0.1.12...v0.1.13
 [0.1.12]: https://github.com/MythicAgents/thanatos/compare/v0.1.11...v0.1.12
