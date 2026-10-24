@@ -37,7 +37,7 @@ jobs:
           cache: 'pip'
       - name: Install Python dependencies
         working-directory: Payload_Type/thanatos
-        run: pip install -e --group dev .
+        run: pip install --group dev -e .
       - name: Check formatting with Black
         working-directory: Payload_Type/thanatos
         run: black --check --diff server
@@ -54,7 +54,7 @@ jobs:
           cache: 'pip'
       - name: Install Python dependencies
         working-directory: Payload_Type/thanatos
-        run: pip install -e --group dev .
+        run: pip install --group dev -e .
       - name: Lint code with pylint
         working-directory: Payload_Type/thanatos
         run: pylint
