@@ -35,7 +35,7 @@ FROM thanatos-rust-toolchains AS thanatos-rust-vendored
 RUN mkdir -p /Mythic
 WORKDIR /Mythic
 RUN --mount=type=bind,source=agent,target=agent \
-    cd agent && cargo vendor /vendor
+    cd agent && cargo vendor --locked /vendor
 
 # Sccache image
 FROM base AS sccache
