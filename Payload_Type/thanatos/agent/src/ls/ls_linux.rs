@@ -34,19 +34,15 @@ pub struct FilePermissions {
 }
 
 /// Gets the file owner from a path
-pub fn get_file_owner(file_path: &path::Path) -> String {
+pub fn get_file_owner(file_path: &path::Path) -> Option<String> {
     // Get the file metadata
-    let meta = if let Ok(data) = file_path.metadata() {
-        data
-    } else {
-        return "".to_string();
-    };
+    let meta = file_path.metadata().ok()?;
 
     // Get the owner uid
     let uid = meta.st_uid();
 
     // Convert the uid to a username
-    get_user_from_uid(uid).unwrap_or_else(|| uid.to_string())
+    get_user_from_uid(uid)
 }
 
 impl FilePermissions {

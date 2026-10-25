@@ -112,7 +112,7 @@ pub fn get_process_list(task: &AgentTask) -> Result<serde_json::Value, Box<dyn E
             process_id: pid,
             architecture: get_architecture(pid).unwrap_or_default(),
             name: get_proc_name(pid),
-            user: get_process_user(pid),
+            user: get_proc_user(pid),
             bin_path: get_bin_path(pid),
             parent_process_id: get_ppid(pid),
             command_line: get_cmdline(pid),
