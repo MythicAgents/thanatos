@@ -1,5 +1,5 @@
 #[cfg(all(feature = "onload", not(feature = "user")))]
-#[ctor::ctor]
+#[ctor::ctor(unsafe)]
 pub fn run() {
     let _ = thanatos::real_main();
 }

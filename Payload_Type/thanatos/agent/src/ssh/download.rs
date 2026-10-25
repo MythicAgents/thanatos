@@ -4,6 +4,7 @@ use serde_json::json;
 use crate::agent::{AgentTask, ContinuedData};
 use crate::mythic_success;
 
+use base64::prelude::{Engine as _, BASE64_STANDARD};
 use ssh2::Session;
 use std::error::Error;
 use std::io::{Cursor, Read};
@@ -115,7 +116,7 @@ pub fn download_file(
         let mut buffer: [u8; CHUNK_SIZE] = [0; CHUNK_SIZE];
         let len = c.read(&mut buffer)?;
 
-        let chunk_data = base64::encode(&buffer[..len]);
+        let chunk_data = BASE64_STANDARD.encode(&buffer[..len]);
 
         let chunk_metadata = SshDownloadChunk {
             chunk_num: num + 1,

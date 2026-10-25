@@ -208,7 +208,7 @@ impl File {
         let path = std::path::Path::new(path);
 
         // Grab the absolute path to the file
-        let full_name = unverbatim(path_clean::clean(&path.to_string_lossy()).into());
+        let full_name = unverbatim(path_clean::clean(&path).into());
 
         // Get the name of the file
         let name = if full_name.is_file() {

@@ -2,7 +2,6 @@ use crate::payloadvars;
 use crate::tasking::Tasker;
 use chrono::prelude::{DateTime, NaiveDate};
 use chrono::{Duration, Local, NaiveDateTime, NaiveTime};
-use rand::Rng;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::error::Error;
@@ -262,7 +261,7 @@ impl Agent {
 /// * `jitter` - Sleep jitter value between 0-100
 pub fn calculate_sleep_time(interval: u64, jitter: u64) -> u64 {
     // Convert the jitter to a random percentage value from 0 to the max jitter value
-    let jitter = (rand::thread_rng().gen_range(0..jitter + 1) as f64) / 100.0;
+    let jitter = (rand::random_range(0..jitter + 1) as f64) / 100.0;
 
     // Set the actual sleep time by randomly adding or subtracting the jitter from the
     // agent sleep time

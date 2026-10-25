@@ -28,7 +28,7 @@ use winapi::{
         wow64apiset::IsWow64Process,
     },
 };
-use wmi::{COMLibrary, WMIConnection};
+use wmi::WMIConnection;
 
 /// Get the list of process information
 pub fn process_info() -> Result<Vec<ProcessListingEntry>, Box<dyn Error>> {
@@ -159,8 +159,7 @@ pub fn process_info() -> Result<Vec<ProcessListingEntry>, Box<dyn Error>> {
         listing.push(entry);
     }
 
-    let com_con = COMLibrary::new()?.into();
-    let wmi_con = WMIConnection::new(com_con)?;
+    let wmi_con = WMIConnection::new()?;
 
     #[derive(Deserialize, Debug)]
     #[serde(rename_all = "PascalCase")]

