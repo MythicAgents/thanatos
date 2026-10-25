@@ -1,5 +1,6 @@
 use crate::agent::AgentTask;
 use crate::mythic_success;
+use base64::prelude::{Engine as _, BASE64_STANDARD};
 use serde::Deserialize;
 use ssh2::Session;
 use std::env;
@@ -115,7 +116,7 @@ fn agent_list(id: &str) -> Result<serde_json::Value, Box<dyn Error>> {
         for key in keys {
             let raw_blob = key.blob();
             let key_type = unsafe { CStr::from_ptr(raw_blob[4..].as_ptr() as *const i8) };
-            let b64_blob = base64::encode(raw_blob);
+            let b64_blob = BASE64_STANDARD.encode(raw_blob);
 
             tmp.push_str(
                 format!(

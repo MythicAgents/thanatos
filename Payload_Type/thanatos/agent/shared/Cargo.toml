@@ -9,7 +9,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 thanatos = { path = ".." }
-ctor = { version = "0.4.2", optional = true }
+ctor = { version = "1.0.13", optional = true }
 
 [features]
 onload = ["dep:ctor"]

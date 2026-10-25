@@ -1,4 +1,5 @@
 use crate::profiles::C2Profile;
+use base64::prelude::{Engine as _, BASE64_STANDARD};
 use std::error::Error;
 
 /// Struct holding information for the HTTP profile
@@ -12,7 +13,7 @@ impl HTTPProfile {
     /// * `host` - Host for the C2 connection
     pub fn new(host: &str) -> Self {
         // base64 decode the aes key
-        let aes_key = profilevars::aes_key().map(|k| base64::decode(k).unwrap());
+        let aes_key = profilevars::aes_key().map(|k| BASE64_STANDARD.decode(k).unwrap());
 
         Self {
             aes_key,

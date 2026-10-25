@@ -116,7 +116,7 @@ impl File {
         let path = Path::new(&path);
 
         // Get the full path to the file
-        let full_name = path_clean::clean(&path.to_string_lossy());
+        let full_name = path_clean::clean(&path);
 
         // Get the name of the file
         let name = if stats.is_file() {
@@ -138,7 +138,7 @@ impl File {
             is_file: stats.is_file(),
             permissions: FilePermissions::new(&stats),
             name,
-            full_name,
+            full_name: full_name.to_string_lossy().to_string(),
             access_time,
             modify_time,
             size: stats.size.unwrap(),
