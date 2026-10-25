@@ -24,10 +24,6 @@ serde_json = "1.0"
 sha2 = "0.11.1"
 netstat2 = "0.11.1"
 
-[dependencies.minreq]
-version = "2.4.2"
-features = ["https-rustls-probe"]
-
 [dependencies.openssl]
 version = "0.10.45"
 features = ["vendored"]
@@ -43,6 +39,10 @@ features = ["vendored-openssl"]
 [dependencies.tokio]
 version = "1.16.1"
 features = ["net", "rt-multi-thread", "io-util", "macros", "process"]
+
+[dependencies.ureq]
+version = "3.5.0"
+features = ["platform-verifier"]
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libc = "0.2"
