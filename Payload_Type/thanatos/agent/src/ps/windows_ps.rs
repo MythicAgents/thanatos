@@ -1,33 +1,25 @@
 //! This module is only imported when targeting Windows hosts
 use crate::ps::ProcessListingEntry;
-use crate::utils::windows::Handle;
 use chrono::DateTime;
 use serde::Deserialize;
-use std::error::Error;
+use std::os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle};
 use std::result::Result;
-use winapi::{
-    ctypes::c_void,
-    shared::{
-        minwindef::{FALSE, FILETIME, TRUE},
-        winerror::ERROR_NO_MORE_FILES,
-    },
-    um::{
-        errhandlingapi::GetLastError,
-        handleapi::INVALID_HANDLE_VALUE,
-        processthreadsapi::{GetProcessTimes, OpenProcess, OpenProcessToken},
-        securitybaseapi::{GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation},
-        tlhelp32::{
-            CreateToolhelp32Snapshot, Module32First, Process32First, Process32Next, MODULEENTRY32,
-            PROCESSENTRY32, TH32CS_SNAPMODULE, TH32CS_SNAPPROCESS,
-        },
-        winbase::LookupAccountSidA,
-        winnt::{
-            TokenIntegrityLevel, TokenUser, PROCESS_QUERY_INFORMATION, PSID, SID_NAME_USE,
-            TOKEN_MANDATORY_LABEL, TOKEN_QUERY, TOKEN_USER,
-        },
-        wow64apiset::IsWow64Process,
-    },
+use std::{error::Error, os::windows::io::OwnedHandle};
+use windows::Win32::Foundation::{
+    ERROR_NO_MORE_FILES, FALSE, FILETIME, HANDLE, INVALID_HANDLE_VALUE, TRUE,
 };
+use windows::Win32::Security::{
+    GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation, LookupAccountSidA,
+    TokenIntegrityLevel, TokenUser, SID_NAME_USE, TOKEN_MANDATORY_LABEL, TOKEN_QUERY, TOKEN_USER,
+};
+use windows::Win32::System::Diagnostics::ToolHelp::{
+    CreateToolhelp32Snapshot, Module32First, Process32First, Process32Next, MODULEENTRY32,
+    PROCESSENTRY32, TH32CS_SNAPMODULE, TH32CS_SNAPPROCESS,
+};
+use windows::Win32::System::Threading::{
+    GetProcessTimes, IsWow64Process, OpenProcess, OpenProcessToken, PROCESS_QUERY_INFORMATION,
+};
+use windows_strings::PSTR;
 use wmi::WMIConnection;
 
 /// Get the list of process information
@@ -36,14 +28,8 @@ pub fn process_info() -> Result<Vec<ProcessListingEntry>, Box<dyn Error>> {
     let mut listing: Vec<ProcessListingEntry> = Vec::new();
 
     // Grab a snapshot of all the running processes
-    let h_snapshot_process =
-        Handle::new(unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) }).ok_or_else(
-            || {
-                std::io::Error::other(format!("Failed to open process snapshot {:?}", unsafe {
-                    GetLastError()
-                }))
-            },
-        )?;
+    let snapshot =
+        unsafe { OwnedHandle::from_raw_handle(CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)?.0) };
 
     // Create the object to store the process PE information
     let mut pe_entry = PROCESSENTRY32 {
@@ -66,29 +52,36 @@ pub fn process_info() -> Result<Vec<ProcessListingEntry>, Box<dyn Error>> {
     };
 
     // Grab the information for the first process
-    if unsafe { Process32First(*h_snapshot_process, &mut pe_entry) } == TRUE {
+    if unsafe { Process32First(HANDLE(snapshot.as_raw_handle()), &mut pe_entry).is_ok() } {
         // Query the process token
-        if let Some(handle) = Handle::new(unsafe {
-            OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe_entry.th32ProcessID)
-        }) {
+        if let Ok(process) = unsafe {
+            OpenProcess(PROCESS_QUERY_INFORMATION, false, pe_entry.th32ProcessID)
+                .map(|handle| OwnedHandle::from_raw_handle(handle.0))
+        } {
             // Populate the `ProcessListingEntry` with the process information
-            first_entry.architecture = get_architecture(*handle).unwrap_or_default();
+            first_entry.architecture = get_architecture(process.as_handle()).unwrap_or_default();
             first_entry.name = get_proc_name(&pe_entry);
-            first_entry.start_time = get_start_time(*handle);
+            first_entry.start_time = get_start_time(process.as_handle());
 
-            let mut token_handle = INVALID_HANDLE_VALUE;
-            if unsafe { OpenProcessToken(*handle, TOKEN_QUERY, &mut token_handle) } != FALSE {
-                let token_handle = Handle::from(token_handle);
-                first_entry.user = get_proc_user(*token_handle);
-                first_entry.integrity_level = get_integrity_level(*token_handle);
+            let token_handle = unsafe { OwnedHandle::from_raw_handle(INVALID_HANDLE_VALUE.0) };
+            if unsafe {
+                OpenProcessToken(
+                    HANDLE(process.as_raw_handle()),
+                    TOKEN_QUERY,
+                    &mut HANDLE(token_handle.as_raw_handle()),
+                )
+                .is_ok()
+            } {
+                first_entry.user = get_proc_user(token_handle.as_handle());
+                first_entry.integrity_level = get_integrity_level(token_handle.as_handle());
             }
         }
-
         // Grab a snapshot of the process' modules
-        if let Some(h_snapshot_module) = Handle::new(unsafe {
+        if let Ok(modules) = unsafe {
             CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pe_entry.th32ProcessID)
-        }) {
-            if unsafe { Module32First(*h_snapshot_module, &mut mod_entry) } == TRUE {
+                .map(|handle| OwnedHandle::from_raw_handle(handle.0))
+        } {
+            if unsafe { Module32First(HANDLE(modules.as_raw_handle()), &mut mod_entry).is_ok() } {
                 // Add the bin path to the process listing information
                 first_entry.bin_path = unsafe {
                     Some(
@@ -107,12 +100,12 @@ pub fn process_info() -> Result<Vec<ProcessListingEntry>, Box<dyn Error>> {
     // Loop over all running processes
     loop {
         // Grab the next process in the snapshot
-        if unsafe { Process32Next(*h_snapshot_process, &mut pe_entry) } == FALSE {
-            // Check if there are no more processes to enumerate
-            if unsafe { GetLastError() } == ERROR_NO_MORE_FILES {
+        match unsafe { Process32Next(HANDLE(snapshot.as_raw_handle()), &mut pe_entry) } {
+            Err(e) if e.code() == ERROR_NO_MORE_FILES.to_hresult() => {
                 break;
             }
-            continue;
+            Err(_) => continue,
+            _ => (),
         }
 
         // Create the listing entry struct
@@ -124,25 +117,34 @@ pub fn process_info() -> Result<Vec<ProcessListingEntry>, Box<dyn Error>> {
         };
 
         // Open a handle to the process token
-        if let Some(handle) = Handle::new(unsafe {
-            OpenProcess(PROCESS_QUERY_INFORMATION, TRUE, pe_entry.th32ProcessID)
-        }) {
-            entry.architecture = get_architecture(*handle).unwrap_or_default();
+        if let Ok(handle) = unsafe {
+            OpenProcess(PROCESS_QUERY_INFORMATION, true, pe_entry.th32ProcessID)
+                .map(|handle| OwnedHandle::from_raw_handle(handle.0))
+        } {
+            entry.architecture = get_architecture(handle.as_handle()).unwrap_or_default();
             entry.name = get_proc_name(&pe_entry);
-            entry.start_time = get_start_time(*handle);
+            entry.start_time = get_start_time(handle.as_handle());
 
-            let mut token_handle = INVALID_HANDLE_VALUE;
-            if unsafe { OpenProcessToken(*handle, TOKEN_QUERY, &mut token_handle) } != FALSE {
-                let token_handle = Handle::from(token_handle);
-                entry.user = get_proc_user(*token_handle);
-                entry.integrity_level = get_integrity_level(*token_handle);
+            let token_handle = unsafe { OwnedHandle::from_raw_handle(INVALID_HANDLE_VALUE.0) };
+            if unsafe {
+                OpenProcessToken(
+                    HANDLE(handle.as_raw_handle()),
+                    TOKEN_QUERY,
+                    &mut HANDLE(token_handle.as_raw_handle()),
+                )
+                .is_ok()
+            } {
+                entry.user = get_proc_user(token_handle.as_handle());
+                entry.integrity_level = get_integrity_level(token_handle.as_handle());
             }
 
             // Grab a snapshot of the process' modules
-            if let Some(h_snapshot_modules) = Handle::new(unsafe {
+            if let Ok(modules) = unsafe {
                 CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pe_entry.th32ProcessID)
-            }) {
-                if unsafe { Module32First(*h_snapshot_modules, &mut mod_entry) } == TRUE {
+                    .map(|handle| OwnedHandle::from_raw_handle(handle.0))
+            } {
+                if unsafe { Module32First(HANDLE(modules.as_raw_handle()), &mut mod_entry).is_ok() }
+                {
                     // Add the bin path to the process listing information
                     entry.bin_path = unsafe {
                         Some(
@@ -201,13 +203,11 @@ fn get_proc_name(pe32: &PROCESSENTRY32) -> Option<String> {
 
 /// Get the architecture of a process
 /// * `handle` - Handle to the process
-pub fn get_architecture(handle: *mut c_void) -> Option<String> {
+pub fn get_architecture(handle: BorrowedHandle) -> Option<String> {
     let mut is_wow64 = FALSE;
 
     // Query the process architecture
-    if unsafe { IsWow64Process(handle, &mut is_wow64) } == FALSE {
-        return None;
-    }
+    unsafe { IsWow64Process(HANDLE(handle.as_raw_handle()), &mut is_wow64).ok()? };
 
     // Check if the process is 32 bit
     if is_wow64 == TRUE {
@@ -219,50 +219,51 @@ pub fn get_architecture(handle: *mut c_void) -> Option<String> {
 
 /// Get the user associated with a process
 /// * `token` - Handle to the process token
-pub fn get_proc_user(token: *mut c_void) -> Option<String> {
-    let mut dw_len = 0;
+pub fn get_proc_user(token: BorrowedHandle) -> Option<String> {
+    let mut len = 0;
 
     // Get the size for the process token information
-    unsafe { GetTokenInformation(token, TokenUser, std::ptr::null_mut(), 0, &mut dw_len) };
-    let mut buffer: Vec<u8> = vec![0; dw_len as usize];
-
-    // Get the token information
-    if unsafe {
-        GetTokenInformation(
-            token,
-            TokenUser,
-            buffer.as_mut_ptr() as *mut c_void,
-            dw_len,
-            &mut dw_len,
-        )
-    } == 0
-    {
+    let _ =
+        unsafe { GetTokenInformation(HANDLE(token.as_raw_handle()), TokenUser, None, 0, &mut len) };
+    if len == 0 {
         return None;
     }
+    let mut buffer = Box::<[u8]>::new_uninit_slice(len as usize);
 
+    // Get the token information
+    unsafe {
+        GetTokenInformation(
+            HANDLE(token.as_raw_handle()),
+            TokenUser,
+            Some(buffer.as_mut_ptr().cast()),
+            len,
+            &mut len,
+        )
+        .ok()?;
+    }
+
+    let buffer = unsafe { buffer.assume_init() };
     let token_user: &TOKEN_USER = unsafe { &*buffer.as_ptr().cast() };
 
     // Grab the SID from the token
-    let user_sid: PSID = token_user.User.Sid;
-    let mut sid_type: SID_NAME_USE = Default::default();
+    let user_sid = token_user.User.Sid;
+    let mut sid_type = SID_NAME_USE::default();
 
     let mut lp_name = [0i8; 1024];
     let mut lp_domain = [0i8; 1024];
 
     // Lookup the SID
-    if unsafe {
+    unsafe {
         LookupAccountSidA(
-            std::ptr::null(),
+            None,
             user_sid,
-            lp_name.as_mut_ptr(),
-            &mut dw_len,
-            lp_domain.as_mut_ptr(),
-            &mut dw_len,
+            Some(PSTR(lp_name.as_mut_ptr().cast())),
+            &mut len,
+            Some(PSTR(lp_domain.as_mut_ptr().cast())),
+            &mut len,
             &mut sid_type,
         )
-    } == FALSE
-    {
-        return None;
+        .ok()?;
     }
 
     // Get the owner name and domain of the process
@@ -282,37 +283,37 @@ pub fn get_proc_user(token: *mut c_void) -> Option<String> {
 
 /// Get the integrity level of a process
 /// * `token` - Process token
-pub fn get_integrity_level(token: *mut c_void) -> Option<u32> {
+pub fn get_integrity_level(token: BorrowedHandle) -> Option<u32> {
     // Grab the token information length
     let mut len: u32 = 0;
-    unsafe {
+    let _ = unsafe {
         GetTokenInformation(
-            token,
+            HANDLE(token.as_raw_handle()),
             TokenIntegrityLevel,
-            std::ptr::null_mut(),
+            None,
             0,
             &mut len,
         )
     };
-    if unsafe { GetLastError() } != 122 {
+    if len == 0 {
         return None;
     }
 
-    let mut buffer: Vec<u8> = vec![0; len as usize];
+    let mut buffer = Box::<[u8]>::new_uninit_slice(len as usize);
 
     // Get the token information for the integrity level
-    if unsafe {
+    unsafe {
         GetTokenInformation(
-            token,
+            HANDLE(token.as_raw_handle()),
             TokenIntegrityLevel,
-            buffer.as_mut_ptr() as *mut c_void,
+            Some(buffer.as_mut_ptr().cast()),
             len,
             &mut len,
         )
-    } == 0
-    {
-        return None;
+        .ok()?;
     }
+
+    let buffer = unsafe { buffer.assume_init() };
 
     // Get the integrity level from the token SID
     let p_til: &TOKEN_MANDATORY_LABEL = unsafe { &*buffer.as_ptr().cast() };
@@ -336,25 +337,23 @@ pub fn get_integrity_level(token: *mut c_void) -> Option<u32> {
 
 /// Get the start time of a process
 /// * `handle` - Handle to the process
-pub fn get_start_time(handle: *mut c_void) -> Option<i64> {
-    let mut creation_time: FILETIME = Default::default();
-    let mut exit_time: FILETIME = Default::default();
-    let mut kernel_time: FILETIME = Default::default();
-    let mut user_time: FILETIME = Default::default();
+pub fn get_start_time(handle: BorrowedHandle) -> Option<i64> {
+    let mut creation_time = FILETIME::default();
+    let mut exit_time = FILETIME::default();
+    let mut kernel_time = FILETIME::default();
+    let mut user_time = FILETIME::default();
 
     // Get the process time information
-    if unsafe {
+    unsafe {
         GetProcessTimes(
-            handle,
+            HANDLE(handle.as_raw_handle()),
             &mut creation_time,
             &mut exit_time,
             &mut kernel_time,
             &mut user_time,
         )
-    } == 0
-    {
-        return None;
-    }
+        .ok()?;
+    };
 
     // Grab the "windows epoch" of the time stamp
     let mut win_epoch =

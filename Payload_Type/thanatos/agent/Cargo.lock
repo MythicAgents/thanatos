@@ -1386,8 +1386,9 @@ dependencies = [
  "ssh2",
  "tokio",
  "ureq",
- "winapi",
+ "windows",
  "windows-acl",
+ "windows-strings",
  "wmi",
 ]
 

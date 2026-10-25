@@ -2,19 +2,16 @@
 use chrono::{DateTime, Local};
 use serde::Serialize;
 use std::os::windows::ffi::OsStrExt;
-use std::{ffi::OsStr, iter::once, path, ptr};
-use winapi::shared::ntdef::NULL;
-use winapi::shared::sddl::ConvertStringSidToSidW;
-use winapi::um::{
-    accctrl::SE_FILE_OBJECT,
-    aclapi::GetNamedSecurityInfoA,
-    errhandlingapi::GetLastError,
-    winbase::LookupAccountSidA,
-    winnt::{SidTypeUnknown, ACCESS_MASK, OWNER_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, PSID},
+use std::{ffi::OsStr, iter::once, path};
+use windows::Win32::Foundation::ERROR_INSUFFICIENT_BUFFER;
+use windows::Win32::Security::Authorization::{
+    ConvertStringSidToSidW, GetNamedSecurityInfoW, SE_FILE_OBJECT,
+};
+use windows::Win32::Security::{
+    LookupAccountSidA, SidTypeUnknown, OWNER_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, PSID,
 };
 use windows_acl::acl::ACL;
-
-use winapi::ctypes::c_void;
+use windows_strings::{PCWSTR, PSTR};
 
 /// Struct holding the access control list for the list entry
 #[derive(Debug, Default, Serialize)]
@@ -38,12 +35,12 @@ fn get_acls(fname: &str) -> Option<Vec<Acl>> {
     let acl = ACL::from_file_path(fname, false).ok()?;
     let entries = acl.all().ok()?;
     for e in entries.iter() {
-        let mut sid: PSID = NULL as PSID;
-        let raw_string_sid: Vec<u16> = OsStr::new(e.string_sid.as_str())
+        let mut sid = PSID::default();
+        let raw_string_sid = OsStr::new(e.string_sid.as_str())
             .encode_wide()
             .chain(once(0))
-            .collect();
-        if unsafe { ConvertStringSidToSidW(raw_string_sid.as_ptr(), &mut sid) } != 0 {
+            .collect::<Vec<_>>();
+        if unsafe { ConvertStringSidToSidW(PCWSTR(raw_string_sid.as_ptr()), &mut sid).is_ok() } {
             if let Some(account) = get_username_from_sid(sid) {
                 if let Some(rights) = rights_mask_to_string(e.mask) {
                     acls.push(Acl {
@@ -64,7 +61,7 @@ const MASK_LIST: &[(u32, &str)] = &[(0x9, "Read"), (0x16, "Write"), (0x20, "Exec
 
 /// Converts a file `ACCESS_MASK` to a String
 /// * `mask` - Access mask to convert
-fn rights_mask_to_string(mask: ACCESS_MASK) -> Option<String> {
+fn rights_mask_to_string(mask: u32) -> Option<String> {
     // Check if the full control bits are set
     if 0x3f & mask == 0x3f {
         return Some("Full Control".to_string());
@@ -95,19 +92,19 @@ fn get_username_from_sid(sid: PSID) -> Option<String> {
 
     // Initial call to `LookupAccountSidA` which will be used to get the right `dw_acct_name`
     // and `dw_domain_name` lengths
-    unsafe {
+    if !unsafe {
         LookupAccountSidA(
-            ptr::null_mut(),
-            sid as PSID,
-            ptr::null_mut(),
+            None,
+            sid,
+            None,
             &mut dw_acct_name,
-            ptr::null_mut(),
+            None,
             &mut dw_domain_name,
             &mut e_use,
         )
-    };
-
-    if unsafe { GetLastError() } != 122 {
+    }
+    .is_err_and(|e| e.code() == ERROR_INSUFFICIENT_BUFFER.to_hresult())
+    {
         return None;
     }
 
@@ -116,19 +113,17 @@ fn get_username_from_sid(sid: PSID) -> Option<String> {
     let mut domain_name = vec![0; dw_domain_name as usize];
 
     // Grab the domain and owner attached to the file
-    if unsafe {
+    unsafe {
         LookupAccountSidA(
-            ptr::null_mut(),
-            sid as PSID,
-            acct_name.as_ptr() as *mut i8,
+            None,
+            sid,
+            Some(PSTR(acct_name.as_mut_ptr().cast())),
             &mut dw_acct_name,
-            domain_name.as_ptr() as *mut i8,
+            Some(PSTR(domain_name.as_mut_ptr().cast())),
             &mut dw_domain_name,
             &mut e_use,
         )
-    } == 0
-    {
-        return None;
+        .ok()?;
     }
 
     // Check if the acount name was populated correctly
@@ -159,44 +154,36 @@ fn get_username_from_sid(sid: PSID) -> Option<String> {
 
 /// Get the file owner name from a path
 /// * `fname` - File path
-pub fn get_file_owner(fname: &path::Path) -> String {
+pub fn get_file_owner(fname: &path::Path) -> Option<String> {
     // Canonicalize the path
-    let fname = if let Ok(fname) = fname.canonicalize() {
-        if let Some(name) = fname.to_str() {
-            format!("{}\0", name)
-        } else {
-            return "".to_string();
-        }
-    } else {
-        return "".to_string();
-    };
+    let fname = fname.canonicalize().ok()?;
+    let mut fname = fname.into_os_string().encode_wide().collect::<Vec<_>>();
+    fname.push(0);
 
     // Create a new SID object
-    let mut psid_owner: PSID = ptr::null_mut();
-    let psid_owner_addr: *mut *mut c_void = &mut psid_owner;
+    let mut psid_owner = PSID::default();
 
-    let mut psd: PSECURITY_DESCRIPTOR = ptr::null_mut();
-    let psd_addr: *mut *mut c_void = &mut psd;
+    let mut psd = PSECURITY_DESCRIPTOR::default();
+    let psd_addr = &mut psd;
 
     // Grab the security information of the file
-    if unsafe {
-        GetNamedSecurityInfoA(
-            fname.as_ptr() as *const i8,
+    unsafe {
+        GetNamedSecurityInfoW(
+            PCWSTR(fname.as_ptr()),
             SE_FILE_OBJECT,
             OWNER_SECURITY_INFORMATION,
-            psid_owner_addr,
-            ptr::null_mut(),
-            ptr::null_mut(),
-            ptr::null_mut(),
+            Some(&raw mut psid_owner),
+            None,
+            None,
+            None,
             psd_addr,
         )
-    } != 0
-    {
-        return "".to_string();
+        .ok()
+        .ok()?;
     }
 
     // Convert the SID to a username
-    get_username_from_sid(psid_owner).unwrap_or_default()
+    get_username_from_sid(psid_owner)
 }
 
 impl FilePermissions {

@@ -50,17 +50,17 @@ libc = "0.2"
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-acl = "0.3.0"
 wmi = "0.18.4"
+windows-strings = "0.5.1"
 
-[target.'cfg(target_os = "windows")'.dependencies.winapi]
-version = "0.3.9"
+[target.'cfg(target_os = "windows")'.dependencies.windows]
+version = "0.62.2"
 features = [
-  "aclapi",
-  "errhandlingapi",
-  "impl-default",
-  "securitybaseapi",
-  "tlhelp32",
-  "winbase",
-  "wincon",
-  "wow64apiset",
-  "sysinfoapi"
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_Security_Authorization",
+  "Win32_System_Console",
+  "Win32_System_Diagnostics_ToolHelp",
+  "Win32_System_Threading",
+  "Win32_System_SystemInformation",
+  "Win32_System_WindowsProgramming",
 ]
