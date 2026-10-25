@@ -7,7 +7,7 @@ use std::result::Result;
 use crate::utils::linux::whoami;
 
 #[cfg(target_os = "windows")]
-use crate::utils::windows::{whoami, Handle};
+use crate::utils::windows::whoami;
 
 /// Get the privileges of the current process
 /// Retrieves the following information:
@@ -140,13 +140,16 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
 /// * `task` - Tasking information
 #[cfg(target_os = "windows")]
 pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Error>> {
-    use winapi::um::{
-        errhandlingapi::GetLastError,
-        processthreadsapi::{GetCurrentProcess, OpenProcessToken},
-        securitybaseapi::GetTokenInformation,
-        winbase::LookupPrivilegeNameA,
-        winnt::{TokenPrivileges, LUID_AND_ATTRIBUTES, TOKEN_PRIVILEGES, TOKEN_QUERY},
+    use std::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle};
+    use windows::Win32::{
+        Foundation::{HANDLE, INVALID_HANDLE_VALUE},
+        Security::{
+            GetTokenInformation, LookupPrivilegeNameA, TokenPrivileges, LUID_AND_ATTRIBUTES,
+            TOKEN_PRIVILEGES, TOKEN_QUERY,
+        },
+        System::Threading::{GetCurrentProcess, OpenProcessToken},
     };
+    use windows_strings::PSTR;
 
     // Create the initial output
     let mut output = format!(
@@ -156,52 +159,39 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
     );
 
     // Get a handle to the current process
-    let mut t_handle = std::ptr::null_mut();
-    if unsafe { OpenProcessToken(GetCurrentProcess() as _, TOKEN_QUERY, &mut t_handle) } == 0 {
-        return Err(std::io::Error::other("Failed to open token handle").into());
-    }
-    let t_handle = Handle::from(t_handle);
+    let token_handle = unsafe { OwnedHandle::from_raw_handle(INVALID_HANDLE_VALUE.0.into()) };
+    unsafe {
+        OpenProcessToken(
+            GetCurrentProcess(),
+            TOKEN_QUERY,
+            &mut HANDLE(token_handle.as_raw_handle()),
+        )
+    }?;
 
     // Get the token information length
     let mut priv_len = 0u32;
-    if unsafe {
+    let _ = unsafe {
         GetTokenInformation(
-            *t_handle,
+            HANDLE(token_handle.as_raw_handle()),
             TokenPrivileges,
-            std::ptr::null_mut(),
+            None,
             0,
             &mut priv_len,
         )
-    } != 0
-    {
-        return Err(
-            std::io::Error::other(format!("Failed to get token information {}", unsafe {
-                GetLastError()
-            }))
-            .into(),
-        );
     };
 
     let mut privs = vec![0; priv_len as usize];
 
     // Get the token information
-    if unsafe {
+    unsafe {
         GetTokenInformation(
-            *t_handle,
+            HANDLE(token_handle.as_raw_handle()),
             TokenPrivileges,
-            privs.as_mut_ptr().cast(),
+            Some(privs.as_mut_ptr().cast()),
             priv_len,
             &mut priv_len,
         )
-    } == 0
-    {
-        return Err(
-            std::io::Error::other(format!("Failed to query privileges {}", unsafe {
-                GetLastError()
-            }))
-            .into(),
-        );
-    }
+    }?;
 
     let privileges: &mut TOKEN_PRIVILEGES = unsafe { &mut *privs.as_mut_ptr().cast() };
     let count = privileges.PrivilegeCount;
@@ -218,12 +208,13 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
     for luid in luids.iter_mut() {
         if unsafe {
             LookupPrivilegeNameA(
-                std::ptr::null_mut(),
+                PSTR::null(),
                 &mut luid.Luid,
-                cch_name.as_mut_ptr(),
+                Some(PSTR(cch_name.as_mut_ptr().cast())),
                 &mut cch_name_size,
             )
-        } != 0
+        }
+        .is_ok()
         {
             output.push_str(
                 format!("{}\n", unsafe {

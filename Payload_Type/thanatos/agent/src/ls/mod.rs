@@ -261,7 +261,7 @@ impl File {
             access_time,
             modify_time,
             size,
-            owner: get_file_owner(path),
+            owner: get_file_owner(path).unwrap_or_default(),
         })
     }
 }
