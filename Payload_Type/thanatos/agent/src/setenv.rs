@@ -21,7 +21,7 @@ pub fn set_env(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Error>> {
     let args: SetEnvArgs = serde_json::from_str(&task.parameters)?;
 
     // Set the env var
-    std::env::set_var(&args.name, &args.value);
+    unsafe { std::env::set_var(&args.name, &args.value) };
 
     // Send the output to Mythic
     Ok(mythic_success!(task.id, "Set environment"))

@@ -1,6 +1,6 @@
 use crate::agent::AgentTask;
 use crate::mythic_success;
-use base64::prelude::{Engine as _, BASE64_STANDARD};
+use base64::prelude::{BASE64_STANDARD, Engine as _};
 use serde::Deserialize;
 use ssh2::Session;
 use std::env;
@@ -46,7 +46,7 @@ fn agent_connect(id: &str, socket: &str) -> Result<serde_json::Value, Box<dyn Er
     let orig_agent = env::var("SSH_AUTH_SOCK");
 
     // Set the new SSH_AUTH_SOCK path
-    env::set_var("SSH_AUTH_SOCK", socket);
+    unsafe { std::env::set_var("SSH_AUTH_SOCK", socket) };
 
     // Test to see if the ssh agent can be connected to
     let sess = match Session::new() {
@@ -54,9 +54,9 @@ fn agent_connect(id: &str, socket: &str) -> Result<serde_json::Value, Box<dyn Er
         Err(e) => {
             // Set the SSH_AUTH_SOCK back to what it originally was if there was an error
             if let Ok(orig_socket) = orig_agent {
-                env::set_var("SSH_AUTH_SOCK", orig_socket);
+                unsafe { std::env::set_var("SSH_AUTH_SOCK", orig_socket) };
             } else {
-                env::remove_var("SSH_AUTH_SOCK");
+                unsafe { std::env::remove_var("SSH_AUTH_SOCK") };
             }
 
             return Err(e.into());
@@ -68,9 +68,9 @@ fn agent_connect(id: &str, socket: &str) -> Result<serde_json::Value, Box<dyn Er
         Err(e) => {
             // Set the SSH_AUTH_SOCK back to what it originally was if there was an error
             if let Ok(orig_socket) = orig_agent {
-                env::set_var("SSH_AUTH_SOCK", orig_socket);
+                unsafe { std::env::set_var("SSH_AUTH_SOCK", orig_socket) };
             } else {
-                env::remove_var("SSH_AUTH_SOCK");
+                unsafe { std::env::remove_var("SSH_AUTH_SOCK") };
             }
 
             return Err(e.into());
@@ -79,9 +79,9 @@ fn agent_connect(id: &str, socket: &str) -> Result<serde_json::Value, Box<dyn Er
 
     if let Err(e) = agent.connect() {
         if let Ok(orig_socket) = orig_agent {
-            env::set_var("SSH_AUTH_SOCK", orig_socket);
+            unsafe { std::env::set_var("SSH_AUTH_SOCK", orig_socket) };
         } else {
-            env::remove_var("SSH_AUTH_SOCK");
+            unsafe { std::env::remove_var("SSH_AUTH_SOCK") };
         }
 
         return Err(e.into());
@@ -140,6 +140,6 @@ fn agent_list(id: &str) -> Result<serde_json::Value, Box<dyn Error>> {
 /// Disconnect from the currently connected ssh agent
 /// * `id` - Task Id
 fn agent_disconnect(id: &str) -> Result<serde_json::Value, Box<dyn Error>> {
-    env::remove_var("SSH_AUTH_SOCK");
+    unsafe { std::env::remove_var("SSH_AUTH_SOCK") };
     Ok(mythic_success!(id, "Disconnected from ssh agent"))
 }

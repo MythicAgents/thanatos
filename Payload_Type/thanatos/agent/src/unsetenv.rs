@@ -16,7 +16,7 @@ pub fn unset_env(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Error>> 
     let args: UnsetenvArgs = serde_json::from_str(&task.parameters)?;
 
     // Unset the variable
-    std::env::remove_var(&args.variable);
+    unsafe { std::env::remove_var(&args.variable) };
 
     // Send the completed task information to Mythic
     Ok(mythic_success!(
