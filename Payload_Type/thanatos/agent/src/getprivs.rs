@@ -1,7 +1,6 @@
-use crate::agent::AgentTask;
-use crate::mythic_success;
-use std::error::Error;
-use std::result::Result;
+use std::{error::Error, result::Result};
+
+use crate::{agent::AgentTask, mythic_success};
 
 #[cfg(target_os = "linux")]
 use crate::utils::linux::whoami;
@@ -144,8 +143,8 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
     use windows::Win32::{
         Foundation::{HANDLE, INVALID_HANDLE_VALUE},
         Security::{
-            GetTokenInformation, LookupPrivilegeNameA, TokenPrivileges, LUID_AND_ATTRIBUTES,
-            TOKEN_PRIVILEGES, TOKEN_QUERY,
+            GetTokenInformation, LUID_AND_ATTRIBUTES, LookupPrivilegeNameA, TOKEN_PRIVILEGES,
+            TOKEN_QUERY, TokenPrivileges,
         },
         System::Threading::{GetCurrentProcess, OpenProcessToken},
     };

@@ -1,26 +1,34 @@
 //! This module is only imported when targeting Windows hosts
-use crate::ps::ProcessListingEntry;
+use std::{
+    error::Error,
+    os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle, OwnedHandle},
+    result::Result,
+};
+
 use chrono::DateTime;
 use serde::Deserialize;
-use std::os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle};
-use std::result::Result;
-use std::{error::Error, os::windows::io::OwnedHandle};
-use windows::Win32::Foundation::{
-    ERROR_NO_MORE_FILES, FALSE, FILETIME, HANDLE, INVALID_HANDLE_VALUE, TRUE,
-};
-use windows::Win32::Security::{
-    GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation, LookupAccountSidA,
-    TokenIntegrityLevel, TokenUser, SID_NAME_USE, TOKEN_MANDATORY_LABEL, TOKEN_QUERY, TOKEN_USER,
-};
-use windows::Win32::System::Diagnostics::ToolHelp::{
-    CreateToolhelp32Snapshot, Module32First, Process32First, Process32Next, MODULEENTRY32,
-    PROCESSENTRY32, TH32CS_SNAPMODULE, TH32CS_SNAPPROCESS,
-};
-use windows::Win32::System::Threading::{
-    GetProcessTimes, IsWow64Process, OpenProcess, OpenProcessToken, PROCESS_QUERY_INFORMATION,
+use windows::Win32::{
+    Foundation::{ERROR_NO_MORE_FILES, FALSE, FILETIME, HANDLE, INVALID_HANDLE_VALUE, TRUE},
+    Security::{
+        GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation, LookupAccountSidA,
+        SID_NAME_USE, TOKEN_MANDATORY_LABEL, TOKEN_QUERY, TOKEN_USER, TokenIntegrityLevel,
+        TokenUser,
+    },
+    System::{
+        Diagnostics::ToolHelp::{
+            CreateToolhelp32Snapshot, MODULEENTRY32, Module32First, PROCESSENTRY32, Process32First,
+            Process32Next, TH32CS_SNAPMODULE, TH32CS_SNAPPROCESS,
+        },
+        Threading::{
+            GetProcessTimes, IsWow64Process, OpenProcess, OpenProcessToken,
+            PROCESS_QUERY_INFORMATION,
+        },
+    },
 };
 use windows_strings::PSTR;
 use wmi::WMIConnection;
+
+use crate::ps::ProcessListingEntry;
 
 /// Get the list of process information
 pub fn process_info() -> Result<Vec<ProcessListingEntry>, Box<dyn Error>> {

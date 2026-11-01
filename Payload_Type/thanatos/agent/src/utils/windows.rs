@@ -13,8 +13,8 @@ pub mod whoami {
     use windows::Win32::{
         Foundation::{HANDLE, INVALID_HANDLE_VALUE},
         Security::{
-            GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation, TokenIntegrityLevel,
-            TOKEN_MANDATORY_LABEL, TOKEN_QUERY,
+            GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation,
+            TOKEN_MANDATORY_LABEL, TOKEN_QUERY, TokenIntegrityLevel,
         },
         System::{
             SystemInformation::{
