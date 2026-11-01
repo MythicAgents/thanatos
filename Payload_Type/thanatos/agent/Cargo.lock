@@ -1475,7 +1475,6 @@ dependencies = [
  "ureq",
  "windows",
  "windows-acl",
- "windows-strings",
  "wmi",
 ]
 

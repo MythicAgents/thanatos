@@ -10,21 +10,23 @@ pub mod whoami {
             io::{AsRawHandle, FromRawHandle, OwnedHandle},
         },
     };
-    use windows::Win32::{
-        Foundation::{HANDLE, INVALID_HANDLE_VALUE},
-        Security::{
-            GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation,
-            TOKEN_MANDATORY_LABEL, TOKEN_QUERY, TokenIntegrityLevel,
-        },
-        System::{
-            SystemInformation::{
-                ComputerNameDnsDomain, ComputerNameDnsHostname, GetComputerNameExW,
+    use windows::{
+        Win32::{
+            Foundation::{HANDLE, INVALID_HANDLE_VALUE},
+            Security::{
+                GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation,
+                TOKEN_MANDATORY_LABEL, TOKEN_QUERY, TokenIntegrityLevel,
             },
-            Threading::{GetCurrentProcess, OpenProcessToken},
-            WindowsProgramming::GetUserNameW,
+            System::{
+                SystemInformation::{
+                    ComputerNameDnsDomain, ComputerNameDnsHostname, GetComputerNameExW,
+                },
+                Threading::{GetCurrentProcess, OpenProcessToken},
+                WindowsProgramming::GetUserNameW,
+            },
         },
+        core::PWSTR,
     };
-    use windows_strings::PWSTR;
 
     /// Get the platform information
     /// TODO: Query the system to get the Windows version

@@ -140,15 +140,17 @@ pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Err
 #[cfg(target_os = "windows")]
 pub fn get_privileges(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Error>> {
     use std::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle};
-    use windows::Win32::{
-        Foundation::{HANDLE, INVALID_HANDLE_VALUE},
-        Security::{
-            GetTokenInformation, LUID_AND_ATTRIBUTES, LookupPrivilegeNameA, TOKEN_PRIVILEGES,
-            TOKEN_QUERY, TokenPrivileges,
+    use windows::{
+        Win32::{
+            Foundation::{HANDLE, INVALID_HANDLE_VALUE},
+            Security::{
+                GetTokenInformation, LUID_AND_ATTRIBUTES, LookupPrivilegeNameA, TOKEN_PRIVILEGES,
+                TOKEN_QUERY, TokenPrivileges,
+            },
+            System::Threading::{GetCurrentProcess, OpenProcessToken},
         },
-        System::Threading::{GetCurrentProcess, OpenProcessToken},
+        core::PSTR,
     };
-    use windows_strings::PSTR;
 
     // Create the initial output
     let mut output = format!(

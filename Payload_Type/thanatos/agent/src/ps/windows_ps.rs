@@ -7,25 +7,27 @@ use std::{
 
 use chrono::DateTime;
 use serde::Deserialize;
-use windows::Win32::{
-    Foundation::{ERROR_NO_MORE_FILES, FALSE, FILETIME, HANDLE, INVALID_HANDLE_VALUE, TRUE},
-    Security::{
-        GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation, LookupAccountSidA,
-        SID_NAME_USE, TOKEN_MANDATORY_LABEL, TOKEN_QUERY, TOKEN_USER, TokenIntegrityLevel,
-        TokenUser,
-    },
-    System::{
-        Diagnostics::ToolHelp::{
-            CreateToolhelp32Snapshot, MODULEENTRY32, Module32First, PROCESSENTRY32, Process32First,
-            Process32Next, TH32CS_SNAPMODULE, TH32CS_SNAPPROCESS,
+use windows::{
+    Win32::{
+        Foundation::{ERROR_NO_MORE_FILES, FALSE, FILETIME, HANDLE, INVALID_HANDLE_VALUE, TRUE},
+        Security::{
+            GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation, LookupAccountSidA,
+            SID_NAME_USE, TOKEN_MANDATORY_LABEL, TOKEN_QUERY, TOKEN_USER, TokenIntegrityLevel,
+            TokenUser,
         },
-        Threading::{
-            GetProcessTimes, IsWow64Process, OpenProcess, OpenProcessToken,
-            PROCESS_QUERY_INFORMATION,
+        System::{
+            Diagnostics::ToolHelp::{
+                CreateToolhelp32Snapshot, MODULEENTRY32, Module32First, PROCESSENTRY32,
+                Process32First, Process32Next, TH32CS_SNAPMODULE, TH32CS_SNAPPROCESS,
+            },
+            Threading::{
+                GetProcessTimes, IsWow64Process, OpenProcess, OpenProcessToken,
+                PROCESS_QUERY_INFORMATION,
+            },
         },
     },
+    core::PSTR,
 };
-use windows_strings::PSTR;
 use wmi::WMIConnection;
 
 use crate::ps::ProcessListingEntry;

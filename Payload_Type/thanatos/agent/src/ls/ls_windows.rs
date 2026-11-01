@@ -3,15 +3,18 @@ use std::{ffi::OsStr, iter::once, os::windows::ffi::OsStrExt, path};
 
 use chrono::{DateTime, Local};
 use serde::Serialize;
-use windows::Win32::{
-    Foundation::ERROR_INSUFFICIENT_BUFFER,
-    Security::{
-        Authorization::{ConvertStringSidToSidW, GetNamedSecurityInfoW, SE_FILE_OBJECT},
-        LookupAccountSidA, OWNER_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, PSID, SidTypeUnknown,
+use windows::{
+    Win32::{
+        Foundation::ERROR_INSUFFICIENT_BUFFER,
+        Security::{
+            Authorization::{ConvertStringSidToSidW, GetNamedSecurityInfoW, SE_FILE_OBJECT},
+            LookupAccountSidA, OWNER_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, PSID,
+            SidTypeUnknown,
+        },
     },
+    core::{PCWSTR, PSTR},
 };
 use windows_acl::acl::ACL;
-use windows_strings::{PCWSTR, PSTR};
 
 /// Struct holding the access control list for the list entry
 #[derive(Debug, Default, Serialize)]
