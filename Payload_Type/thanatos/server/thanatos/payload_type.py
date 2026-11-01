@@ -225,17 +225,6 @@ class Thanatos(PayloadType):
             if len(features) > 0:
                 command += f" --features {','.join(features)}"
 
-            # Copy any prebuilt dependencies if they exist
-            deps_suffix = "_static" if self.get_parameter("static") == "yes" else ""
-
-            deps_path = f"/opt/{target_os}{deps_suffix}"
-            if os.path.exists(deps_path):
-                copytree(
-                    f"{deps_path}",
-                    f"{agent_build_path.name}/target",
-                    dirs_exist_ok=True,
-                )
-
             # Set the build stdout to the build command invocation
             resp.build_message = str(command)
 
@@ -256,11 +245,6 @@ class Thanatos(PayloadType):
                 resp.set_build_stdout(stdout.decode())
                 resp.set_build_stderr(stderr.decode())
                 raise Exception("Failed to build payload. Check Build Errors")
-
-            # Copy any dependencies that were compiled
-            built_path = f"{agent_build_path.name}/target"
-            if os.path.exists(built_path):
-                copytree(f"{built_path}", f"{deps_path}", dirs_exist_ok=True)
 
             # Check if there is anything on stdout/stderr and forward to Mythic
             if stdout:
