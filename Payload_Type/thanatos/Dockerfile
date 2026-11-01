@@ -69,6 +69,8 @@ RUN apt-get install -y \
     mingw-w64-x86-64-dev \
     gcc-mingw-w64-i686-win32 \
     mingw-w64-i686-dev \
+    libssl-dev \
+    pkg-config \
     perl
 
 # Main server image
