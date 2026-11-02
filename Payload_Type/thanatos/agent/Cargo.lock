@@ -1283,6 +1283,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_repr"
+version = "0.1.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8d3b1629de253c70a0508c3899572da79ca359fdab27c7920ff00406df418906"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.9",
+]
+
+[[package]]
 name = "serdect"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1457,6 +1468,7 @@ version = "0.1.15"
 dependencies = [
  "aes",
  "base64",
+ "bitflags 2.13.2",
  "cbc",
  "cfg-if",
  "chrono",
@@ -1468,6 +1480,7 @@ dependencies = [
  "rsa",
  "serde",
  "serde_json",
+ "serde_repr",
  "sha1",
  "sha2",
  "ssh2",

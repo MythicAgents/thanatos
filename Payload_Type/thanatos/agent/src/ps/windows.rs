@@ -11,8 +11,7 @@ use windows::{
     Win32::{
         Foundation::{ERROR_NO_MORE_FILES, FALSE, FILETIME, HANDLE, INVALID_HANDLE_VALUE, TRUE},
         Security::{
-            GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation, LookupAccountSidA,
-            SID_NAME_USE, TOKEN_MANDATORY_LABEL, TOKEN_QUERY, TOKEN_USER, TokenIntegrityLevel,
+            GetTokenInformation, LookupAccountSidA, SID_NAME_USE, TOKEN_QUERY, TOKEN_USER,
             TokenUser,
         },
         System::{
@@ -30,10 +29,25 @@ use windows::{
 };
 use wmi::WMIConnection;
 
-use crate::ps::ProcessListingEntry;
+use crate::{
+    agent::AgentTask,
+    ps::{ProcessListing, ProcessListingEntry},
+    utils::{
+        os::windows::IntegrityLevelExt,
+        platform::{self, IntegrityLevel},
+    },
+};
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "PascalCase")]
+#[serde(rename = "Win32_Process")]
+struct Win32ProcessCmdline {
+    process_id: u32,
+    command_line: Option<String>,
+}
 
 /// Get the list of process information
-pub fn process_info() -> Result<Vec<ProcessListingEntry>, Box<dyn Error>> {
+fn process_info() -> Result<Vec<ProcessListingEntry>, Box<dyn Error>> {
     // Vec to hold the process infomation
     let mut listing: Vec<ProcessListingEntry> = Vec::new();
 
@@ -83,7 +97,8 @@ pub fn process_info() -> Result<Vec<ProcessListingEntry>, Box<dyn Error>> {
                 .is_ok()
             } {
                 first_entry.user = get_proc_user(token_handle.as_handle());
-                first_entry.integrity_level = get_integrity_level(token_handle.as_handle());
+                first_entry.integrity_level =
+                    IntegrityLevel::try_from_token(token_handle.as_handle()).ok();
             }
         }
         // Grab a snapshot of the process' modules
@@ -145,7 +160,8 @@ pub fn process_info() -> Result<Vec<ProcessListingEntry>, Box<dyn Error>> {
                 .is_ok()
             } {
                 entry.user = get_proc_user(token_handle.as_handle());
-                entry.integrity_level = get_integrity_level(token_handle.as_handle());
+                entry.integrity_level =
+                    IntegrityLevel::try_from_token(token_handle.as_handle()).ok();
             }
 
             // Grab a snapshot of the process' modules
@@ -172,14 +188,6 @@ pub fn process_info() -> Result<Vec<ProcessListingEntry>, Box<dyn Error>> {
     }
 
     let wmi_con = WMIConnection::new()?;
-
-    #[derive(Deserialize, Debug)]
-    #[serde(rename_all = "PascalCase")]
-    #[serde(rename = "Win32_Process")]
-    struct Win32ProcessCmdline {
-        process_id: u32,
-        command_line: Option<String>,
-    }
 
     let results: Vec<Win32ProcessCmdline> = wmi_con.query()?;
 
@@ -213,7 +221,7 @@ fn get_proc_name(pe32: &PROCESSENTRY32) -> Option<String> {
 
 /// Get the architecture of a process
 /// * `handle` - Handle to the process
-pub fn get_architecture(handle: BorrowedHandle) -> Option<String> {
+fn get_architecture(handle: BorrowedHandle) -> Option<String> {
     let mut is_wow64 = FALSE;
 
     // Query the process architecture
@@ -229,7 +237,7 @@ pub fn get_architecture(handle: BorrowedHandle) -> Option<String> {
 
 /// Get the user associated with a process
 /// * `token` - Handle to the process token
-pub fn get_proc_user(token: BorrowedHandle) -> Option<String> {
+fn get_proc_user(token: BorrowedHandle) -> Option<String> {
     let mut len = 0;
 
     // Get the size for the process token information
@@ -291,63 +299,9 @@ pub fn get_proc_user(token: BorrowedHandle) -> Option<String> {
     Some(format!("{}\\{}", domain, name))
 }
 
-/// Get the integrity level of a process
-/// * `token` - Process token
-pub fn get_integrity_level(token: BorrowedHandle) -> Option<u32> {
-    // Grab the token information length
-    let mut len: u32 = 0;
-    let _ = unsafe {
-        GetTokenInformation(
-            HANDLE(token.as_raw_handle()),
-            TokenIntegrityLevel,
-            None,
-            0,
-            &mut len,
-        )
-    };
-    if len == 0 {
-        return None;
-    }
-
-    let mut buffer = Box::<[u8]>::new_uninit_slice(len as usize);
-
-    // Get the token information for the integrity level
-    unsafe {
-        GetTokenInformation(
-            HANDLE(token.as_raw_handle()),
-            TokenIntegrityLevel,
-            Some(buffer.as_mut_ptr().cast()),
-            len,
-            &mut len,
-        )
-        .ok()?;
-    }
-
-    let buffer = unsafe { buffer.assume_init() };
-
-    // Get the integrity level from the token SID
-    let p_til: &TOKEN_MANDATORY_LABEL = unsafe { &*buffer.as_ptr().cast() };
-
-    let integrity_level_sid: &u32 = unsafe {
-        let p_count = GetSidSubAuthorityCount(p_til.Label.Sid);
-        if p_count.is_null() {
-            return None;
-        }
-        let count = (*p_count) - 1;
-        let integrity_level_ptr = GetSidSubAuthority(p_til.Label.Sid, count as u32);
-        if integrity_level_ptr.is_null() {
-            return None;
-        }
-        &*integrity_level_ptr
-    };
-
-    // Get the integrity level from the sid
-    Some(integrity_level_sid >> 12)
-}
-
 /// Get the start time of a process
 /// * `handle` - Handle to the process
-pub fn get_start_time(handle: BorrowedHandle) -> Option<i64> {
+fn get_start_time(handle: BorrowedHandle) -> Option<i64> {
     let mut creation_time = FILETIME::default();
     let mut exit_time = FILETIME::default();
     let mut kernel_time = FILETIME::default();
@@ -377,4 +331,24 @@ pub fn get_start_time(handle: BorrowedHandle) -> Option<i64> {
     let start_time = DateTime::from_timestamp(posix_epoch, 0)?;
 
     Some(start_time.timestamp_millis())
+}
+
+pub fn get_process_list(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Error>> {
+    // Get the process information
+    let listing = process_info()?;
+
+    // Create the output with the platform
+    let output = ProcessListing {
+        platform: platform::generic_name(),
+        processes: &listing,
+    };
+
+    // Return the process listing
+    Ok(serde_json::json!({
+        "task_id": task.id,
+        "status": "success",
+        "completed": true,
+        "user_output": serde_json::to_string(&output)?,
+        "processes": serde_json::to_value(listing)?,
+    }))
 }

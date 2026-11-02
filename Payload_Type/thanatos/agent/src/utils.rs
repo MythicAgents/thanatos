@@ -1,24 +1,8 @@
 use std::path::{Component, PathBuf};
 
-#[cfg(target_os = "linux")]
-pub mod linux;
-
-#[cfg(target_os = "windows")]
-pub mod windows;
-
-// Used for getting the local internal IP address
-// This just binds to a socket and checks what the interface IP address is not the best
-// way to do it but there is no more intuitive "better" way
-pub mod local_ipaddress {
-    use std::net::UdpSocket;
-
-    /// Get the local IP address of the machine
-    pub fn get() -> Option<String> {
-        let socket = UdpSocket::bind("0.0.0.0:0").ok()?;
-        socket.connect("8.8.8.8:80").ok()?;
-        Some(socket.local_addr().ok()?.ip().to_string())
-    }
-}
+pub mod macros;
+pub mod os;
+pub mod platform;
 
 /// Convert a windows verbatim path into a nonverbatim one
 /// * `path` - Path to clean up
@@ -106,50 +90,4 @@ pub fn parse_linux_mode(mode: u32) -> String {
     }
 
     str_mode
-}
-
-/// Macro used for formatting a string into the Mythic error json format
-/// * `task_id` - Id of the task
-/// * `error` - Error to display in the Mythic task
-#[macro_export]
-macro_rules! mythic_error {
-    ($tid:expr, $errmsg:expr) => {
-        serde_json::json!({
-            "task_id": $tid,
-            "status": "error",
-            "user_output": $errmsg,
-            "completed": true,
-        })
-    };
-}
-
-/// Macro used for formatting a string into the Mythic success json format
-/// * `task_id` - Id of the task
-/// * `output` - Message for the task output
-#[macro_export]
-macro_rules! mythic_success {
-    ($tid:expr, $out:expr) => {
-        serde_json::json!({
-            "task_id": $tid,
-            "status": "success",
-            "user_output": $out,
-            "completed": true,
-        })
-    };
-}
-
-/// Macro used for formatting a string into the Mythic json format with a custom status message
-/// * `task_id` - Id of the task
-/// * `status` - Status message for the task
-/// * `output` - Message for the task output
-#[macro_export]
-macro_rules! mythic_continued {
-    ($tid:expr, $stat:expr, $out:expr) => {
-        serde_json::json!({
-            "task_id": $tid,
-            "status": $stat,
-            "user_output": $out,
-            "completed": false,
-        })
-    };
 }

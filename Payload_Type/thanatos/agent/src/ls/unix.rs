@@ -1,15 +1,16 @@
 //! This file is only imported when compiling for Linux
-use crate::utils::{
-    linux::{get_group_from_gid, get_user_from_uid},
-    parse_linux_mode,
+use std::{
+    os::unix::fs::{MetadataExt, PermissionsExt},
+    path,
 };
+
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
-use std::convert::TryInto;
-use std::path;
 
-use std::os::linux::fs::MetadataExt;
-use std::os::unix::fs::PermissionsExt;
+use crate::utils::{
+    os::unix::{GroupEntry, PasswdEntry},
+    parse_linux_mode,
+};
 
 /// Struct for storing file permissions
 #[derive(Serialize, Deserialize, Default)]
@@ -33,18 +34,6 @@ pub struct FilePermissions {
     pub creation_date: i64,
 }
 
-/// Gets the file owner from a path
-pub fn get_file_owner(file_path: &path::Path) -> Option<String> {
-    // Get the file metadata
-    let meta = file_path.metadata().ok()?;
-
-    // Get the owner uid
-    let uid = meta.st_uid();
-
-    // Convert the uid to a username
-    get_user_from_uid(uid)
-}
-
 impl FilePermissions {
     /// Formulate a new `FilePermissions` object
     /// * `file_path` - File path to get the permissions from
@@ -59,37 +48,39 @@ impl FilePermissions {
             };
         };
 
-        // Parse the integer mode into readable `-rwxrw-r--` text
-        let permissions = parse_linux_mode(meta.permissions().mode());
+        let permissions = meta.permissions();
 
         // Grab the uid and gid from the metadata
-        let gid = meta.st_gid();
-        let uid = meta.st_uid();
+        let gid = meta.gid();
+        let uid = meta.uid();
 
         // Lookup the group of the owner from the integer gid. Return just the integer gid
         // if that fails
-        let group = get_group_from_gid(gid).unwrap_or_else(|| gid.to_string());
+        let group = GroupEntry::getgrgid(gid)
+            .and_then(|entry| entry.ok_or_else(|| std::io::Error::from_raw_os_error(libc::ENOENT)))
+            .map(|entry| entry.name().to_string_lossy().to_string())
+            .unwrap_or_else(|_| gid.to_string());
 
         // Lookup the user from the integer uid. Return just the uid if that
         // fails
-        let user = get_user_from_uid(uid).unwrap_or_else(|| uid.to_string());
+        let user = PasswdEntry::getpwuid(uid)
+            .and_then(|entry| entry.ok_or_else(|| std::io::Error::from_raw_os_error(libc::ENOENT)))
+            .map(|entry| entry.name().to_string_lossy().to_string())
+            .unwrap_or_else(|_| uid.to_string());
 
         // Get the creation date timestamp
-        let creation_date = file_path.metadata().ok().and_then(|meta| {
-            meta.created().ok().and_then(|created| {
-                (created >= std::time::UNIX_EPOCH)
-                    .then(|| DateTime::<Local>::from(created).timestamp())
-            })
+        let creation_date = meta.created().ok().and_then(|created| {
+            (created >= std::time::UNIX_EPOCH).then(|| DateTime::<Local>::from(created).timestamp())
         });
 
         // Create a new FilePermissions object
         Self {
             uid: uid.try_into().unwrap_or(-1),
             gid: gid.try_into().unwrap_or(-1),
-            permissions,
+            permissions: parse_linux_mode(permissions.mode()),
             group,
             user,
-            creation_date: creation_date.unwrap_or(0),
+            creation_date: creation_date.unwrap_or(-1),
         }
     }
 }

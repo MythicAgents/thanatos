@@ -1,23 +1,18 @@
-use crate::agent::AgentTask;
-use crate::utils::unverbatim;
-use chrono::prelude::{DateTime, Local};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::error::Error;
 use std::path::Path;
 
-// Import dependencies based on platform configuration
-cfg_if::cfg_if! {
-    if #[cfg(target_os = "linux")] {
-        pub mod ls_linux;
-        use ls_linux::{FilePermissions, get_file_owner};
-        use crate::utils::linux as native;
-    } else if #[cfg(target_os = "windows")] {
-        mod ls_windows;
-        use ls_windows::{FilePermissions, get_file_owner};
-        use crate::utils::windows as native;
-    }
-}
+use chrono::{DateTime, Local};
+use serde::{Deserialize, Serialize};
+
+#[cfg_attr(unix, path = "ls/unix.rs")]
+#[cfg_attr(windows, path = "ls/windows.rs")]
+mod imp;
+
+pub use imp::FilePermissions;
+
+use crate::{
+    agent::AgentTask,
+    utils::{platform, unverbatim},
+};
 
 /// Parameters for the ls command
 #[allow(dead_code)]
@@ -99,15 +94,12 @@ pub struct File {
 
     /// Size of the listing entry
     pub size: u64,
-
-    /// Owner of the listing entry
-    pub owner: String,
 }
 
 impl FileBrowser {
     /// Generate a new `FileBrowser` listing
     /// * `args` - Argumuments for the Mythic command
-    fn new(args: &LsArgs) -> Result<Self, Box<dyn Error>> {
+    fn new(args: &LsArgs) -> Result<Self, Box<dyn std::error::Error>> {
         // Get the current working directory
         let cwd = std::env::current_dir()?;
 
@@ -186,7 +178,7 @@ impl FileBrowser {
         // Create the file browser object
         Ok(Self {
             host: args.host.to_string(),
-            platform: native::whoami::generic_platform(),
+            platform: platform::generic_name(),
             is_file: path.is_file(),
             permissions: FilePermissions::new(&path),
             name,
@@ -204,7 +196,7 @@ impl FileBrowser {
 impl File {
     /// Creates a new `File` struct
     /// * `path` - Path to the file
-    fn new(path: &Path) -> Result<Self, Box<dyn Error>> {
+    fn new(path: &Path) -> Result<Self, Box<dyn std::error::Error>> {
         let path = std::path::Path::new(path);
 
         // Grab the absolute path to the file
@@ -261,14 +253,13 @@ impl File {
             access_time,
             modify_time,
             size,
-            owner: get_file_owner(path).unwrap_or_default(),
         })
     }
 }
 
 /// Get a directory listing of a path
 /// * `task` - Task information
-pub fn make_ls(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Error>> {
+pub fn make_ls(task: &AgentTask) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
     // Parse the arguments into a parsable object
     let args: LsArgs = serde_json::from_str(&task.parameters)?;
 
@@ -276,7 +267,7 @@ pub fn make_ls(task: &AgentTask) -> Result<serde_json::Value, Box<dyn Error>> {
     let file_browser = FileBrowser::new(&args)?;
 
     // Return the data to Mythic
-    Ok(json!({
+    Ok(serde_json::json!({
         "task_id": task.id,
         "file_browser": &file_browser,
         "status": "success",

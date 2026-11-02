@@ -7,9 +7,7 @@ use windows::{
     Win32::{
         Foundation::ERROR_INSUFFICIENT_BUFFER,
         Security::{
-            Authorization::{ConvertStringSidToSidW, GetNamedSecurityInfoW, SE_FILE_OBJECT},
-            LookupAccountSidA, OWNER_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, PSID,
-            SidTypeUnknown,
+            Authorization::ConvertStringSidToSidW, LookupAccountSidA, PSID, SidTypeUnknown,
         },
     },
     core::{PCWSTR, PSTR},
@@ -43,16 +41,15 @@ fn get_acls(fname: &str) -> Option<Vec<Acl>> {
             .encode_wide()
             .chain(once(0))
             .collect::<Vec<_>>();
-        if unsafe { ConvertStringSidToSidW(PCWSTR(raw_string_sid.as_ptr()), &mut sid).is_ok() } {
-            if let Some(account) = get_username_from_sid(sid) {
-                if let Some(rights) = rights_mask_to_string(e.mask) {
-                    acls.push(Acl {
-                        account,
-                        rights,
-                        r#type: e.entry_type.to_string(),
-                    });
-                }
-            }
+        if unsafe { ConvertStringSidToSidW(PCWSTR(raw_string_sid.as_ptr()), &mut sid).is_ok() }
+            && let Some(account) = get_username_from_sid(sid)
+            && let Some(rights) = rights_mask_to_string(e.mask)
+        {
+            acls.push(Acl {
+                account,
+                rights,
+                r#type: e.entry_type.to_string(),
+            });
         }
     }
 
@@ -155,40 +152,6 @@ fn get_username_from_sid(sid: PSID) -> Option<String> {
     }
 }
 
-/// Get the file owner name from a path
-/// * `fname` - File path
-pub fn get_file_owner(fname: &path::Path) -> Option<String> {
-    // Canonicalize the path
-    let fname = fname.canonicalize().ok()?;
-    let mut fname = fname.into_os_string().encode_wide().collect::<Vec<_>>();
-    fname.push(0);
-
-    // Create a new SID object
-    let mut psid_owner = PSID::default();
-
-    let mut psd = PSECURITY_DESCRIPTOR::default();
-    let psd_addr = &mut psd;
-
-    // Grab the security information of the file
-    unsafe {
-        GetNamedSecurityInfoW(
-            PCWSTR(fname.as_ptr()),
-            SE_FILE_OBJECT,
-            OWNER_SECURITY_INFORMATION,
-            Some(&raw mut psid_owner),
-            None,
-            None,
-            None,
-            psd_addr,
-        )
-        .ok()
-        .ok()?;
-    }
-
-    // Convert the SID to a username
-    get_username_from_sid(psid_owner)
-}
-
 impl FilePermissions {
     /// Create a new `FilePermissions` object
     /// * `fpath` - Path to grab the permissions from
@@ -219,7 +182,7 @@ impl FilePermissions {
 
         // Return the file permissions
         FilePermissions {
-            acls: get_acls(&fname).unwrap_or_else(|| vec![Default::default()]),
+            acls: get_acls(&fname).unwrap_or_default(),
             creation_date: creation_date.unwrap_or_default(),
         }
     }

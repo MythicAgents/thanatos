@@ -1,8 +1,8 @@
 use crate::agent::{AgentTask, ContinuedData};
 use crate::mythic_success;
 use crate::utils::unverbatim;
-use base64::prelude::BASE64_STANDARD;
 use base64::Engine as _;
+use base64::prelude::BASE64_STANDARD;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::error::Error;
@@ -16,11 +16,7 @@ use std::io::Read;
 /// Chunk size used for chunking and sending files
 const CHUNK_SIZE: usize = 512000;
 
-#[cfg(target_os = "windows")]
-use crate::utils::windows::whoami::hostname;
-
-#[cfg(target_os = "linux")]
-use crate::utils::linux::whoami::hostname;
+use crate::utils::platform;
 
 /// Struct containing the task parameters
 #[derive(Deserialize)]
@@ -97,7 +93,7 @@ pub fn download_file(
     let download_data = DownloadResponse {
         total_chunks,
         full_path: Some(&full_path),
-        host: hostname(),
+        host: platform::hostname().ok(),
         is_screenshot: false,
         chunk_size: CHUNK_SIZE,
         filename: None,

