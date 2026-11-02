@@ -1,4 +1,4 @@
-use std::{ffi::CStr, marker::PhantomPinned, mem::MaybeUninit};
+use std::{ffi::CStr, mem::MaybeUninit, pin::Pin};
 
 use crate::utils::platform::IntegrityLevel;
 
@@ -60,8 +60,7 @@ impl GroupEntry {
 
 struct NssEntry<T> {
     entry: T,
-    _storage: Box<[i8]>,
-    _pin: PhantomPinned,
+    _storage: Pin<Box<[i8]>>,
 }
 
 impl<T> NssEntry<T> {
@@ -103,8 +102,7 @@ impl<T> NssEntry<T> {
             } else {
                 return Ok(Some(Self {
                     entry: unsafe { entry.assume_init() },
-                    _storage: unsafe { storage.assume_init() },
-                    _pin: PhantomPinned,
+                    _storage: Box::into_pin(unsafe { storage.assume_init() }),
                 }));
             }
         }
