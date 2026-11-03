@@ -10,6 +10,7 @@ on:
       - 'Payload_Type/thanatos/docker/**'
       - 'Payload_Type/thanatos/uv.lock'
       - 'Payload_Type/thanatos/agent/Cargo.lock'
+  workflow_dispatch:
 env:
   CONTAINER_IMAGE_DESCRIPTION: "Base container image for the Thanatos Mythic C2 agent"
   CONTAINER_IMAGE_LICENSE: BSD-3-Clause
