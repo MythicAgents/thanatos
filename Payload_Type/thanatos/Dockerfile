@@ -46,19 +46,20 @@ RUN mv sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl/sccache /usr/bin/scc
 
 # Thanatos server builder
 FROM base-apt AS thanatos-server-builder
-RUN apt-get install -y python3 python3-venv python3-dev gcc g++
+COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /uvx /usr/local/bin/
+RUN apt-get install -y gcc g++
 RUN mkdir -p /Mythic
 WORKDIR /Mythic
 RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=server,target=server <<EOF
-python3 -m venv /thanatos-venv
-/thanatos-venv/bin/pip install .
+uv tool install -e .
 EOF
 
 # Runtime dependencies
 FROM base-apt AS thanatos-runtime-deps
+COPY --from=thanatos-server-builder /usr/local/bin/uv /usr/local/bin/uvx /usr/local/bin/
 RUN apt-get install -y \
-    python3 \
     make \
     gcc \
     gcc-i686-linux-gnu \
@@ -72,13 +73,14 @@ RUN apt-get install -y \
 
 # Main server image
 FROM thanatos-runtime-deps AS runner
-COPY --link --from=thanatos-server-builder /thanatos-venv /thanatos-venv
+COPY --link --from=thanatos-server-builder /root/.local/bin /root/.local/bin
+COPY --link --from=thanatos-server-builder /root/.local/share/uv /root/.local/share/uv
 COPY --link --from=thanatos-rust-toolchains /root/.cargo /root/.cargo
 COPY --link --from=thanatos-rust-toolchains /root/.rustup /root/.rustup
 COPY --link --from=thanatos-rust-vendored /vendor /vendor
 COPY --from=sccache /usr/bin/sccache /usr/bin/sccache
 RUN mkdir -p /Mythic
 WORKDIR /Mythic
-ENV PATH="/thanatos-venv/bin:/root/.cargo/bin:$PATH"
+ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
 COPY docker/config.toml /root/.cargo/config.toml
 CMD ["thanatos-server"]
