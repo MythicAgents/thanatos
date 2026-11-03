@@ -35,7 +35,7 @@
   "c2": [
     "http"
   ],
-  "mythic_version": "3.2",
+  "mythic_version": "4.0",
   "agent_version": "0.1.15",
   "supported_wrappers": []
 }
