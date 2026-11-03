@@ -1,5 +1,14 @@
 [build]
 rustc-wrapper = "/usr/bin/sccache"
+dep-info-basedir = "."
+incremental = true
+
+[target.x86_64-pc-windows-gnu]
+linker = "x86_64-w64-mingw32-gcc"
+
+[target.i686-pc-windows-gnu]
+linker = "i686-w64-mingw32-gcc"
+rustflags = "-C panic=abort"
 
 [source.crates-io]
 replace-with = "vendored-sources"
