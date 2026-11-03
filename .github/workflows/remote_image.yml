@@ -1,0 +1,50 @@
+name: Remote container image
+on:
+  push:
+    branches:
+      - 'main'
+      - 'Mythic-v4.0.0'
+    paths:
+      - '.github/workflows/remote_image.yml'
+      - 'Payload_Type/thanatos/Dockerfile'
+      - 'Payload_Type/thanatos/docker/**'
+      - 'Payload_Type/thanatos/uv.lock'
+      - 'Payload_Type/thanatos/agent/Cargo.lock'
+env:
+  CONTAINER_IMAGE_DESCRIPTION: "Base container image for the Thanatos Mythic C2 agent"
+  CONTAINER_IMAGE_LICENSE: BSD-3-Clause
+jobs:
+  build-image:
+    name: Build and push container image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Set remote container image url
+        id: set-url
+        env:
+          TAG_NAME: ${{ case(github.ref == 'refs/heads/main', 'latest', github.ref_name) }}
+        run: |
+          echo "image_url=${GITHUB_REPOSITORY@L}" >> $GITHUB_OUTPUT
+          echo "image_tag=${TAG_NAME@L}" >> $GITHUB_OUTPUT
+      - name: Log into ghcr.io
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push container image
+        uses: docker/build-push-action@v7
+        with:
+          context: Payload_Type/thanatos
+          push: true
+          tags: "ghcr.io/${{ steps.set-url.outputs.image_url }}:${{ steps.set-url.outputs.image_tag }}"
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.description=${{ env.CONTAINER_IMAGE_DESCRIPTION }}
+            org.opencontainers.image.licenses=${{ env.CONTAINER_IMAGE_LICENSE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
